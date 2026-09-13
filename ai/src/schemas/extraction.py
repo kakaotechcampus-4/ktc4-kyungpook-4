@@ -7,7 +7,8 @@ class PreferentialCondition(BaseModel):
     """개별 우대조건 하나."""
     description: str  # 조건 설명 (예: "급여이체 실적 보유")
     bonus_rate: float  # 이 조건으로 얻는 우대금리 (%p 단위, 예: 0.2)
-    applicable_term_months: Optional[int] = None  # 특정 만기(개월)에만 적용되면 그 값, 전체 만기 공통이면 None
+    applicable_term_months: Optional[int] = None  # 정확히 이 만기(개월)에만 적용되면 그 값
+    min_term_months: Optional[int] = None  # "X개월 이상"처럼 하한 조건이면 그 값 (해당 만기 이상이면 다 적용)
 
 
 class ExtractionResult(BaseModel):

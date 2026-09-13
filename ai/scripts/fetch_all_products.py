@@ -1,8 +1,8 @@
 """
-finlife API - 페이지네이션까지 포함해서 4개 조합(은행/저축은행 x 정기예금/적금)
-전체 데이터를 끝까지 받아와 tests/fixtures/*.json에 덮어쓴다.
+finlife API - 페이지네이션까지 포함해서 전체 조합(은행/저축은행/신협 x 정기예금/적금)의
+전체 데이터를 끝까지 받아서 tests/fixtures/*.json에 저장한다.
 
-이전 스크립트들(test_finlife_api.py 등)은 pageNo=1만 요청해서
+이전 스크립트(test_finlife_api.py)는 pageNo=1만 요청해서
 total_count보다 적은 데이터만 저장했었음 - 이 스크립트가 그 문제를 고친 버전.
 """
 import json
@@ -23,10 +23,12 @@ SAVING_URL = "https://finlife.fss.or.kr/finlifeapi/savingProductsSearch.json"
 
 # (라벨, URL, topFinGrpNo, 저장 파일명)
 TARGETS = [
-    ("은행/정기예금", DEPOSIT_URL, "020000", "deposit_sample.json"),
-    ("은행/적금", SAVING_URL, "020000", "saving_sample.json"),
-    ("저축은행/정기예금", DEPOSIT_URL, "030300", "deposit_savingsbank_sample.json"),
-    ("저축은행/적금", SAVING_URL, "030300", "saving_savingsbank_sample.json"),
+    ("은행 정기예금", DEPOSIT_URL, "020000", "deposit_sample.json"),
+    ("은행 적금", SAVING_URL, "020000", "saving_sample.json"),
+    ("저축은행 정기예금", DEPOSIT_URL, "030300", "deposit_savingsbank_sample.json"),
+    ("저축은행 적금", SAVING_URL, "030300", "saving_savingsbank_sample.json"),
+    ("신협 정기예금", DEPOSIT_URL, "032000", "deposit_cu_sample.json"),
+    ("신협 적금", SAVING_URL, "032000", "saving_cu_sample.json"),
 ]
 
 
