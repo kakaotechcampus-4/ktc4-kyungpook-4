@@ -43,13 +43,39 @@ flutter run
 | 패키지 추가 | `flutter pub add <package>` |
 | APK 빌드 | `flutter build apk` |
 
+## 아키텍처
+
+- 상태관리: [Riverpod](https://riverpod.dev/)
+- 라우팅: [go_router](https://pub.dev/packages/go_router)
+- 구조: layer-first (기능별이 아니라 역할별로 폴더를 나눔)
+
 ## 폴더 구조
 
 ```
 frontend/
-├── lib/            앱 코드 (진입점: lib/main.dart)
-├── test/           위젯/유닛 테스트
-├── android/        Android 플랫폼 프로젝트
-├── ios/            iOS 플랫폼 프로젝트
-└── pubspec.yaml    의존성 정의
+├── lib/
+│   ├── main.dart          앱 진입점 (ProviderScope + MaterialApp.router)
+│   ├── router/             go_router 라우트 정의 (AppRoutes 상수 포함)
+│   ├── screens/            화면 단위 위젯. 화면별로 하위 폴더
+│   │   ├── splash/          스플래시
+│   │   ├── loading/         로딩
+│   │   ├── calendar/        홈 — 만기 캘린더
+│   │   ├── tutorial/        온보딩 튜토리얼
+│   │   ├── input/           맞춤 추천 설문 (step 1~3)
+│   │   └── result/          포트폴리오 추천 결과
+│   ├── widgets/             여러 화면에서 재사용하는 공통 위젯
+│   ├── providers/           Riverpod Notifier/Provider
+│   ├── models/              화면·API에서 쓰는 데이터 클래스
+│   ├── services/            API 클라이언트, 설정값
+│   └── utils/               포맷터 등 순수 유틸 함수
+├── test/                   위젯/유닛 테스트
+├── android/                Android 플랫폼 프로젝트
+├── ios/                    iOS 플랫폼 프로젝트
+└── pubspec.yaml            의존성 정의
 ```
+
+새 화면을 추가할 때는 `screens/<화면이름>/` 폴더를 만들고, 필요한 상태는
+`providers/`, 재사용 UI는 `widgets/`, 데이터 구조는 `models/`에 둡니다.
+
+> 로그인/마이페이지는 아직 기획이 확정되지 않아 구조에 넣지 않았습니다.
+> 확정되면 `screens/` 아래에 폴더만 추가하면 됩니다.
