@@ -1,0 +1,1071 @@
+{
+  "generated_at": "2026-09-06T13:53:29.690479+00:00",
+  "total_checked": 38,
+  "review_count": 23,
+  "items": [
+    {
+      "fin_co_no": "0010354",
+      "fin_prdt_cd": "MK240001",
+      "fin_prdt_nm": "정기예금",
+      "spcl_cnd": "* 최대우대금리 : 0.1%\n- 창구에서 1년이상 재예치 하는 경우 + 0.1%p",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "창구에서 1년이상 재예치 하는 경우",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010356",
+      "fin_prdt_cd": "1001",
+      "fin_prdt_nm": "푸른 정기예금",
+      "spcl_cnd": "* 가입시점 우대금리 조건 충족시 최대 0.1%p 가산 적용(계약기간 24개월 이내)\n- 계좌별 가입금액 10억원 이상 : 0.1%p(최초 계약기간 한정)\n- 우수고객 : 0.1%p(거래기간 3년 이상, 직전 2년 평잔 10억원 이상인 고객. 단, 대출관련 예금 등 제외)",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "계좌별 가입금액 10억원 이상 (최초 계약기간 한정)",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 24
+        },
+        {
+          "description": "우수고객 : 거래기간 3년 이상, 직전 2년 평잔 10억원 이상인 고객 (단, 대출관련 예금 등 제외)",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 24
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010359",
+      "fin_prdt_cd": "240037",
+      "fin_prdt_nm": "회전yes정기예금(1년단위 변동금리상품)",
+      "spcl_cnd": "*회전시점의 정기예금 12개월 금리 + 우대금리 0.1% 적용, 매1년 회전주기 단위로 약정이율이 변동\n*중도해지시 회전주기 충족분에는 약정이율, 잔여기간에는 중도해지이율 적용",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "회전시점의 정기예금 12개월 금리 + 우대금리 적용",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010359",
+      "fin_prdt_cd": "240039",
+      "fin_prdt_nm": "e-회전yes정기예금(1년단위 변동금리상품) (인터넷뱅킹, 스마트뱅킹)",
+      "spcl_cnd": "*회전시점의 정기예금 12개월 금리 + 우대금리 0.1% 적용, 매1년 회전주기 단위로 약정이율이 변동\n*중도해지시 회전주기 충족분에는 약정이율, 잔여기간에는 중도해지이율 적용",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "회전시점의 정기예금 12개월 금리 + 우대금리 0.1% 적용",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010359",
+      "fin_prdt_cd": "240041",
+      "fin_prdt_nm": "SB톡톡 회전yes정기예금(1년단위 변동금리상품) (비대면)",
+      "spcl_cnd": "*회전시점의 정기예금 12개월 금리 + 우대금리 0.1% 적용, 매1년 회전주기 단위로 약정이율이 변동\n*중도해지시 회전주기 충족분에는 약정이율, 잔여기간에는 중도해지이율 적용",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "회전시점의 정기예금 12개월 금리 + 우대금리 0.1% 적용, 매1년 회전주기 단위로 약정이율이 변동",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010370",
+      "fin_prdt_cd": "250033",
+      "fin_prdt_nm": "정기예금",
+      "spcl_cnd": "- 비대면(인터넷뱅킹 또는 사이다뱅크APP)우대금리 : 연0.1%\n\n- 자동연장 시 추가 우대금리 : 연0.05%\n\n- 장애인 등록고객 추가 우대금리 : 연 0.2%\n(1천만원 이하, 12개월 약정시)",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "비대면(인터넷뱅킹 또는 사이다뱅크APP)우대금리",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        },
+        {
+          "description": "자동연장 시 추가 우대금리",
+          "bonus_rate": 0.05,
+          "applicable_term_months": null
+        },
+        {
+          "description": "장애인 등록고객 추가 우대금리(1천만원 이하, 12개월 약정시)",
+          "bonus_rate": 0.2,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.35,
+          "diff": -0.25
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        },
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.35,
+          "diff": -0.25
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.15,
+          "diff": -0.05
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010456",
+      "fin_prdt_cd": "240052",
+      "fin_prdt_nm": "회전식정기예금 (1년단위 변동금리상품)",
+      "spcl_cnd": "*회전시점 고시된 12개월 정기예금금리 + 우대금리 0.1%로 자동연장되는 변동금리상품(1년단위 확정금리). 중도해지시 충족한 회전기간은 약정이율, 미충족기간에 대해서만 중도해지 이율 적용.",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "회전시점 고시된 12개월 정기예금금리에 우대금리 적용",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010456",
+      "fin_prdt_cd": "240054",
+      "fin_prdt_nm": "비대면 회전식정기예금 (1년단위 변동금리상품)",
+      "spcl_cnd": "*회전시점 고시된 12개월 정기예금금리 + 우대금리 0.1%로 자동연장되는 변동금리상품(1년단위 확정금리). 중도해지시 충족한 회전기간은 약정이율, 미충족기간에 대해서만 중도해지 이율 적용.",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "회전시점 고시된 12개월 정기예금금리 + 우대금리 적용",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010456",
+      "fin_prdt_cd": "240056",
+      "fin_prdt_nm": "SB톡톡 회전식정기예금(비대면) (1년단위 변동금리상품)",
+      "spcl_cnd": "*회전시점 고시된 12개월 정기예금금리 + 우대금리 0.1%로 자동연장되는 변동금리상품(1년단위 확정금리). 중도해지시 충족한 회전기간은 약정이율, 미충족기간에 대해서만 중도해지 이율 적용.",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "회전시점 고시된 12개월 정기예금금리에 우대금리 적용",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010457",
+      "fin_prdt_cd": "240008",
+      "fin_prdt_nm": "정기예금",
+      "spcl_cnd": "재예치 우대 : 0.05%\n(1년이상 예치한 정기예.적금을 만기 1년이상 정기예금으로 재예치 및 추가 예치한 예금)\n* 만기연장 우대금리 3.85%",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "1년이상 예치한 정기예.적금을 만기 1년이상 정기예금으로 재예치 및 추가 예치한 예금",
+          "bonus_rate": 0.05,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.05,
+          "extracted_total": 0,
+          "diff": 0.05
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.05,
+          "extracted_total": 0,
+          "diff": 0.05
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010463",
+      "fin_prdt_cd": "240001 240002",
+      "fin_prdt_nm": "정기예금",
+      "spcl_cnd": "최대 연0.30%p 창구약정이율+우대금리 적용 ※우대금리 적용조건 ①가입기간12개월이상 계약금액 10억이상 0.10%p ②가입기간 12개월 최대2,000만원한도, 가족 중 가입당시 만12세이하 고객수에 따라 다르게 적용 만기해지조건(2명0.10p%,3명0.20%p,4명0.30%p) ※조건①,조건②의 우대금리는 중복 적용되지 않음",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "가입기간 12개월, 가족 중 가입당시 만12세 이하 고객수 4명 이상, 최대 2,000만원 한도, 만기해지조건",
+          "bonus_rate": 0.3,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.3,
+          "diff": -0.3
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.3,
+          "diff": -0.3
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010471",
+      "fin_prdt_cd": "24-0055",
+      "fin_prdt_nm": "회전정기예금 (대면, 전지점)",
+      "spcl_cnd": "*회전정기예금(회전주기 12개월) 기본금리: 매 1년마다 해당시점 정기예금 1년 금리 +0.1%로 자동연장되는 변동금리 상품(1년 단위 확정금리). 매 1년 경과 후 중도해지시 회전일로부터 1년 경과 시점까지는 정상이율 적용.\n12개월 정기예금(대면) 기본금리(연 3.50%)+ 기본 우대금리(연 0.10%)",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "매 1년마다 해당시점 정기예금 1년 금리 +0.1%로 자동연장되는 변동금리 적용(1년 단위 확정금리) 및 12개월 정기예금(대면) 기본 우대금리",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010471",
+      "fin_prdt_cd": "24-0059",
+      "fin_prdt_nm": "회전정기예금 (비대면)",
+      "spcl_cnd": "*회전정기예금(회전주기 12개월) 기본금리: 매 1년마다 해당시점 정기예금 1년 금리 +0.1%로 자동연장되는 변동금리 상품(1년 단위 확정금리). 매 1년 경과 후 중도해지시 회전일로부터 1년 경과 시점까지는 정상이율 적용.\n12개월 정기예금(비대면) 기본금리(연 3.50%)+ 기본 우대금리(연 0.10%)",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "회전정기예금 자동연장 시 해당시점 정기예금 1년 금리 대비 가산금리",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        },
+        {
+          "description": "12개월 정기예금(비대면) 기본 우대금리",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.2,
+          "diff": -0.2
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.2,
+          "diff": -0.2
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010471",
+      "fin_prdt_cd": "24-0081",
+      "fin_prdt_nm": "페퍼스회전정기예금 (디지털페퍼앱)",
+      "spcl_cnd": "*페퍼스회전정기예금(회전주기 12개월) 기본금리:매 1년마다 해당시점 정기예금 1년 금리 +0.1%로 자동연장되는 변동금리 상품(1년 단위 확정금리). 매 1년 경과 후 중도해지시 회전일로부터 1년 경과 시점까지는 정상이율 적용.\n12개월 정기예금(비대면) 기본금리(연 3.50%)+ 기본 우대금리(연 0.10%)",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "매 1년마다 해당시점 정기예금 1년 금리 +0.1%로 자동연장 (기본 우대금리)",
+          "bonus_rate": 0.1,
+          "applicable_term_months": 12
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010471",
+      "fin_prdt_cd": "24-0086",
+      "fin_prdt_nm": "♥회전정기예금(창구 전용) (평촌, 부천)",
+      "spcl_cnd": "*♥회전정기예금(회전주기 12개월) 기본금리: 매 1년마다 해당시점 정기예금 1년 금리 +0.1%로 자동연장되는 변동금리 상품(1년 단위 확정금리). 매 1년 경과 후 중도해지시 회전일로부터 1년 경과 시점까지는 정상이율 적용.\n12개월 정기예금(대면) 기본금리(연 3.50%)+ 기본 우대금리(연 0.10%)",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "매 1년마다 해당시점 정기예금 1년 금리 +0.1%로 자동연장되는 변동금리 적용에 따른 기본 우대금리",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0010537",
+      "fin_prdt_cd": "240202",
+      "fin_prdt_nm": "한투 알아서 중도해지안심정기예금",
+      "spcl_cnd": "-예적금담보대출 가산금리 우대(상품약정금리+0.5%)창구 방문하여 해당상품을 담보로 제공한 대출 실행 시에만 해당",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "예적금담보대출 가산금리 우대(상품약정금리+0.5%), 창구 방문하여 해당상품을 담보로 제공한 대출 실행 시에만 해당",
+          "bonus_rate": 0.5,
+          "applicable_term_months": null
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.5,
+          "diff": -0.5
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.5,
+          "diff": -0.5
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0011551",
+      "fin_prdt_cd": "240001",
+      "fin_prdt_nm": "정기예금",
+      "spcl_cnd": "예,적금 만기 후 원금 12개월 이상 재예치 시 : 0.1%p 우대",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "예,적금 만기 후 원금 12개월 이상 재예치 시",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0011767",
+      "fin_prdt_cd": "240050",
+      "fin_prdt_nm": "정기예금",
+      "spcl_cnd": "(판매중단)\n자동만기연장 우대상품 기가입고객에 한해 자동재예치 시 적용.\n이외 우대조건 없음.",
+      "status": "MISMATCH",
+      "extracted_conditions": [],
+      "mismatches": [
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0,
+          "diff": 0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0013002",
+      "fin_prdt_cd": "BNK1001",
+      "fin_prdt_nm": "정기예금(대면)",
+      "spcl_cnd": "비대면, 인터넷,모바일 가입시 0.1%우대",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "비대면, 인터넷, 모바일 가입시",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0013166",
+      "fin_prdt_cd": "240001",
+      "fin_prdt_nm": "정기예금",
+      "spcl_cnd": "* 최고우대금리 : 0.2%\n- 인터넷뱅킹, 모바일APP, 모바일WEB(하나디지털뱅크, 하나원큐연계), 비대면계좌개설서비스(SB톡톡)으로 가입: 0.1%\n- 하나카드 휴면 6개월 이상 무실적 고객이 발급 후 3개월간 이용실적 10만원 이상 확인 시 0.1% 단,①~⑤ 모두충족 시\n(자세한 사항은 홈페이지 참조)\n※ 단위는 연%p",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "인터넷뱅킹, 모바일APP, 모바일WEB(하나디지털뱅크, 하나원큐연계), 비대면계좌개설서비스(SB톡톡)으로 가입",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        },
+        {
+          "description": "하나카드 휴면 6개월 이상 무실적 고객이 발급 후 3개월간 이용실적 10만원 이상 확인 시 (①~⑤ 모두 충족 시)",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.2,
+          "diff": -0.2
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "1",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "3",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "6",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.2,
+          "diff": -0.2
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.1,
+          "extracted_total": 0.2,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0013166",
+      "fin_prdt_cd": "240007",
+      "fin_prdt_nm": "세바퀴정기예금(1년단위 변동금리상품)",
+      "spcl_cnd": "세바퀴 정기예금 가입시 0.1%\n인터넷뱅킹,모바일APP,모바일WEB(하나디지털뱅크, 하나원큐연계)으로 가입시 0.1%",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "세바퀴 정기예금 가입시",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        },
+        {
+          "description": "인터넷뱅킹,모바일APP,모바일WEB(하나디지털뱅크, 하나원큐연계)으로 가입시",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.2,
+          "diff": -0.2
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.2,
+          "diff": -0.2
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0013166",
+      "fin_prdt_cd": "240010",
+      "fin_prdt_nm": "비대면 하나더넥스트 시니어 회전예금",
+      "spcl_cnd": "인터넷뱅킹,모바일APP,모바일WEB(하나디지털뱅크, 하나원큐연계)으로 가입시 0.1%",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "인터넷뱅킹,모바일APP,모바일WEB(하나디지털뱅크, 하나원큐연계)으로 가입시",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    },
+    {
+      "fin_co_no": "0013351",
+      "fin_prdt_cd": "240070",
+      "fin_prdt_nm": "OK안심정기예금(변동금리)",
+      "spcl_cnd": "당행 보통예금(활동계좌) 보유 시 +0.1%p",
+      "status": "MISMATCH",
+      "extracted_conditions": [
+        {
+          "description": "당행 보통예금(활동계좌) 보유 시",
+          "bonus_rate": 0.1,
+          "applicable_term_months": null
+        }
+      ],
+      "mismatches": [
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "12",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "24",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        },
+        {
+          "save_trm": "36",
+          "disclosed_max_bonus": 0.0,
+          "extracted_total": 0.1,
+          "diff": -0.1
+        }
+      ]
+    }
+  ]
+}
