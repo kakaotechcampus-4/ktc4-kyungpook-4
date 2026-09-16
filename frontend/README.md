@@ -68,6 +68,8 @@ frontend/
 │   ├── models/              화면·API에서 쓰는 데이터 클래스
 │   ├── services/            API 클라이언트, 설정값
 │   └── utils/               포맷터 등 순수 유틸 함수
+├── assets/
+│   └── images/             Figma에서 export한 일러스트·마스코트·로고 PNG
 ├── test/                   위젯/유닛 테스트
 ├── android/                Android 플랫폼 프로젝트
 ├── ios/                    iOS 플랫폼 프로젝트
@@ -79,3 +81,14 @@ frontend/
 
 > 로그인/마이페이지는 아직 기획이 확정되지 않아 구조에 넣지 않았습니다.
 > 확정되면 `screens/` 아래에 폴더만 추가하면 됩니다.
+
+## 에셋(이미지) 규칙
+
+- Figma에서 내보낸 PNG는 전부 `assets/images/`에 둡니다. `icons/`는 만들지 않았습니다 —
+  지금 있는 파일은 전부 화면별 일러스트/로고/문구 이미지라 "재사용되는 작은 아이콘"과는
+  성격이 달라서, 실제로 작은 아이콘이 필요해질 때 그때 `assets/icons/`를 새로 만드세요.
+- 경로 문자열을 여기저기 직접 쓰지 말고 [`lib/utils/app_images.dart`](lib/utils/app_images.dart)에
+  상수를 추가해서 씁니다 — 파일명 오타를 컴파일 타임에 잡을 수 있습니다.
+- 새 이미지를 추가하면 `AppImages`에 상수를 추가하기만 하면 됩니다.
+  `pubspec.yaml`의 `assets: - assets/images/`가 폴더 전체를 이미 포함하고 있어서
+  파일마다 따로 등록할 필요는 없습니다.
