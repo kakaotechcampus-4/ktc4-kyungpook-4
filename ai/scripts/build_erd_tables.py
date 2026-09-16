@@ -5,17 +5,22 @@ deposit_savingsbank_sample.json, saving_savingsbank_sample.json)
 원본 데이터를 BE ERD의 institution / product / product_option / product_condition
 테이블 형태로 변환.
 
+[v2 변경사항] product_condition(우대조건)은 이제 정규식이 아니라 실제 AI(Claude Sonnet 5)
+호출로 뽑습니다. 이 스크립트는 그 결과가 담긴 캐시 파일(output/ai_condition_cache.jsonl)을
+읽기만 하고, 실제 AI 호출은 scripts/extract_conditions_ai.py가 담당합니다.
+=> 그래서 실행 순서가 중요합니다: 1) extract_conditions_ai.py 먼저 실행 (AI 호출 + 캐시 생성)
+   2) 그 다음에 이 build_erd_tables.py 실행 (캐시를 읽어서 최종 테이블 생성)
+
 가정(확인 안 된 부분, BE와 맞춰야 함):
 - institution_type: "신협", "새마을금고", "은행", "저축은행" (한글 그대로)
 - source: "OFFICIAL" (기관 공식 전자공시 출처)
 - product.run_id: 이 스크립트에서는 채우지 않음(null) - batch_run 레코드는
   BE 임포트 단계에서 생성/연결한다고 가정
-- product_condition(우대조건): 은행(finlife) 데이터의 spcl_cnd 텍스트만 이번에
-  파싱해서 채움. 신협/새마을금고(원문이 비정형 텍스트/"없음"으로만 있음)와
-  저축은행(이번 라운드에서는 범위 제외하기로 함)은 채우지 않음.
-  파싱은 "가./나./1./-" 같은 마커로 문장을 나눈 뒤, 문장 안의 "숫자%p" 패턴을
-  가산금리로 추출하는 best-effort 방식 - 완벽하지 않을 수 있어 evidence_text에
-  원문을 그대로 같이 남겨서 나중에 검토 가능하게 함.
+- product_condition(우대조건): 은행 + 저축은행(finlife) 데이터의 spcl_cnd 텍스트를
+  AI로 파싱해서 채움(신협/새마을금고는 지금 가진 원본 파일에 우대조건 자유텍스트 필드
+  자체가 없어서 이번에도 비어있음 - 별도 원문 파일이 확인되면 추가 예정).
+  검증(verification_status)은 만기별 실제 공시 우대폭(intr_rate2-intr_rate)과
+  AI가 뽑은 조건 합계를 비교해서 MATCHED/MISMATCH/UNVERIFIED/FAILED로 채움.
 
 산출물: out/institution.jsonl, out/product.jsonl, out/product_option.jsonl,
 out/product_condition.jsonl
@@ -27,6 +32,7 @@ from pathlib import Path
 FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 OUT = Path(__file__).resolve().parent.parent / "output" / "erd"
 OUT.mkdir(parents=True, exist_ok=True)
+AI_CACHE_PATH = Path(__file__).resolve().parent.parent / "output" / "ai_condition_cache.jsonl"
 
 PCT_RE = re.compile(r"(\d+(?:\.\d+)?)")
 TERM_RE = re.compile(r"(\d+)")
@@ -52,6 +58,18 @@ def is_freeform(name: str) -> bool:
 
 def rate_type_of(name: str) -> str:
     return "복리" if "복리" in name else "단리"
+
+
+def load_ai_cache():
+    cache = {}
+    if AI_CACHE_PATH.exists():
+        with AI_CACHE_PATH.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    row = json.loads(line)
+                    cache[row["key"]] = row
+    return cache
 
 
 # ---------------------------------------------------------------------------
@@ -124,7 +142,8 @@ def add_product_option(product_id, period_months, rate_type, reserve_type, base_
 
 
 def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
-                           evidence_url, verification_status, confidence_badge):
+                           evidence_url, verification_status, confidence_badge,
+                           apply_period_min=None, apply_period_max=None, exclusion_group=None):
     idx = sum(1 for c in product_conditions.values() if c["product_id"] == product_id) + 1
     condition_id = f"{product_id}-COND-{idx}"
     product_conditions[condition_id] = {
@@ -134,9 +153,9 @@ def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
         "rate_bonus": rate_bonus,
         "threshold_value": None,
         "threshold_unit": None,
-        "apply_period_min": None,
-        "apply_period_max": None,
-        "exclusion_group": None,
+        "apply_period_min": apply_period_min,
+        "apply_period_max": apply_period_max,
+        "exclusion_group": exclusion_group,
         "evidence_text": evidence_text,
         "evidence_url": evidence_url,
         "verification_status": verification_status,
@@ -357,8 +376,12 @@ def process_kfcc():
 # ---------------------------------------------------------------------------
 # 3) 은행 / 저축은행 (금감원 finlife: deposit_*.json, saving_*.json)
 # ---------------------------------------------------------------------------
-CONDITION_SPLIT_RE = re.compile(r"(?:^|\n)\s*(?:[①-⑩]|[가-하]\.|\d+[.)]|[-*※□○·]+)\s*")
-BONUS_RATE_RE = re.compile(r"(\d+(?:\.\d+)?)\s*%\s*p?")
+# [v7 이전까지 썼던 방식 - 지금은 안 씀] condition_type을 단순 키워드 매칭으로 채우던
+# 로직. AI 도입 전 정규식 시절 잔재라서 정확도가 낮았음(예: "급여이체"라는 단어가
+# 없는데 실질적으로 급여이체 조건인 경우를 못 잡음). extract_conditions_ai.py의
+# ExtractionResult에 condition_type 필드가 추가되면서 AI가 직접 분류하도록 바뀜 -
+# attach_ai_conditions()가 이제 cond["condition_type"]을 그대로 씀.
+# 함수 자체는 참고용으로 남겨둠(다른 곳에서 쓰지 않음).
 CONDITION_KEYWORDS = [
     ("급여이체", "급여이체"),
     ("자동이체", "자동이체"),
@@ -373,8 +396,6 @@ CONDITION_KEYWORDS = [
     ("인터넷", "비대면가입"),
     ("앱", "비대면가입"),
 ]
-EMPTY_SPCL_CND = {"없음", "해당사항 없음", "해당없음", "우대금리 없음", ""}
-FINLIFE_SOURCE_URL = "https://finlife.fss.or.kr"
 
 
 def classify_condition_type(text: str) -> str:
@@ -384,31 +405,39 @@ def classify_condition_type(text: str) -> str:
     return "기타"
 
 
-def split_conditions(text: str):
-    if not text:
-        return []
-    text = text.strip()
-    if text in EMPTY_SPCL_CND:
-        return []
-    parts = [p.strip() for p in CONDITION_SPLIT_RE.split(text) if p and p.strip()]
-    if not parts:
-        parts = [text]
-    return parts
+def _period_bounds(cond):
+    """AI가 뽑은 만기 적용범위(정확히 X개월 / X개월 이상 / X개월 이하 / X~Y개월)를
+    product_condition의 apply_period_min/apply_period_max 두 컬럼으로 정리."""
+    exact = cond.get("applicable_term_months")
+    if exact is not None:
+        return exact, exact
+    return cond.get("min_term_months"), cond.get("max_term_months")
 
 
-def extract_conditions(product_id: str, spcl_cnd: str) -> int:
+def attach_ai_conditions(ai_cache, filename, fin_co_no, fin_prdt_cd, product_id) -> int:
+    """extract_conditions_ai.py가 만든 캐시에서 이 상품(base)의 AI 추출 결과를 찾아
+    product_condition 행으로 채운다. 캐시에 없거나(=아직 AI extraction을 안 돌림) 그 상품
+    호출이 실패했으면(error 있음) 아무것도 채우지 않고 0을 반환한다."""
+    key = f"{filename}:{fin_co_no}:{fin_prdt_cd}"
+    row = ai_cache.get(key)
+    if not row or row.get("error"):
+        return 0
+    status = row["verification_status"]
+    confidence_badge = {"MATCHED": "HIGH", "MISMATCH": "LOW"}.get(status, status)
     count = 0
-    for line in split_conditions(spcl_cnd):
-        m = BONUS_RATE_RE.search(line)
-        rate_bonus = float(m.group(1)) if m else None
+    for cond in row["conditions"]:
+        apply_period_min, apply_period_max = _period_bounds(cond)
         add_product_condition(
             product_id,
-            condition_type=classify_condition_type(line),
-            rate_bonus=rate_bonus,
-            evidence_text=line,
-            evidence_url=FINLIFE_SOURCE_URL,
-            verification_status="공식(금감원 공시)",
-            confidence_badge="공식",
+            condition_type=cond.get("condition_type") or "기타",
+            rate_bonus=cond.get("bonus_rate"),
+            evidence_text=cond["description"],
+            evidence_url=row.get("evidence_url"),
+            verification_status=status,
+            confidence_badge=confidence_badge,
+            apply_period_min=apply_period_min,
+            apply_period_max=apply_period_max,
+            exclusion_group=cond.get("group_id"),
         )
         count += 1
     return count
@@ -437,7 +466,8 @@ def parse_amount(v):
         return None
 
 
-def process_finlife(filename: str, institution_type: str, product_type_tag: str, parse_conditions: bool):
+def process_finlife(filename: str, institution_type: str, product_type_tag: str,
+                     parse_conditions: bool, ai_cache: dict):
     data = json.loads((FIXTURES / filename).read_text(encoding="utf-8"))
     result = data.get("result", data)
     base_list = result.get("baseList") or []
@@ -538,21 +568,30 @@ def process_finlife(filename: str, institution_type: str, product_type_tag: str,
                 )
 
             if parse_conditions:
-                n_conditions += extract_conditions(product_id, base.get("spcl_cnd"))
+                n_conditions += attach_ai_conditions(ai_cache, filename, fin_co_no, fin_prdt_cd, product_id)
 
     return len(base_list), len(option_list), n_conditions, n_missing_options
 
 
 FINLIFE_SOURCES = [
-    # (파일명, institution_type, product_type_tag, 우대조건 파싱 여부)
+    # (파일명, institution_type, product_type_tag, AI 우대조건 적용 여부)
+    # v2: 은행/저축은행 전부 포함(스코프 결정: 전체) - 실제 AI 호출 결과는
+    # scripts/extract_conditions_ai.py가 만든 output/ai_condition_cache.jsonl에서 읽어온다.
     ("deposit_sample.json", "은행", "deposit", True),
     ("saving_sample.json", "은행", "savings", True),
-    ("deposit_savingsbank_sample.json", "저축은행", "deposit", False),
-    ("saving_savingsbank_sample.json", "저축은행", "savings", False),
+    ("deposit_savingsbank_sample.json", "저축은행", "deposit", True),
+    ("saving_savingsbank_sample.json", "저축은행", "savings", True),
 ]
 
 
 def main():
+    ai_cache = load_ai_cache()
+    if not ai_cache:
+        print("[!] output/ai_condition_cache.jsonl이 없거나 비어있습니다.")
+        print("    -> product_condition이 비어서 나올 수 있습니다. 먼저 이걸 실행하세요:")
+        print("       python scripts\\extract_conditions_ai.py")
+        print()
+
     n_cu = process_cu()
     n_kfcc, missing = process_kfcc()
 
@@ -562,7 +601,7 @@ def main():
         if not path.exists():
             finlife_summary.append((filename, None))
             continue
-        n_base, n_opt, n_cond, n_missing_opt = process_finlife(filename, itype, ptag, parse_cond)
+        n_base, n_opt, n_cond, n_missing_opt = process_finlife(filename, itype, ptag, parse_cond, ai_cache)
         finlife_summary.append((filename, (n_base, n_opt, n_cond, n_missing_opt)))
 
     with (OUT / "institution.jsonl").open("w", encoding="utf-8") as f:
@@ -585,7 +624,7 @@ def main():
             print(f"  {filename}: 파일 없음(스킵)")
             continue
         n_base, n_opt, n_cond, n_missing_opt = stats
-        print(f"  {filename}: baseList {n_base}건 / optionList {n_opt}건 / 우대조건 추출 {n_cond}건"
+        print(f"  {filename}: baseList {n_base}건 / optionList {n_opt}건 / 우대조건(AI) 추출 {n_cond}건"
               + (f" / 금리옵션 없는 상품 {n_missing_opt}건" if n_missing_opt else ""))
     print()
     print(f"institution: {len(institutions)}건, product: {len(products)}건, "
@@ -597,6 +636,9 @@ def main():
             print(f"  {oid}: 기존={old['base_rate']}/{old['max_rate']} -> 새값={new['base_rate']}/{new['max_rate']}")
     if missing:
         print(f"경고: kfcc branches.json에서 못 찾은 지점 {len(missing)}건 -> {missing}")
+    print()
+    print("참고: 신협/새마을금고는 이번에도 product_condition이 비어있습니다 - 우대조건")
+    print("자유텍스트 원본 파일을 못 찾았기 때문입니다(위 docstring 참고).")
 
 
 if __name__ == "__main__":
