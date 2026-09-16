@@ -30,10 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // 보이는 화면을 최소 2초 볼 수 있다.
     await _precacheImages();
 
-    await Future.wait([
-      Future.delayed(_minimumVisibleDuration),
-      _loadInitialData(),
-    ]);
+    await Future.delayed(_minimumVisibleDuration);
 
     if (mounted) context.go(AppRoutes.calendar);
   }
@@ -45,12 +42,6 @@ class _SplashScreenState extends State<SplashScreen> {
       precacheImage(const AssetImage(AppImages.titleIcon), context),
     ]);
   }
-
-  /// 캘린더 화면에 필요한 초기 데이터를 불러온다.
-  /// 아직 연결된 API가 없어 즉시 끝나지만, 실제 로딩 로직이 생기면
-  /// 여기서 await 하면 된다. 최소 노출 시간(2초)보다 오래 걸리면
-  /// 그만큼 스플래시가 더 유지된다.
-  Future<void> _loadInitialData() async {}
 
   @override
   Widget build(BuildContext context) {

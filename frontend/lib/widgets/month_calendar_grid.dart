@@ -10,11 +10,13 @@ final _gridLineColor = AppColors.lavender.withValues(alpha: 0.25);
 class MonthCalendarGrid extends StatelessWidget {
   final DateTime month;
   final DateTime? highlightedDate;
+  final ValueChanged<DateTime>? onDateSelected;
 
   const MonthCalendarGrid({
     super.key,
     required this.month,
     this.highlightedDate,
+    this.onDateSelected,
   });
 
   @override
@@ -66,6 +68,9 @@ class MonthCalendarGrid extends StatelessWidget {
                           date.year == highlightedDate!.year &&
                           date.month == highlightedDate!.month &&
                           date.day == highlightedDate!.day,
+                      onTap: onDateSelected == null
+                          ? null
+                          : () => onDateSelected!(date),
                     ),
                 ],
               ),
@@ -80,11 +85,13 @@ class _DayCell extends StatelessWidget {
   final DateTime date;
   final bool inCurrentMonth;
   final bool isHighlighted;
+  final VoidCallback? onTap;
 
   const _DayCell({
     required this.date,
     required this.inCurrentMonth,
     required this.isHighlighted,
+    this.onTap,
   });
 
   @override
@@ -95,17 +102,20 @@ class _DayCell extends StatelessWidget {
             ? AppColors.accent
             : Colors.black87);
 
-    return Container(
-      height: 72,
-      padding: const EdgeInsets.all(8),
-      color: isHighlighted ? AppColors.lavender.withValues(alpha: 0.3) : null,
-      alignment: Alignment.topLeft,
-      child: Text(
-        '${date.day}',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: textColor,
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 72,
+        padding: const EdgeInsets.all(8),
+        color: isHighlighted ? AppColors.lavender.withValues(alpha: 0.3) : null,
+        alignment: Alignment.topLeft,
+        child: Text(
+          '${date.day}',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: textColor,
+          ),
         ),
       ),
     );

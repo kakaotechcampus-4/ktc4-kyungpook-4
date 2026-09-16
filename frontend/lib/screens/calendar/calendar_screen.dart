@@ -13,11 +13,18 @@ const _monthNames = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-class CalendarScreen extends ConsumerWidget {
+class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
+}
+
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
+  late DateTime _selectedDate = DateTime.now();
+
+  @override
+  Widget build(BuildContext context) {
     final today = DateTime.now();
     final events = ref.watch(upcomingEventsProvider);
 
@@ -45,7 +52,11 @@ class CalendarScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            MonthCalendarGrid(month: today, highlightedDate: today),
+            MonthCalendarGrid(
+              month: today,
+              highlightedDate: _selectedDate,
+              onDateSelected: (date) => setState(() => _selectedDate = date),
+            ),
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 32, 20, 8),
               child: Text(
