@@ -380,6 +380,43 @@ def gather_targets():
     return targets
 
 
+KFCC_FIXTURE = FIXTURES / "kfcc_central_conditions_raw.jsonl"
+
+
+def gather_kfcc_targets():
+    # 새마을금고 중앙 카탈로그 원문(fetch_kfcc_central_conditions.py가 만든 raw fixture)을
+    # 읽어서 gather_targets()와 동일한 shape의 target 딕셔너리로 변환한다.
+    # opts는 항상 빈 리스트 -> verify_against_options가 자동으로 UNVERIFIED 반환(정상 -
+    # 새마을금고는 개별금고마다 금리가 달라 중앙 카탈로그 레벨에서 검증 기준값 자체가 없음).
+    targets = []
+    if not KFCC_FIXTURE.exists():
+        print(f"[{KFCC_FIXTURE.name}] 파일 없음 - 스킵")
+        return targets
+
+    with KFCC_FIXTURE.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            spcl_cnd = (row.get("spcl_cnd_raw") or "").strip()
+            if not spcl_cnd:
+                continue
+            goods_file = row.get("goods_file", "")
+            product_name = row.get("product_name", "")
+            targets.append({
+                "key": f"kfcc_central:{goods_file}",
+                "filename": "kfcc_central_conditions_raw.jsonl",
+                "institution_type": "새마을금고",
+                "evidence_url": row.get("source_url", ""),
+                "fin_co_no": None,
+                "fin_prdt_cd": product_name,
+                "spcl_cnd": spcl_cnd,
+                "opts": [],
+            })
+    return targets
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None, help="테스트용: 이 건수만 처리하고 멈춤")
@@ -397,7 +434,7 @@ def main():
     client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1")
     cache = {} if args.fresh else load_cache()
 
-    targets = gather_targets()
+    targets = gather_targets() + gather_kfcc_targets()
     if args.limit:
         targets = targets[: args.limit]
     print(f"처리 대상: {len(targets)}건 (이미 캐시에 있는 것 포함, 모델: {OPENAI_MODEL})\n")

@@ -278,98 +278,127 @@ def kfcc_product_type(category: str, name: str) -> str:
     return "적금(자유적립식)" if is_freeform(name) else "적금(정액적립식)"
 
 
-def process_kfcc():
-    branch_idx = load_kfcc_branch_index()
-    n_records = 0
-    missing_branch = []
-
+def _load_kfcc_records():
+    records = []
     with (FIXTURES / "kfcc_rates.jsonl").open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if not line:
-                continue
-            rec = json.loads(line)
-            n_records += 1
+            if line:
+                records.append(json.loads(line))
+    return records
 
-            gmgo_cd = rec["gmgoCd"]
-            gmgo_nm = rec["gmgoNm"]
-            div_nm = rec["divNm"]
-            r1, r2 = rec.get("r1"), rec.get("r2")
 
-            branch = branch_idx.get((gmgo_cd, div_nm))
-            if branch is None:
-                div_cd = f"X{abs(hash(div_nm)) % 1000:03d}"  # 폴백(비상용), review 필요
-                missing_branch.append((gmgo_cd, div_nm))
-            else:
-                div_cd = branch["divCd"]
+def _build_kfcc_fallback_div_cd(records, branch_idx):
+    """[리뷰 수정] 원래는 branch_idx에 없는 지점마다 그 자리에서 hash(div_nm)으로 폴백
+    코드를 만들었는데, 파이썬 내장 hash()는 프로세스마다 시드가 랜덤(PYTHONHASHSEED)이라
+    같은 문자열이어도 스크립트를 실행할 때마다 다른 값이 나옴 - 그러면 재실행할 때마다
+    같은 지점이 새 코드를 받아서 institution이 중복 생성되는 문제가 있었음(리뷰에서 지적됨).
+    이제는 branch_idx에 없는 (gmgo_cd, div_nm) 조합을 먼저 다 모아서, 같은 gmgo_cd 안에서
+    div_nm을 정렬한 순서로 번호를 고정 배정한다 - 원본 파일 내용이 같은 한 항상 같은
+    입력엔 같은 코드가 나오고, gmgo_cd 안에서만 유일하면 되므로 충돌 위험도 없다."""
+    missing_pairs = set()
+    for rec in records:
+        key = (rec["gmgoCd"], rec["divNm"])
+        if key not in branch_idx:
+            missing_pairs.add(key)
 
-            inst_code = f"KFCC-{gmgo_cd}-{div_cd}"
-            inst_name = f"{gmgo_nm}새마을금고 {div_nm}"
-            region = f"{r1} {r2}" if r1 and r2 else None
-            add_institution(inst_code, inst_name, "새마을금고", region)
+    fallback_div_cd = {}
+    for gmgo_cd in sorted({p[0] for p in missing_pairs}):
+        div_nms = sorted(p[1] for p in missing_pairs if p[0] == gmgo_cd)
+        for i, div_nm in enumerate(div_nms):
+            fallback_div_cd[(gmgo_cd, div_nm)] = f"X{i:03d}"
+    return fallback_div_cd
 
-            for category in ("거치식예탁금", "적립식예탁금"):
-                for entry in rec.get(category, []):
-                    product_title = entry["product_title"]
-                    headers = entry["headers"]
-                    rate_headers = headers[2:]
-                    rows = entry["rows"]
 
-                    # 헤더 열마다(월지급식/만기지급식 등) 별도 상품으로 취급
-                    for col_idx, rate_header in enumerate(rate_headers):
-                        suffix = payment_label(rate_header)
-                        variant_name = f"{product_title}({suffix})" if suffix else product_title
-                        product_id = f"KFCC-{gmgo_cd}-{div_cd}-{variant_name}"
+def process_kfcc():
+    branch_idx = load_kfcc_branch_index()
+    records = _load_kfcc_records()
+    fallback_div_cd = _build_kfcc_fallback_div_cd(records, branch_idx)
+    n_records = 0
+    missing_branch = []
 
-                        join_channel = "비대면" if "더뱅킹" in product_title else "대면"
-                        add_product(
+    for rec in records:
+        n_records += 1
+
+        gmgo_cd = rec["gmgoCd"]
+        gmgo_nm = rec["gmgoNm"]
+        div_nm = rec["divNm"]
+        r1, r2 = rec.get("r1"), rec.get("r2")
+
+        branch = branch_idx.get((gmgo_cd, div_nm))
+        if branch is None:
+            div_cd = fallback_div_cd[(gmgo_cd, div_nm)]
+            missing_branch.append((gmgo_cd, div_nm))
+        else:
+            div_cd = branch["divCd"]
+
+        inst_code = f"KFCC-{gmgo_cd}-{div_cd}"
+        inst_name = f"{gmgo_nm}새마을금고 {div_nm}"
+        region = f"{r1} {r2}" if r1 and r2 else None
+        add_institution(inst_code, inst_name, "새마을금고", region)
+
+        for category in ("거치식예탁금", "적립식예탁금"):
+            for entry in rec.get(category, []):
+                product_title = entry["product_title"]
+                headers = entry["headers"]
+                rate_headers = headers[2:]
+                rows = entry["rows"]
+
+                # 헤더 열마다(월지급식/만기지급식 등) 별도 상품으로 취급
+                for col_idx, rate_header in enumerate(rate_headers):
+                    suffix = payment_label(rate_header)
+                    variant_name = f"{product_title}({suffix})" if suffix else product_title
+                    product_id = f"KFCC-{gmgo_cd}-{div_cd}-{variant_name}"
+
+                    join_channel = "비대면" if "더뱅킹" in product_title else "대면"
+                    add_product(
+                        product_id,
+                        institution_code=inst_code,
+                        product_name=variant_name,
+                        product_type=kfcc_product_type(category, variant_name),
+                        amount_min=None,
+                        amount_cap=None,
+                        monthly_min=None,
+                        monthly_cap=None,
+                        terms_text=None,
+                        region=region,
+                        join_channel=join_channel,
+                        membership_required=None,
+                        new_customer_only=None,
+                        min_age=None,
+                        max_age=None,
+                        parse_status="PARSED",
+                        snapshot_date=None,
+                        sale_end_date=None,
+                        is_active=True,
+                    )
+
+                    for row in rows:
+                        if len(row) == len(headers):
+                            term_raw = row[1]
+                            rates = row[2:]
+                        elif len(row) == len(headers) - 1:
+                            term_raw = row[0]
+                            rates = row[1:]
+                        else:
+                            continue  # 예상 밖 모양 - 스킵(로그로 남겨도 됨)
+
+                        if col_idx >= len(rates):
+                            continue
+                        period_months = parse_term_months(term_raw)
+                        base_rate = parse_pct(rates[col_idx])
+                        add_product_option(
                             product_id,
-                            institution_code=inst_code,
-                            product_name=variant_name,
-                            product_type=kfcc_product_type(category, variant_name),
-                            amount_min=None,
-                            amount_cap=None,
-                            monthly_min=None,
-                            monthly_cap=None,
-                            terms_text=None,
-                            region=region,
-                            join_channel=join_channel,
-                            membership_required=None,
-                            new_customer_only=None,
-                            min_age=None,
-                            max_age=None,
-                            parse_status="PARSED",
-                            snapshot_date=None,
-                            sale_end_date=None,
-                            is_active=True,
+                            period_months=period_months,
+                            rate_type=rate_type_of(variant_name),
+                            reserve_type=(
+                                "거치식" if category == "거치식예탁금" else (
+                                    "자유적립식" if is_freeform(variant_name) else "정액적립식"
+                                )
+                            ),
+                            base_rate=base_rate,
+                            max_rate=base_rate,  # 새마을금고 데이터엔 우대 포함 최고금리 구분이 없음
                         )
-
-                        for row in rows:
-                            if len(row) == len(headers):
-                                term_raw = row[1]
-                                rates = row[2:]
-                            elif len(row) == len(headers) - 1:
-                                term_raw = row[0]
-                                rates = row[1:]
-                            else:
-                                continue  # 예상 밖 모양 - 스킵(로그로 남겨도 됨)
-
-                            if col_idx >= len(rates):
-                                continue
-                            period_months = parse_term_months(term_raw)
-                            base_rate = parse_pct(rates[col_idx])
-                            add_product_option(
-                                product_id,
-                                period_months=period_months,
-                                rate_type=rate_type_of(variant_name),
-                                reserve_type=(
-                                    "거치식" if category == "거치식예탁금" else (
-                                        "자유적립식" if is_freeform(variant_name) else "정액적립식"
-                                    )
-                                ),
-                                base_rate=base_rate,
-                                max_rate=base_rate,  # 새마을금고 데이터엔 우대 포함 최고금리 구분이 없음
-                            )
     return n_records, missing_branch
 
 
