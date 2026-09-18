@@ -26,6 +26,19 @@ class PreferentialCondition(BaseModel):
     group_id: Optional[str] = None  # 같은 group_id를 가진 조건들은 서로 대체 관계
     # (하나만 인정, 최댓값만 반영) - 예: 금액/실적/점수/인원수 구간별 조건들, 또는 "최고 X%p"
     # 아래 나열된 ①②③... 조건들. 독립적으로 각자 더해지는 조건이면 비워둠(None).
+    # [v9 추가] 그동안 evidence_text(원문 문장) 안에만 텍스트로 남아있던 "이 조건을
+    # 충족하려면 넘어야 하는 숫자 기준"을 구조화된 컬럼으로도 뽑음(BE ERD의
+    # product_condition.threshold_value/threshold_unit은 처음 설계부터 있었는데, AI
+    # 추출 스키마에 대응 필드가 없어서 지금까지 한 번도 채워진 적이 없었음). 목적:
+    # 실시간 매칭 로직(사용자가 입력한 값과 이 조건을 비교하는 규칙 기반 코드)이
+    # evidence_text를 다시 정규식으로 파싱하지 않고 이 두 컬럼만 보고 바로 비교할 수
+    # 있게 하는 것.
+    threshold_value: Optional[float] = None  # 조건 충족 기준 숫자 (예: "50만원 이상"
+    # -> 50, "월 5회 이상" -> 5). 기준 숫자가 없는 조건(예: "신규고객", "마케팅 동의")
+    # 이면 null.
+    threshold_unit: Optional[str] = None  # threshold_value의 단위를 원문 표현 그대로
+    # (예: "만원", "원", "회", "건", "명", "점", "보"). threshold_value가 null이면
+    # 같이 null.
 
 
 class ExtractionResult(BaseModel):

@@ -148,7 +148,13 @@ def add_product_option(product_id, period_months, rate_type, reserve_type, base_
 
 def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
                            evidence_url, verification_status, confidence_badge,
-                           apply_period_min=None, apply_period_max=None, exclusion_group=None):
+                           apply_period_min=None, apply_period_max=None, exclusion_group=None,
+                           threshold_value=None, threshold_unit=None):
+    # [v9] threshold_value/threshold_unit은 원래 ERD 설계 때부터 있던 컬럼인데, AI 추출
+    # 스키마(extract_conditions_ai.py)에 대응 필드가 없어서 지금까지 항상 None으로만
+    # 채워지고 있었음. extraction.py의 PreferentialCondition에 필드를 추가한 뒤부터는
+    # 호출부(attach_ai_conditions/attach_ai_conditions_kfcc)가 cond에서 그 값을 그대로
+    # 넘겨준다 - 여기서는 그냥 받아서 채우기만 하면 됨.
     idx = sum(1 for c in product_conditions.values() if c["product_id"] == product_id) + 1
     condition_id = f"{product_id}-COND-{idx}"
     product_conditions[condition_id] = {
@@ -156,8 +162,8 @@ def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
         "product_id": product_id,
         "condition_type": condition_type,
         "rate_bonus": rate_bonus,
-        "threshold_value": None,
-        "threshold_unit": None,
+        "threshold_value": threshold_value,
+        "threshold_unit": threshold_unit,
         "apply_period_min": apply_period_min,
         "apply_period_max": apply_period_max,
         "exclusion_group": exclusion_group,
@@ -495,6 +501,8 @@ def attach_ai_conditions_kfcc(condition_index, product_title, product_id) -> int
             apply_period_min=apply_period_min,
             apply_period_max=apply_period_max,
             exclusion_group=cond.get("group_id"),
+            threshold_value=cond.get("threshold_value"),
+            threshold_unit=cond.get("threshold_unit"),
         )
         count += 1
     return count
@@ -524,6 +532,8 @@ def attach_ai_conditions(ai_cache, filename, fin_co_no, fin_prdt_cd, product_id)
             apply_period_min=apply_period_min,
             apply_period_max=apply_period_max,
             exclusion_group=cond.get("group_id"),
+            threshold_value=cond.get("threshold_value"),
+            threshold_unit=cond.get("threshold_unit"),
         )
         count += 1
     return count
