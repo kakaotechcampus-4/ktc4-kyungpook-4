@@ -1,0 +1,5 @@
+logs/
+.env
+output/
+tests/fixtures/*
+!tests/fixtures/.gitkeep
