@@ -17,10 +17,15 @@ deposit_savingsbank_sample.json, saving_savingsbank_sample.json)
 - product.run_id: 이 스크립트에서는 채우지 않음(null) - batch_run 레코드는
   BE 임포트 단계에서 생성/연결한다고 가정
 - product_condition(우대조건): 은행 + 저축은행(finlife) 데이터의 spcl_cnd 텍스트를
-  AI로 파싱해서 채움(신협/새마을금고는 지금 가진 원본 파일에 우대조건 자유텍스트 필드
-  자체가 없어서 이번에도 비어있음 - 별도 원문 파일이 확인되면 추가 예정).
-  검증(verification_status)은 만기별 실제 공시 우대폭(intr_rate2-intr_rate)과
-  AI가 뽑은 조건 합계를 비교해서 MATCHED/MISMATCH/UNVERIFIED/FAILED로 채움.
+  AI로 파싱해서 채움. 검증(verification_status)은 만기별 실제 공시 우대폭
+  (intr_rate2-intr_rate)과 AI가 뽑은 조건 합계를 비교해서 MATCHED/MISMATCH/
+  UNVERIFIED/FAILED로 채움.
+  [v3 추가] 새마을금고는 중앙 금융상품몰 상세설명(kfcc_central_conditions_raw.jsonl)
+  원문을 같은 AI extraction 파이프라인으로 파싱해서, 상품명 기준으로 매칭되는 중앙
+  공통상품 14개에만 채움(개별 금고 전용 상품은 카탈로그에 없어 매칭 안 됨 - 09-17
+  스코프 결정). 지점별 실측 우대폭이 없어 검증 기준값 자체가 없으므로 항상
+  verification_status=UNVERIFIED로 채워짐(정상 - 신뢰도 문제 아님).
+  신협(cu.co.kr prefCondMemo)은 아직 이 파이프라인에 연결 안 해서 여전히 비어있음.
 
 산출물: out/institution.jsonl, out/product.jsonl, out/product_option.jsonl,
 out/product_condition.jsonl
@@ -143,7 +148,13 @@ def add_product_option(product_id, period_months, rate_type, reserve_type, base_
 
 def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
                            evidence_url, verification_status, confidence_badge,
-                           apply_period_min=None, apply_period_max=None, exclusion_group=None):
+                           apply_period_min=None, apply_period_max=None, exclusion_group=None,
+                           threshold_value=None, threshold_unit=None):
+    # [v9] threshold_value/threshold_unit은 원래 ERD 설계 때부터 있던 컬럼인데, AI 추출
+    # 스키마(extract_conditions_ai.py)에 대응 필드가 없어서 지금까지 항상 None으로만
+    # 채워지고 있었음. extraction.py의 PreferentialCondition에 필드를 추가한 뒤부터는
+    # 호출부(attach_ai_conditions/attach_ai_conditions_kfcc)가 cond에서 그 값을 그대로
+    # 넘겨준다 - 여기서는 그냥 받아서 채우기만 하면 됨.
     idx = sum(1 for c in product_conditions.values() if c["product_id"] == product_id) + 1
     condition_id = f"{product_id}-COND-{idx}"
     product_conditions[condition_id] = {
@@ -151,8 +162,8 @@ def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
         "product_id": product_id,
         "condition_type": condition_type,
         "rate_bonus": rate_bonus,
-        "threshold_value": None,
-        "threshold_unit": None,
+        "threshold_value": threshold_value,
+        "threshold_unit": threshold_unit,
         "apply_period_min": apply_period_min,
         "apply_period_max": apply_period_max,
         "exclusion_group": exclusion_group,
@@ -278,99 +289,135 @@ def kfcc_product_type(category: str, name: str) -> str:
     return "적금(자유적립식)" if is_freeform(name) else "적금(정액적립식)"
 
 
-def process_kfcc():
-    branch_idx = load_kfcc_branch_index()
-    n_records = 0
-    missing_branch = []
-
+def _load_kfcc_records():
+    records = []
     with (FIXTURES / "kfcc_rates.jsonl").open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if not line:
-                continue
-            rec = json.loads(line)
-            n_records += 1
+            if line:
+                records.append(json.loads(line))
+    return records
 
-            gmgo_cd = rec["gmgoCd"]
-            gmgo_nm = rec["gmgoNm"]
-            div_nm = rec["divNm"]
-            r1, r2 = rec.get("r1"), rec.get("r2")
 
-            branch = branch_idx.get((gmgo_cd, div_nm))
-            if branch is None:
-                div_cd = f"X{abs(hash(div_nm)) % 1000:03d}"  # 폴백(비상용), review 필요
-                missing_branch.append((gmgo_cd, div_nm))
-            else:
-                div_cd = branch["divCd"]
+def _build_kfcc_fallback_div_cd(records, branch_idx):
+    """[리뷰 수정] 원래는 branch_idx에 없는 지점마다 그 자리에서 hash(div_nm)으로 폴백
+    코드를 만들었는데, 파이썬 내장 hash()는 프로세스마다 시드가 랜덤(PYTHONHASHSEED)이라
+    같은 문자열이어도 스크립트를 실행할 때마다 다른 값이 나옴 - 그러면 재실행할 때마다
+    같은 지점이 새 코드를 받아서 institution이 중복 생성되는 문제가 있었음(리뷰에서 지적됨).
+    이제는 branch_idx에 없는 (gmgo_cd, div_nm) 조합을 먼저 다 모아서, 같은 gmgo_cd 안에서
+    div_nm을 정렬한 순서로 번호를 고정 배정한다 - 원본 파일 내용이 같은 한 항상 같은
+    입력엔 같은 코드가 나오고, gmgo_cd 안에서만 유일하면 되므로 충돌 위험도 없다."""
+    missing_pairs = set()
+    for rec in records:
+        key = (rec["gmgoCd"], rec["divNm"])
+        if key not in branch_idx:
+            missing_pairs.add(key)
 
-            inst_code = f"KFCC-{gmgo_cd}-{div_cd}"
-            inst_name = f"{gmgo_nm}새마을금고 {div_nm}"
-            region = f"{r1} {r2}" if r1 and r2 else None
-            add_institution(inst_code, inst_name, "새마을금고", region)
+    fallback_div_cd = {}
+    for gmgo_cd in sorted({p[0] for p in missing_pairs}):
+        div_nms = sorted(p[1] for p in missing_pairs if p[0] == gmgo_cd)
+        for i, div_nm in enumerate(div_nms):
+            fallback_div_cd[(gmgo_cd, div_nm)] = f"X{i:03d}"
+    return fallback_div_cd
 
-            for category in ("거치식예탁금", "적립식예탁금"):
-                for entry in rec.get(category, []):
-                    product_title = entry["product_title"]
-                    headers = entry["headers"]
-                    rate_headers = headers[2:]
-                    rows = entry["rows"]
 
-                    # 헤더 열마다(월지급식/만기지급식 등) 별도 상품으로 취급
-                    for col_idx, rate_header in enumerate(rate_headers):
-                        suffix = payment_label(rate_header)
-                        variant_name = f"{product_title}({suffix})" if suffix else product_title
-                        product_id = f"KFCC-{gmgo_cd}-{div_cd}-{variant_name}"
+def process_kfcc(ai_cache):
+    branch_idx = load_kfcc_branch_index()
+    records = _load_kfcc_records()
+    fallback_div_cd = _build_kfcc_fallback_div_cd(records, branch_idx)
+    condition_index = load_kfcc_condition_index(ai_cache)
+    n_records = 0
+    n_conditions = 0
+    missing_branch = []
 
-                        join_channel = "비대면" if "더뱅킹" in product_title else "대면"
-                        add_product(
+    for rec in records:
+        n_records += 1
+
+        gmgo_cd = rec["gmgoCd"]
+        gmgo_nm = rec["gmgoNm"]
+        div_nm = rec["divNm"]
+        r1, r2 = rec.get("r1"), rec.get("r2")
+
+        branch = branch_idx.get((gmgo_cd, div_nm))
+        if branch is None:
+            div_cd = fallback_div_cd[(gmgo_cd, div_nm)]
+            missing_branch.append((gmgo_cd, div_nm))
+        else:
+            div_cd = branch["divCd"]
+
+        inst_code = f"KFCC-{gmgo_cd}-{div_cd}"
+        inst_name = f"{gmgo_nm}새마을금고 {div_nm}"
+        region = f"{r1} {r2}" if r1 and r2 else None
+        add_institution(inst_code, inst_name, "새마을금고", region)
+
+        for category in ("거치식예탁금", "적립식예탁금"):
+            for entry in rec.get(category, []):
+                product_title = entry["product_title"]
+                headers = entry["headers"]
+                rate_headers = headers[2:]
+                rows = entry["rows"]
+
+                # 헤더 열마다(월지급식/만기지급식 등) 별도 상품으로 취급
+                for col_idx, rate_header in enumerate(rate_headers):
+                    suffix = payment_label(rate_header)
+                    variant_name = f"{product_title}({suffix})" if suffix else product_title
+                    product_id = f"KFCC-{gmgo_cd}-{div_cd}-{variant_name}"
+
+                    join_channel = "비대면" if "더뱅킹" in product_title else "대면"
+                    add_product(
+                        product_id,
+                        institution_code=inst_code,
+                        product_name=variant_name,
+                        product_type=kfcc_product_type(category, variant_name),
+                        amount_min=None,
+                        amount_cap=None,
+                        monthly_min=None,
+                        monthly_cap=None,
+                        terms_text=None,
+                        region=region,
+                        join_channel=join_channel,
+                        membership_required=None,
+                        new_customer_only=None,
+                        min_age=None,
+                        max_age=None,
+                        parse_status="PARSED",
+                        snapshot_date=None,
+                        sale_end_date=None,
+                        is_active=True,
+                    )
+
+                    for row in rows:
+                        if len(row) == len(headers):
+                            term_raw = row[1]
+                            rates = row[2:]
+                        elif len(row) == len(headers) - 1:
+                            term_raw = row[0]
+                            rates = row[1:]
+                        else:
+                            continue  # 예상 밖 모양 - 스킵(로그로 남겨도 됨)
+
+                        if col_idx >= len(rates):
+                            continue
+                        period_months = parse_term_months(term_raw)
+                        base_rate = parse_pct(rates[col_idx])
+                        add_product_option(
                             product_id,
-                            institution_code=inst_code,
-                            product_name=variant_name,
-                            product_type=kfcc_product_type(category, variant_name),
-                            amount_min=None,
-                            amount_cap=None,
-                            monthly_min=None,
-                            monthly_cap=None,
-                            terms_text=None,
-                            region=region,
-                            join_channel=join_channel,
-                            membership_required=None,
-                            new_customer_only=None,
-                            min_age=None,
-                            max_age=None,
-                            parse_status="PARSED",
-                            snapshot_date=None,
-                            sale_end_date=None,
-                            is_active=True,
+                            period_months=period_months,
+                            rate_type=rate_type_of(variant_name),
+                            reserve_type=(
+                                "거치식" if category == "거치식예탁금" else (
+                                    "자유적립식" if is_freeform(variant_name) else "정액적립식"
+                                )
+                            ),
+                            base_rate=base_rate,
+                            max_rate=base_rate,  # 새마을금고 데이터엔 우대 포함 최고금리 구분이 없음
                         )
 
-                        for row in rows:
-                            if len(row) == len(headers):
-                                term_raw = row[1]
-                                rates = row[2:]
-                            elif len(row) == len(headers) - 1:
-                                term_raw = row[0]
-                                rates = row[1:]
-                            else:
-                                continue  # 예상 밖 모양 - 스킵(로그로 남겨도 됨)
-
-                            if col_idx >= len(rates):
-                                continue
-                            period_months = parse_term_months(term_raw)
-                            base_rate = parse_pct(rates[col_idx])
-                            add_product_option(
-                                product_id,
-                                period_months=period_months,
-                                rate_type=rate_type_of(variant_name),
-                                reserve_type=(
-                                    "거치식" if category == "거치식예탁금" else (
-                                        "자유적립식" if is_freeform(variant_name) else "정액적립식"
-                                    )
-                                ),
-                                base_rate=base_rate,
-                                max_rate=base_rate,  # 새마을금고 데이터엔 우대 포함 최고금리 구분이 없음
-                            )
-    return n_records, missing_branch
+                    # 조건은 결제방식(월지급식 등) 접미사가 붙기 전 원래 상품명(product_title)
+                    # 기준으로 붙인다 - 중앙 카탈로그(kfcc_central_conditions_raw.jsonl)엔
+                    # 결제방식 구분이 없고 상품 하나당 조건 세트 하나뿐이라서.
+                    n_conditions += attach_ai_conditions_kfcc(condition_index, product_title, product_id)
+    return n_records, n_conditions, missing_branch
 
 
 # ---------------------------------------------------------------------------
@@ -414,6 +461,53 @@ def _period_bounds(cond):
     return cond.get("min_term_months"), cond.get("max_term_months")
 
 
+def load_kfcc_condition_index(ai_cache):
+    """extract_conditions_ai.py의 gather_kfcc_targets()가 만든 캐시 항목은
+    (filename, fin_co_no, fin_prdt_cd) 키가 아니라 "kfcc_central:{goods_file}" 키를 쓰고
+    fin_co_no가 항상 None이라 attach_ai_conditions()의 조회 방식을 그대로 못 쓴다.
+    새마을금고는 지점마다 다른 product_id를 갖지만 우대조건은 중앙 카탈로그 상품명
+    (fin_prdt_cd 필드에 저장된 product_name) 하나에 묶여 있으므로, 상품명 -> 캐시 행으로
+    인덱싱해서 여러 지점의 product_id가 같은 조건 세트를 조회할 수 있게 한다."""
+    index = {}
+    for row in ai_cache.values():
+        if row.get("filename") != "kfcc_central_conditions_raw.jsonl" or row.get("error"):
+            continue
+        index[row["fin_prdt_cd"]] = row  # fin_prdt_cd에 product_name이 들어있음
+    return index
+
+
+def attach_ai_conditions_kfcc(condition_index, product_title, product_id) -> int:
+    """중앙 카탈로그 상품명(product_title, 결제방식 접미사 붙기 전 원래 이름)으로
+    load_kfcc_condition_index() 인덱스를 조회해 조건을 붙인다. 카탈로그에 없는 상품(개별
+    금고 전용 상품 등, 09-17 조사 기준 보류 대상)은 매칭 안 되어 0을 반환한다 - 정상.
+    verification_status는 kfcc 캐시 항목이 항상 opts=[]로 들어와서 UNVERIFIED로 고정됨
+    (중앙 카탈로그 레벨엔 지점별 실측 우대폭이 없어 검증 기준값 자체가 없기 때문 - 정상)."""
+    row = condition_index.get(product_title)
+    if not row:
+        return 0
+    status = row["verification_status"]
+    confidence_badge = {"MATCHED": "HIGH", "MISMATCH": "LOW"}.get(status, "UNVERIFIED")
+    count = 0
+    for cond in row["conditions"]:
+        apply_period_min, apply_period_max = _period_bounds(cond)
+        add_product_condition(
+            product_id,
+            condition_type=cond.get("condition_type") or "기타",
+            rate_bonus=cond.get("bonus_rate"),
+            evidence_text=cond["description"],
+            evidence_url=row.get("evidence_url"),
+            verification_status=status,
+            confidence_badge=confidence_badge,
+            apply_period_min=apply_period_min,
+            apply_period_max=apply_period_max,
+            exclusion_group=cond.get("group_id"),
+            threshold_value=cond.get("threshold_value"),
+            threshold_unit=cond.get("threshold_unit"),
+        )
+        count += 1
+    return count
+
+
 def attach_ai_conditions(ai_cache, filename, fin_co_no, fin_prdt_cd, product_id) -> int:
     """extract_conditions_ai.py가 만든 캐시에서 이 상품(base)의 AI 추출 결과를 찾아
     product_condition 행으로 채운다. 캐시에 없거나(=아직 AI extraction을 안 돌림) 그 상품
@@ -438,6 +532,8 @@ def attach_ai_conditions(ai_cache, filename, fin_co_no, fin_prdt_cd, product_id)
             apply_period_min=apply_period_min,
             apply_period_max=apply_period_max,
             exclusion_group=cond.get("group_id"),
+            threshold_value=cond.get("threshold_value"),
+            threshold_unit=cond.get("threshold_unit"),
         )
         count += 1
     return count
@@ -593,7 +689,7 @@ def main():
         print()
 
     n_cu = process_cu()
-    n_kfcc, missing = process_kfcc()
+    n_kfcc, n_kfcc_conditions, missing = process_kfcc(ai_cache)
 
     finlife_summary = []
     for filename, itype, ptag, parse_cond in FINLIFE_SOURCES:
@@ -617,7 +713,8 @@ def main():
         for row in product_conditions.values():
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    print(f"신협 원본 레코드: {n_cu}건, 새마을금고 원본 레코드: {n_kfcc}건")
+    print(f"신협 원본 레코드: {n_cu}건, 새마을금고 원본 레코드: {n_kfcc}건 "
+          f"(그중 우대조건(AI) 매칭 {n_kfcc_conditions}건 - 중앙 공통상품만 대상)")
     print("은행/저축은행(finlife) 원본:")
     for filename, stats in finlife_summary:
         if stats is None:
@@ -637,8 +734,10 @@ def main():
     if missing:
         print(f"경고: kfcc branches.json에서 못 찾은 지점 {len(missing)}건 -> {missing}")
     print()
-    print("참고: 신협/새마을금고는 이번에도 product_condition이 비어있습니다 - 우대조건")
-    print("자유텍스트 원본 파일을 못 찾았기 때문입니다(위 docstring 참고).")
+    print("참고: 신협은 이번에도 product_condition이 비어있습니다 - prefCondMemo 원문을")
+    print("아직 extract_conditions_ai.py 파이프라인에 연결 안 했기 때문입니다(위 docstring 참고).")
+    print("새마을금고는 중앙 공통상품 14개만 조건이 채워지고, 개별 금고 전용 상품은")
+    print("중앙 카탈로그에 없어 매칭이 안 되므로 비어있는 게 정상입니다.")
 
 
 if __name__ == "__main__":

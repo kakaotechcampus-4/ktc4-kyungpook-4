@@ -77,6 +77,18 @@ compute_extracted_total에서는 bonus_rate가 null인 조건을 0으로 취급(
 안내하는 용도로는 계속 활용 가능. 프롬프트에도 "모르면 지어내지 말고 null" 지시를
 명시적으로 추가함. 스키마 변경이라 --fresh로 다시 뽑아야 반영됨.
 
+[v9 변경사항] BE ERD의 product_condition.threshold_value/threshold_unit 컬럼이
+처음 설계 때부터 있었는데, 지금까지 AI 추출 스키마에 대응 필드가 없어서 한 번도
+채워지지 않고 항상 null로 저장되고 있었음(build_erd_tables.py에서 하드코딩).
+그래서 "이 조건을 충족하려면 넘어야 하는 숫자 기준"(예: "급여이체 50만원 이상"의
+50/만원)이 evidence_text 원문 안에만 텍스트로 남아있었음 - 나중에 사용자 입력값과
+이 조건을 비교하는 실시간 매칭 로직을 짜는 사람이 매번 원문을 다시 정규식으로
+파싱해야 하는 부담이 있었음. PreferentialCondition에 threshold_value(float)/
+threshold_unit(str) 필드를 추가하고 프롬프트에 추출 규칙을 명시함 - 이제
+build_erd_tables.py가 이 값을 그대로 product_condition에 채워넣음(별도 코드
+수정 완료, ERD 테이블 구조 자체는 안 바뀜 - 원래 있던 빈 컬럼을 채우는 것뿐).
+스키마 변경이라 --fresh로 다시 뽑아야 반영됨.
+
 실행:
   python scripts\\extract_conditions_ai.py --limit 20 --fresh   (테스트로 20건만 새로)
   python scripts\\extract_conditions_ai.py --fresh              (전체를 새 스키마로 재실행)
@@ -167,11 +179,22 @@ SYSTEM_PROMPT = (
     "하나하나에 대한 %가 원문에 따로 안 쪼개져 있는 경우\n"
     "이런 조건도 description과 condition_type은 그대로 채워서 빠뜨리지 마 - "
     "%p만 모르는 것뿐이니까.\n\n"
+    "threshold_value / threshold_unit(중요): 그 조건을 충족하려면 넘어야 하는 "
+    "숫자 기준이 원문에 있으면 뽑아줘. 예를 들어 '급여이체 50만원 이상'이면 "
+    "threshold_value=50, threshold_unit='만원'. '월 5회 이상 이용'이면 "
+    "threshold_value=5, threshold_unit='회'. '카드 실적 30만원 이상'이면 "
+    "threshold_value=30, threshold_unit='만원'. 단위는 원문에 쓰인 표현을 그대로 "
+    "써(예: '만원', '원', '회', '건', '명', '점', '보'). 숫자 기준 자체가 없는 "
+    "조건(예: '신규고객', '마케팅 동의', '비대면 가입')이면 둘 다 null로 둬. "
+    "여러 구간이 나열된 group_id 조건(예: '300만원 이상 0.1%, 500만원 이상 "
+    "0.2%')은 각 구간 조건마다 그 구간 자신의 기준값을 따로 채워(첫 조건엔 "
+    "threshold_value=300, 둘째 조건엔 threshold_value=500).\n\n"
     "반드시 아래 JSON 형식으로만 응답해. 코드블록(```) 없이, 설명 문장 없이, "
     "순수 JSON 객체 하나만 출력해:\n"
     '{"overall_max_bonus_rate": null, "conditions": [{"description": "조건 설명", '
     '"bonus_rate": 0.2, "condition_type": "기타", "applicable_term_months": null, '
-    '"min_term_months": null, "max_term_months": null, "group_id": null}]}'
+    '"min_term_months": null, "max_term_months": null, "group_id": null, '
+    '"threshold_value": null, "threshold_unit": null}]}'
 )
 
 CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
@@ -380,6 +403,43 @@ def gather_targets():
     return targets
 
 
+KFCC_FIXTURE = FIXTURES / "kfcc_central_conditions_raw.jsonl"
+
+
+def gather_kfcc_targets():
+    # 새마을금고 중앙 카탈로그 원문(fetch_kfcc_central_conditions.py가 만든 raw fixture)을
+    # 읽어서 gather_targets()와 동일한 shape의 target 딕셔너리로 변환한다.
+    # opts는 항상 빈 리스트 -> verify_against_options가 자동으로 UNVERIFIED 반환(정상 -
+    # 새마을금고는 개별금고마다 금리가 달라 중앙 카탈로그 레벨에서 검증 기준값 자체가 없음).
+    targets = []
+    if not KFCC_FIXTURE.exists():
+        print(f"[{KFCC_FIXTURE.name}] 파일 없음 - 스킵")
+        return targets
+
+    with KFCC_FIXTURE.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            spcl_cnd = (row.get("spcl_cnd_raw") or "").strip()
+            if not spcl_cnd:
+                continue
+            goods_file = row.get("goods_file", "")
+            product_name = row.get("product_name", "")
+            targets.append({
+                "key": f"kfcc_central:{goods_file}",
+                "filename": "kfcc_central_conditions_raw.jsonl",
+                "institution_type": "새마을금고",
+                "evidence_url": row.get("source_url", ""),
+                "fin_co_no": None,
+                "fin_prdt_cd": product_name,
+                "spcl_cnd": spcl_cnd,
+                "opts": [],
+            })
+    return targets
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None, help="테스트용: 이 건수만 처리하고 멈춤")
@@ -397,7 +457,7 @@ def main():
     client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1")
     cache = {} if args.fresh else load_cache()
 
-    targets = gather_targets()
+    targets = gather_targets() + gather_kfcc_targets()
     if args.limit:
         targets = targets[: args.limit]
     print(f"처리 대상: {len(targets)}건 (이미 캐시에 있는 것 포함, 모델: {OPENAI_MODEL})\n")
