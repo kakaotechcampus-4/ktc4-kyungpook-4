@@ -1,5 +1,5 @@
 """
-product_condition(우대조건)을 정규식이 아니라 실제 Claude Sonnet 5 AI 호출로 뽑는 스크립트.
+product_condition(우대조건)을 Claude Sonnet 5 AI 호출로 뽑는 스크립트.
 (build_erd_tables.py는 이 스크립트가 만든 캐시 파일을 읽어서 최종 테이블을 만든다 - 2단계 구조)
 
 지금 처리 대상(스코프 결정: 은행+저축은행+신협+새마을금고 "전체"):
