@@ -1,29 +1,18 @@
 """
-신협(cu_rate_compare.jsonl) + 새마을금고(kfcc_rates.jsonl, kfcc_branches.json)
-+ 은행/저축은행(금감원 finlife: deposit_sample.json, saving_sample.json,
-deposit_savingsbank_sample.json, saving_savingsbank_sample.json)
-원본 데이터를 BE ERD의 institution / product / product_option / product_condition
-테이블 형태로 변환.
+신협(cu_rate_compare.jsonl) + 은행/저축은행(금감원 finlife: deposit_sample.json, saving_sample.json,
+  deposit_savingsbank_sample.json, saving_savingsbank_sample.json)
+원본 데이터를 BE ERD의 product / product_condition 테이블 형태로 변환.
 
-[v2 변경사항] product_condition(우대조건)은 이제 정규식이 아니라 실제 AI(Claude Sonnet 5)
-호출로 뽑습니다. 이 스크립트는 그 결과가 담긴 캐시 파일(output/ai_condition_cache.jsonl)을
-읽기만 하고, 실제 AI 호출은 scripts/extract_conditions_ai.py가 담당합니다.
-=> 그래서 실행 순서가 중요합니다: 1) extract_conditions_ai.py 먼저 실행 (AI 호출 + 캐시 생성)
-   2) 그 다음에 이 build_erd_tables.py 실행 (캐시를 읽어서 최종 테이블 생성)
+[A안] product = 만기별 1행 flat 테이블 (institution + rate + period 내장).
+  - institution.jsonl, product_option.jsonl 더 이상 생성하지 않음.
+  - product_id = {PREFIX}-{기관코드}-{상품코드}-{만기개월} 형태로 만기 포함.
+  - 우대조건(product_condition)은 만기별 product_id에 각각 연결(중복 저장).
 
-가정(확인 안 된 부분, BE와 맞춰야 함):
-- institution_type: "신협", "새마을금고", "은행", "저축은행" (한글 그대로)
-- source: "OFFICIAL" (기관 공식 전자공시 출처)
-- product.run_id: 이 스크립트에서는 채우지 않음(null) - batch_run 레코드는
-  BE 임포트 단계에서 생성/연결한다고 가정
-- product_condition(우대조건): 은행 + 저축은행(finlife) 데이터의 spcl_cnd 텍스트를
-  AI로 파싱해서 채움(신협/새마을금고는 지금 가진 원본 파일에 우대조건 자유텍스트 필드
-  자체가 없어서 이번에도 비어있음 - 별도 원문 파일이 확인되면 추가 예정).
-  검증(verification_status)은 만기별 실제 공시 우대폭(intr_rate2-intr_rate)과
-  AI가 뽑은 조건 합계를 비교해서 MATCHED/MISMATCH/UNVERIFIED/FAILED로 채움.
+실행 순서:
+  1) python scripts\\extract_conditions_ai.py   (AI 호출 + 캐시 생성)
+  2) python scripts\\build_erd_tables.py         (캐시 읽어서 최종 테이블 생성)
 
-산출물: out/institution.jsonl, out/product.jsonl, out/product_option.jsonl,
-out/product_condition.jsonl
+산출물: output/erd/product.jsonl, output/erd/product_condition.jsonl
 """
 import json
 import re
@@ -56,8 +45,14 @@ def is_freeform(name: str) -> bool:
     return "자유" in name
 
 
-def rate_type_of(name: str) -> str:
-    return "복리" if "복리" in name else "단리"
+def fmt_date(s):
+    """'20260819' -> '2026-08-19'. 이미 'YYYY-MM-DD' 형태면 그대로 반환."""
+    if not s:
+        return None
+    s = str(s)
+    if len(s) == 8 and s.isdigit():
+        return f"{s[:4]}-{s[4:6]}-{s[6:]}"
+    return s
 
 
 def load_ai_cache():
@@ -68,83 +63,62 @@ def load_ai_cache():
                 line = line.strip()
                 if line:
                     row = json.loads(line)
-                    cache[row["key"]] = row
+                    if not row.get("error"):
+                        cache[row["key"]] = row
     return cache
 
 
 # ---------------------------------------------------------------------------
-# 공통 결과 저장소 (institution_code 기준 중복 제거)
+# 공통 결과 저장소
 # ---------------------------------------------------------------------------
-institutions = {}      # institution_code -> row dict
-products = {}           # product_id -> row dict
-product_options = {}    # option_id -> row dict (중복 방지)
-product_conditions = {} # condition_id -> row dict
-option_best_date = {}   # option_id -> 이 값을 채택할 때 근거로 쓴 snapshot_date
-product_best_date = {}  # product_id -> 지금까지 본 것 중 가장 최신 snapshot_date
+products = {}            # product_id -> row dict
+product_conditions = {}  # condition_id -> row dict
+product_best_date = {}   # product_id -> 지금까지 본 것 중 가장 최신 snapshot_date
+condition_count = {}     # product_id -> 해당 product에 달린 조건 수 (O(1) 카운터)
 dup_stats = {"exact": 0, "conflict": 0, "conflict_examples": []}
 
 
-def add_institution(code, name, itype, region, is_active=True):
-    if code not in institutions:
-        institutions[code] = {
-            "institution_code": code,
-            "name": name,
-            "institution_type": itype,
-            "region": region,
-            "is_active": is_active,
-        }
-
-
 def add_product(product_id, snapshot_date=None, **fields):
-    # 같은 product_id가 여러 term 레코드에서 반복 등장하므로 대부분 필드는 처음 값만 채택.
-    # snapshot_date만은 지금까지 본 것 중 가장 최신 날짜로 계속 갱신한다(원본 파일에
-    # 서로 다른 수집일 데이터가 섞여 들어와 있는 경우가 실제로 있어서).
-    if product_id not in products:
-        row = {"product_id": product_id, "offer_id": None, "run_id": None, "source": "OFFICIAL",
-               "snapshot_date": snapshot_date}
-        row.update(fields)
-        products[product_id] = row
-        product_best_date[product_id] = snapshot_date
-    elif snapshot_date and (product_best_date.get(product_id) is None or snapshot_date > product_best_date[product_id]):
-        products[product_id]["snapshot_date"] = snapshot_date
-        product_best_date[product_id] = snapshot_date
-
-
-def add_product_option(product_id, period_months, rate_type, reserve_type, base_rate, max_rate, snapshot_date=None):
-    option_id = f"{product_id}-{period_months}-{rate_type}"
+    """같은 product_id가 중복 등장하면:
+    - base_rate/max_rate 동일 → exact dup(무시), snapshot_date만 최신으로 갱신
+    - 값이 다름 → conflict: 더 최신 snapshot_date 쪽을 채택"""
     new_row = {
-        "option_id": option_id,
         "product_id": product_id,
-        "period_months": period_months,
-        "rate_type": rate_type,
-        "reserve_type": reserve_type,
-        "base_rate": base_rate,
-        "max_rate": max_rate,
+        "offer_id": None,
+        "source": "OFFICIAL",
+        "snapshot_date": snapshot_date,
+        **fields,
     }
-    existing = product_options.get(option_id)
+    existing = products.get(product_id)
     if existing is None:
-        product_options[option_id] = new_row
-        option_best_date[option_id] = snapshot_date
+        products[product_id] = new_row
+        product_best_date[product_id] = snapshot_date
         return
-    if existing["base_rate"] == base_rate and existing["max_rate"] == max_rate:
+    if (existing.get("base_rate") == fields.get("base_rate")
+            and existing.get("max_rate") == fields.get("max_rate")):
         dup_stats["exact"] += 1
+        if snapshot_date and (product_best_date.get(product_id) is None
+                              or snapshot_date > product_best_date[product_id]):
+            products[product_id]["snapshot_date"] = snapshot_date
+            product_best_date[product_id] = snapshot_date
         return
-    # 값이 다른 경우: 원본에 서로 다른 수집일 데이터가 섞여 있을 수 있으므로
-    # snapshot_date가 더 최신인 쪽을 채택한다(둘 다 날짜가 없거나 같으면 나중 값으로 덮어씀).
     dup_stats["conflict"] += 1
     if len(dup_stats["conflict_examples"]) < 10:
-        dup_stats["conflict_examples"].append((option_id, existing, new_row))
-    best_date = option_best_date.get(option_id)
+        dup_stats["conflict_examples"].append(
+            (product_id, existing.get("base_rate"), fields.get("base_rate"))
+        )
+    best_date = product_best_date.get(product_id)
     if snapshot_date and best_date and snapshot_date <= best_date:
-        return  # 기존 값이 더 최신이거나 같음 -> 기존 값 유지
-    product_options[option_id] = new_row
-    option_best_date[option_id] = snapshot_date
+        return
+    products[product_id] = new_row
+    product_best_date[product_id] = snapshot_date
 
 
 def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
-                           evidence_url, verification_status, confidence_badge,
-                           apply_period_min=None, apply_period_max=None, exclusion_group=None):
-    idx = sum(1 for c in product_conditions.values() if c["product_id"] == product_id) + 1
+                           source_url, exclusive_group=None,
+                           verification_status=None, confidence_badge=None):
+    idx = condition_count.get(product_id, 0) + 1
+    condition_count[product_id] = idx
     condition_id = f"{product_id}-COND-{idx}"
     product_conditions[condition_id] = {
         "condition_id": condition_id,
@@ -152,15 +126,31 @@ def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
         "condition_type": condition_type,
         "rate_bonus": rate_bonus,
         "threshold_value": None,
-        "threshold_unit": None,
-        "apply_period_min": apply_period_min,
-        "apply_period_max": apply_period_max,
-        "exclusion_group": exclusion_group,
+        "exclusive_group": exclusive_group,
         "evidence_text": evidence_text,
-        "evidence_url": evidence_url,
+        "source_url": source_url,
         "verification_status": verification_status,
         "confidence_badge": confidence_badge,
     }
+
+
+def attach_ai_conditions(ai_cache, cache_key, product_id) -> int:
+    """캐시에서 조건을 읽어 product_id(만기 포함)에 연결."""
+    row = ai_cache.get(cache_key)
+    if not row:
+        return 0
+    count = 0
+    for cond in row["conditions"]:
+        add_product_condition(
+            product_id,
+            condition_type=cond.get("condition_type") or "기타",
+            rate_bonus=cond.get("bonus_rate"),
+            evidence_text=cond["description"],
+            source_url=row.get("evidence_url"),
+            exclusive_group=cond.get("group_id"),
+        )
+        count += 1
+    return count
 
 
 # ---------------------------------------------------------------------------
@@ -184,8 +174,9 @@ def cu_product_type(product_type_tag: str, name: str) -> str:
     return "적금(자유적립식)" if is_freeform(name) else "적금(정액적립식)"
 
 
-def process_cu():
+def process_cu(ai_cache=None):
     n_records = 0
+    n_conditions = 0
     with (FIXTURES / "cu_rate_compare.jsonl").open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -194,58 +185,36 @@ def process_cu():
             rec = json.loads(line)
             n_records += 1
 
-            cu_code = f"CU-{rec['cuIngno']}"
-            add_institution(cu_code, rec["cuNm"], "신협", None)
-
+            cu_ingno = rec["cuIngno"]
+            stock_code = rec["stockCode"]
+            tret_yn = rec.get("tretYn")
             clean_name, channel_from_name = clean_product_name(rec["stockNm"])
-            join_channel = CHANNEL_MAP.get(rec.get("tretYn"), channel_from_name)
+            join_channel = CHANNEL_MAP.get(tret_yn, channel_from_name)
+            period_months = parse_term_months(rec.get("monTy"))
 
-            # 주의: stockCode가 대면/비대면 버전끼리 겹치는 경우가 실제로 있어서
-            # (예: 정기적금(대면)/정기적금(비대면)이 둘 다 stockCode=1701),
-            # tretYn(채널)까지 id에 포함시켜야 서로 다른 상품이 덮어써지지 않는다.
-            product_id = f"{cu_code}-{rec['stockCode']}-{rec.get('tretYn')}"
-            join_limt = rec.get("joinLimtCode")
-            membership_required = None if join_limt is None else (join_limt != "제한없음")
+            # stockCode가 대면/비대면 버전끼리 겹치므로 tretYn까지 포함
+            product_id = f"CU-{cu_ingno}-{stock_code}-{tret_yn}-{period_months}"
 
-            terms_parts = [rec.get("dueAfIntRateMemo"), rec.get("etcAtntMatt")]
-            terms_text = "\n\n".join(p for p in terms_parts if p) or None
-
-            snapshot_date = rec.get("pubiBeginDate")
             add_product(
                 product_id,
-                institution_code=cu_code,
+                snapshot_date=rec.get("pubiBeginDate"),
+                institution=rec["cuNm"],
+                institution_type="신협",
                 product_name=clean_name,
                 product_type=cu_product_type(rec.get("_product_type"), clean_name),
-                amount_min=None,
-                amount_cap=rec.get("highLimtAmt"),
-                monthly_min=None,
-                monthly_cap=None,
-                terms_text=terms_text,
-                region=None,
-                join_channel=join_channel,
-                membership_required=membership_required,
-                new_customer_only=None,
-                min_age=None,
-                max_age=None,
-                parse_status="PARSED",
-                snapshot_date=snapshot_date,
-                sale_end_date=None,
-                is_active=True,
-            )
-
-            period_months = parse_term_months(rec.get("monTy"))
-            add_product_option(
-                product_id,
-                period_months=period_months,
-                rate_type=rate_type_of(clean_name),
-                reserve_type="거치식" if rec.get("_product_type") == "deposit" else (
-                    "자유적립식" if is_freeform(clean_name) else "정액적립식"
-                ),
                 base_rate=parse_pct(rec.get("baseRate")),
                 max_rate=parse_pct(rec.get("highRate")),
-                snapshot_date=snapshot_date,
+                period_months=period_months,
+                amount_cap=rec.get("highLimtAmt"),
+                region=None,
+                join_channel=join_channel,
             )
-    return n_records
+
+            if ai_cache is not None:
+                cache_key = f"cu:{cu_ingno}:{stock_code}:{tret_yn}"
+                n_conditions += attach_ai_conditions(ai_cache, cache_key, product_id)
+
+    return n_records, n_conditions
 
 
 # ---------------------------------------------------------------------------
@@ -298,15 +267,14 @@ def process_kfcc():
 
             branch = branch_idx.get((gmgo_cd, div_nm))
             if branch is None:
-                div_cd = f"X{abs(hash(div_nm)) % 1000:03d}"  # 폴백(비상용), review 필요
+                div_cd = f"X{abs(hash(div_nm)) % 1000:03d}"
                 missing_branch.append((gmgo_cd, div_nm))
             else:
                 div_cd = branch["divCd"]
 
-            inst_code = f"KFCC-{gmgo_cd}-{div_cd}"
             inst_name = f"{gmgo_nm}새마을금고 {div_nm}"
             region = f"{r1} {r2}" if r1 and r2 else None
-            add_institution(inst_code, inst_name, "새마을금고", region)
+            join_channel = "비대면" if "더뱅킹" in gmgo_nm else "대면"
 
             for category in ("거치식예탁금", "적립식예탁금"):
                 for entry in rec.get(category, []):
@@ -315,134 +283,44 @@ def process_kfcc():
                     rate_headers = headers[2:]
                     rows = entry["rows"]
 
-                    # 헤더 열마다(월지급식/만기지급식 등) 별도 상품으로 취급
                     for col_idx, rate_header in enumerate(rate_headers):
                         suffix = payment_label(rate_header)
                         variant_name = f"{product_title}({suffix})" if suffix else product_title
-                        product_id = f"KFCC-{gmgo_cd}-{div_cd}-{variant_name}"
-
-                        join_channel = "비대면" if "더뱅킹" in product_title else "대면"
-                        add_product(
-                            product_id,
-                            institution_code=inst_code,
-                            product_name=variant_name,
-                            product_type=kfcc_product_type(category, variant_name),
-                            amount_min=None,
-                            amount_cap=None,
-                            monthly_min=None,
-                            monthly_cap=None,
-                            terms_text=None,
-                            region=region,
-                            join_channel=join_channel,
-                            membership_required=None,
-                            new_customer_only=None,
-                            min_age=None,
-                            max_age=None,
-                            parse_status="PARSED",
-                            snapshot_date=None,
-                            sale_end_date=None,
-                            is_active=True,
-                        )
+                        join_ch = "비대면" if "더뱅킹" in product_title else join_channel
 
                         for row in rows:
                             if len(row) == len(headers):
-                                term_raw = row[1]
-                                rates = row[2:]
+                                term_raw, rates = row[1], row[2:]
                             elif len(row) == len(headers) - 1:
-                                term_raw = row[0]
-                                rates = row[1:]
+                                term_raw, rates = row[0], row[1:]
                             else:
-                                continue  # 예상 밖 모양 - 스킵(로그로 남겨도 됨)
-
+                                continue
                             if col_idx >= len(rates):
                                 continue
                             period_months = parse_term_months(term_raw)
                             base_rate = parse_pct(rates[col_idx])
-                            add_product_option(
+
+                            product_id = f"KFCC-{gmgo_cd}-{div_cd}-{variant_name}-{period_months}"
+                            add_product(
                                 product_id,
-                                period_months=period_months,
-                                rate_type=rate_type_of(variant_name),
-                                reserve_type=(
-                                    "거치식" if category == "거치식예탁금" else (
-                                        "자유적립식" if is_freeform(variant_name) else "정액적립식"
-                                    )
-                                ),
+                                snapshot_date=None,
+                                institution=inst_name,
+                                institution_type="새마을금고",
+                                product_name=variant_name,
+                                product_type=kfcc_product_type(category, variant_name),
                                 base_rate=base_rate,
-                                max_rate=base_rate,  # 새마을금고 데이터엔 우대 포함 최고금리 구분이 없음
+                                max_rate=base_rate,
+                                period_months=period_months,
+                                amount_cap=None,
+                                region=region,
+                                join_channel=join_ch,
                             )
     return n_records, missing_branch
 
 
 # ---------------------------------------------------------------------------
-# 3) 은행 / 저축은행 (금감원 finlife: deposit_*.json, saving_*.json)
+# 3) 은행 / 저축은행 (금감원 finlife)
 # ---------------------------------------------------------------------------
-# [v7 이전까지 썼던 방식 - 지금은 안 씀] condition_type을 단순 키워드 매칭으로 채우던
-# 로직. AI 도입 전 정규식 시절 잔재라서 정확도가 낮았음(예: "급여이체"라는 단어가
-# 없는데 실질적으로 급여이체 조건인 경우를 못 잡음). extract_conditions_ai.py의
-# ExtractionResult에 condition_type 필드가 추가되면서 AI가 직접 분류하도록 바뀜 -
-# attach_ai_conditions()가 이제 cond["condition_type"]을 그대로 씀.
-# 함수 자체는 참고용으로 남겨둠(다른 곳에서 쓰지 않음).
-CONDITION_KEYWORDS = [
-    ("급여이체", "급여이체"),
-    ("자동이체", "자동이체"),
-    ("첫거래", "신규고객"),
-    ("신규", "신규고객"),
-    ("카드", "카드실적"),
-    ("마케팅", "마케팅동의"),
-    ("공과금", "공과금이체"),
-    ("연금", "연금수령"),
-    ("비대면", "비대면가입"),
-    ("모바일", "비대면가입"),
-    ("인터넷", "비대면가입"),
-    ("앱", "비대면가입"),
-]
-
-
-def classify_condition_type(text: str) -> str:
-    for kw, label in CONDITION_KEYWORDS:
-        if kw in text:
-            return label
-    return "기타"
-
-
-def _period_bounds(cond):
-    """AI가 뽑은 만기 적용범위(정확히 X개월 / X개월 이상 / X개월 이하 / X~Y개월)를
-    product_condition의 apply_period_min/apply_period_max 두 컬럼으로 정리."""
-    exact = cond.get("applicable_term_months")
-    if exact is not None:
-        return exact, exact
-    return cond.get("min_term_months"), cond.get("max_term_months")
-
-
-def attach_ai_conditions(ai_cache, filename, fin_co_no, fin_prdt_cd, product_id) -> int:
-    """extract_conditions_ai.py가 만든 캐시에서 이 상품(base)의 AI 추출 결과를 찾아
-    product_condition 행으로 채운다. 캐시에 없거나(=아직 AI extraction을 안 돌림) 그 상품
-    호출이 실패했으면(error 있음) 아무것도 채우지 않고 0을 반환한다."""
-    key = f"{filename}:{fin_co_no}:{fin_prdt_cd}"
-    row = ai_cache.get(key)
-    if not row or row.get("error"):
-        return 0
-    status = row["verification_status"]
-    confidence_badge = {"MATCHED": "HIGH", "MISMATCH": "LOW"}.get(status, status)
-    count = 0
-    for cond in row["conditions"]:
-        apply_period_min, apply_period_max = _period_bounds(cond)
-        add_product_condition(
-            product_id,
-            condition_type=cond.get("condition_type") or "기타",
-            rate_bonus=cond.get("bonus_rate"),
-            evidence_text=cond["description"],
-            evidence_url=row.get("evidence_url"),
-            verification_status=status,
-            confidence_badge=confidence_badge,
-            apply_period_min=apply_period_min,
-            apply_period_max=apply_period_max,
-            exclusion_group=cond.get("group_id"),
-        )
-        count += 1
-    return count
-
-
 def classify_join_channel(join_way):
     if not join_way:
         return None
@@ -454,7 +332,7 @@ def classify_join_channel(join_way):
         return "대면"
     if has_online:
         return "비대면"
-    return join_way  # 알 수 없는 패턴이면 원문 그대로 보존
+    return join_way
 
 
 def parse_amount(v):
@@ -467,7 +345,7 @@ def parse_amount(v):
 
 
 def process_finlife(filename: str, institution_type: str, product_type_tag: str,
-                     parse_conditions: bool, ai_cache: dict):
+                    parse_conditions: bool, ai_cache: dict):
     data = json.loads((FIXTURES / filename).read_text(encoding="utf-8"))
     result = data.get("result", data)
     base_list = result.get("baseList") or []
@@ -487,16 +365,13 @@ def process_finlife(filename: str, institution_type: str, product_type_tag: str,
         fin_prdt_cd = base.get("fin_prdt_cd")
         kor_co_nm = base.get("kor_co_nm")
         fin_prdt_nm = base.get("fin_prdt_nm")
-
         inst_code = f"{inst_prefix}-{fin_co_no}"
-        add_institution(inst_code, kor_co_nm, institution_type, None)
 
         opts = options_by_product.get((fin_co_no, fin_prdt_cd), [])
         if not opts:
             n_missing_options += 1
 
-        # 적금이면 rsrv_type_nm(자유적립식/정액적립식)별로 그룹 -> 서로 다른 상품(variant)으로 분리.
-        # 예금은 rsrv_type_nm 자체가 없으므로 그룹 키가 None 하나뿐이라 분리되지 않는다.
+        # 적금: rsrv_type_nm별로 variant 분리 (예금은 None 하나뿐)
         variants = {}
         for opt in opts:
             variants.setdefault(opt.get("rsrv_type_nm"), []).append(opt)
@@ -505,11 +380,9 @@ def process_finlife(filename: str, institution_type: str, product_type_tag: str,
         multi_variant = len([k for k in variants if k]) > 1
 
         join_channel = classify_join_channel(base.get("join_way"))
-        terms_parts = [base.get("mtrt_int"), base.get("etc_note")]
-        terms_text = "\n\n".join(p for p in terms_parts if p) or None
-        snapshot_date = base.get("dcls_strt_day")
-        sale_end_date = base.get("dcls_end_day")
+        snapshot_date = fmt_date(base.get("dcls_strt_day"))
         amount_cap = parse_amount(base.get("max_limit"))
+        cache_key = f"{filename}:{fin_co_no}:{fin_prdt_cd}"
 
         for rsrv_key, opt_rows in variants.items():
             if product_type_tag == "deposit":
@@ -522,61 +395,41 @@ def process_finlife(filename: str, institution_type: str, product_type_tag: str,
                     product_name = f"{fin_prdt_nm}({rsrv_key})" if multi_variant else fin_prdt_nm
                     id_suffix = f"-{rsrv_key}" if multi_variant else ""
                 else:
-                    # optionList에 rsrv_type_nm이 없는 예외 케이스 - 정액적립식으로 가정(확인 필요)
                     p_type = "적금(정액적립식)"
                     product_name = fin_prdt_nm
                     id_suffix = ""
 
-            product_id = f"{inst_code}-{fin_prdt_cd}{id_suffix}"
-
-            add_product(
-                product_id,
-                institution_code=inst_code,
-                product_name=product_name,
-                product_type=p_type,
-                amount_min=None,
-                amount_cap=amount_cap,
-                monthly_min=None,
-                monthly_cap=None,
-                terms_text=terms_text,
-                region=None,
-                join_channel=join_channel,
-                membership_required=None,
-                new_customer_only=None,
-                min_age=None,
-                max_age=None,
-                parse_status="PARSED",
-                snapshot_date=snapshot_date,
-                sale_end_date=sale_end_date,
-                is_active=True,
-            )
-
+            # optionList 각 행(만기)마다 flat product 행 생성
             for opt in opt_rows:
                 period_months = parse_term_months(opt.get("save_trm"))
                 base_rate = opt.get("intr_rate")
                 max_rate = opt.get("intr_rate2")
                 if max_rate is None:
                     max_rate = base_rate
-                add_product_option(
+
+                product_id = f"{inst_code}-{fin_prdt_cd}{id_suffix}-{period_months}"
+                add_product(
                     product_id,
-                    period_months=period_months,
-                    rate_type=rate_type_of(opt.get("intr_rate_type_nm") or "단리"),
-                    reserve_type=("거치식" if product_type_tag == "deposit" else (rsrv_key or "정액적립식")),
+                    snapshot_date=snapshot_date,
+                    institution=kor_co_nm,
+                    institution_type=institution_type,
+                    product_name=product_name,
+                    product_type=p_type,
                     base_rate=base_rate,
                     max_rate=max_rate,
-                    snapshot_date=snapshot_date,
+                    period_months=period_months,
+                    amount_cap=amount_cap,
+                    region=None,
+                    join_channel=join_channel,
                 )
 
-            if parse_conditions:
-                n_conditions += attach_ai_conditions(ai_cache, filename, fin_co_no, fin_prdt_cd, product_id)
+                if parse_conditions:
+                    n_conditions += attach_ai_conditions(ai_cache, cache_key, product_id)
 
     return len(base_list), len(option_list), n_conditions, n_missing_options
 
 
 FINLIFE_SOURCES = [
-    # (파일명, institution_type, product_type_tag, AI 우대조건 적용 여부)
-    # v2: 은행/저축은행 전부 포함(스코프 결정: 전체) - 실제 AI 호출 결과는
-    # scripts/extract_conditions_ai.py가 만든 output/ai_condition_cache.jsonl에서 읽어온다.
     ("deposit_sample.json", "은행", "deposit", True),
     ("saving_sample.json", "은행", "savings", True),
     ("deposit_savingsbank_sample.json", "저축은행", "deposit", True),
@@ -592,8 +445,7 @@ def main():
         print("       python scripts\\extract_conditions_ai.py")
         print()
 
-    n_cu = process_cu()
-    n_kfcc, missing = process_kfcc()
+    n_cu, n_cu_conditions = process_cu(ai_cache)
 
     finlife_summary = []
     for filename, itype, ptag, parse_cond in FINLIFE_SOURCES:
@@ -601,44 +453,40 @@ def main():
         if not path.exists():
             finlife_summary.append((filename, None))
             continue
-        n_base, n_opt, n_cond, n_missing_opt = process_finlife(filename, itype, ptag, parse_cond, ai_cache)
+        n_base, n_opt, n_cond, n_missing_opt = process_finlife(
+            filename, itype, ptag, parse_cond, ai_cache
+        )
         finlife_summary.append((filename, (n_base, n_opt, n_cond, n_missing_opt)))
 
-    with (OUT / "institution.jsonl").open("w", encoding="utf-8") as f:
-        for row in institutions.values():
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
     with (OUT / "product.jsonl").open("w", encoding="utf-8") as f:
         for row in products.values():
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
-    with (OUT / "product_option.jsonl").open("w", encoding="utf-8") as f:
-        for row in product_options.values():
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
     with (OUT / "product_condition.jsonl").open("w", encoding="utf-8") as f:
         for row in product_conditions.values():
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    print(f"신협 원본 레코드: {n_cu}건, 새마을금고 원본 레코드: {n_kfcc}건")
+    print(f"신협 원본 레코드: {n_cu}건 (우대조건 추출 {n_cu_conditions}건)")
     print("은행/저축은행(finlife) 원본:")
     for filename, stats in finlife_summary:
         if stats is None:
             print(f"  {filename}: 파일 없음(스킵)")
             continue
         n_base, n_opt, n_cond, n_missing_opt = stats
-        print(f"  {filename}: baseList {n_base}건 / optionList {n_opt}건 / 우대조건(AI) 추출 {n_cond}건"
-              + (f" / 금리옵션 없는 상품 {n_missing_opt}건" if n_missing_opt else ""))
+        print(
+            f"  {filename}: baseList {n_base}건 / optionList {n_opt}건"
+            f" / 우대조건(AI) 추출 {n_cond}건"
+            + (f" / 금리옵션 없는 상품 {n_missing_opt}건" if n_missing_opt else "")
+        )
     print()
-    print(f"institution: {len(institutions)}건, product: {len(products)}건, "
-          f"product_option: {len(product_options)}건, product_condition: {len(product_conditions)}건")
-    print(f"중복 option_id: 완전동일(무시) {dup_stats['exact']}건 / 값 충돌(최신 snapshot_date 채택) {dup_stats['conflict']}건")
+    print(f"product: {len(products)}건, product_condition: {len(product_conditions)}건")
+    print(
+        f"중복 product_id: 완전동일(무시) {dup_stats['exact']}건"
+        f" / 값 충돌(최신 snapshot_date 채택) {dup_stats['conflict']}건"
+    )
     if dup_stats["conflict_examples"]:
         print("충돌 예시(최대 10건):")
-        for oid, old, new in dup_stats["conflict_examples"]:
-            print(f"  {oid}: 기존={old['base_rate']}/{old['max_rate']} -> 새값={new['base_rate']}/{new['max_rate']}")
-    if missing:
-        print(f"경고: kfcc branches.json에서 못 찾은 지점 {len(missing)}건 -> {missing}")
-    print()
-    print("참고: 신협/새마을금고는 이번에도 product_condition이 비어있습니다 - 우대조건")
-    print("자유텍스트 원본 파일을 못 찾았기 때문입니다(위 docstring 참고).")
+        for pid, old_rate, new_rate in dup_stats["conflict_examples"]:
+            print(f"  {pid}: {old_rate} -> {new_rate}")
 
 
 if __name__ == "__main__":
