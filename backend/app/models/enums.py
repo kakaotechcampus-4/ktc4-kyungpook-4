@@ -30,12 +30,29 @@ THRESHOLD_UNITS = ("KRW", "COUNT", "MONTH")
 CONDITION_VERIFY_STATUSES = ("EXACT", "MISSING", "EXCESS")
 CONFIDENCE_BADGES = ("확인됨", "검수대기")
 
+# 우대조건의 종류. product_condition(상품이 요구하는 조건)과
+# user_profile_extra(사용자가 충족한다고 답한 조건)가 같은 값으로 만나야 가산이 된다.
+#
+# 이 목록은 우리가 새로 지은 게 아니라 AI 파트가 이미 쓰고 있는 어휘를 그대로 받았다
+# (ai/scripts/extract_conditions_ai.py 프롬프트에 분류 카테고리로 박혀 있다).
+# 순서도 프롬프트와 같게 뒀다 - 한쪽이 바뀌면 diff 로 바로 보이게 하기 위해서다.
+# 실측: 2026-09-19 산출물 product_condition 7,068 건에서 이 9개 밖의 값은 0건.
+# 다만 '기타'가 3,622건(51%)이라, 매칭에 실제로 쓸 수 있는 건 절반뿐이다.
+CONDITION_TYPES = (
+    "급여이체",
+    "자동이체",
+    "신규고객",
+    "카드실적",
+    "마케팅동의",
+    "공과금이체",
+    "연금수령",
+    "비대면가입",
+    "기타",
+)
+
 PORTFOLIO_TYPES = ("단순형", "균형형", "최대형")
 PORTFOLIO_STATUSES = ("진행중", "완료")
 HOLDING_STATUSES = ("유지중", "만기")
-
-# condition_type 은 아직 목록 미확정이라 CHECK 를 걸지 않았다.
-# 확정되면 여기에 튜플을 추가하고 product_condition / user_profile_extra 양쪽에 CHECK 를 건다.
 
 
 def one_of(column: str, values: tuple[str, ...]) -> str:

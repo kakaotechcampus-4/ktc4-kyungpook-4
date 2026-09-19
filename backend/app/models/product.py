@@ -28,6 +28,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.models.batch import BatchRun
 from app.models.enums import (
+    CONDITION_TYPES,
     CONDITION_VERIFY_STATUSES,
     CONFIDENCE_BADGES,
     JOIN_CHANNELS,
@@ -208,11 +209,10 @@ class ProductCondition(Base):
 
     condition_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     product_id: Mapped[str] = mapped_column(String(64), ForeignKey("product.product_id", ondelete="CASCADE"))
-    # 닫힌 어휘 목록 확정 필요.
     # UserProfileExtra.condition_type 과 같은 값을 써야 매칭이 된다.
     condition_type: Mapped[str] = mapped_column(
         String(50),
-        comment="닫힌 어휘 목록 확정 필요. user_profile_extra.condition_type 과 같은 값을 써야 매칭이 된다",
+        comment="user_profile_extra.condition_type 과 같은 값을 써야 매칭이 된다. 어휘는 enums.CONDITION_TYPES",
     )
     rate_bonus: Mapped[Decimal] = mapped_column(Numeric(4, 2), server_default=text("0"))
     threshold_value: Mapped[int | None] = mapped_column(BigInteger)
@@ -237,6 +237,7 @@ class ProductCondition(Base):
     product: Mapped[Product] = relationship(back_populates="conditions")
 
     __table_args__ = (
+        CheckConstraint(one_of("condition_type", CONDITION_TYPES), name="condition_type"),
         CheckConstraint(one_of_or_null("threshold_unit", THRESHOLD_UNITS), name="threshold_unit"),
         # 임계값과 단위는 항상 짝으로 채워진다
         CheckConstraint("(threshold_value IS NULL) = (threshold_unit IS NULL)", name="threshold_pair"),

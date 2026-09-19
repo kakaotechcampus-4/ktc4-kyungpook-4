@@ -211,6 +211,8 @@ CREATE TABLE user_profile_extra (
     CONSTRAINT pk_user_profile_extra PRIMARY KEY (id),
     CONSTRAINT fk_user_profile_extra_profile_id_user_profile
         FOREIGN KEY (profile_id) REFERENCES user_profile (profile_id) ON DELETE CASCADE,
+    CONSTRAINT ck_user_profile_extra_condition_type
+        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '기타')),
     -- 답을 받았으면 시각도 있어야 한다
     CONSTRAINT ck_user_profile_extra_answered
         CHECK (answer_value IS NULL OR answered_at IS NOT NULL)
@@ -535,6 +537,8 @@ CREATE TABLE product_condition (
     CONSTRAINT pk_product_condition PRIMARY KEY (condition_id),
     CONSTRAINT fk_product_condition_product_id_product
         FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE CASCADE,
+    CONSTRAINT ck_product_condition_condition_type
+        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '기타')),
     CONSTRAINT ck_product_condition_threshold_unit
         CHECK (threshold_unit IS NULL OR threshold_unit IN ('KRW', 'COUNT', 'MONTH')),
     -- 임계값과 단위는 항상 짝으로 채워진다
@@ -555,7 +559,7 @@ CREATE TABLE product_condition (
 COMMENT ON TABLE  product_condition IS
     '약관에서 뽑아낸 우대조건 1개. 기간 제한은 applies_period_* 로 표현하므로 상품 단위로 붙인다';
 COMMENT ON COLUMN product_condition.condition_type IS
-    '닫힌 어휘 목록 확정 필요. user_profile_extra.condition_type 과 같은 값을 써야 매칭이 된다';
+    'user_profile_extra.condition_type 과 같은 값을 써야 매칭이 된다. 어휘는 enums.CONDITION_TYPES';
 COMMENT ON COLUMN product_condition.exclusive_group IS '같은 그룹의 조건은 하나만 적용된다 (택1 우대)';
 COMMENT ON COLUMN product_condition.evidence_text IS '가산 근거가 된 약관 원문 인용. 사용자에게 그대로 보여준다';
 COMMENT ON COLUMN product_condition.verification_status IS

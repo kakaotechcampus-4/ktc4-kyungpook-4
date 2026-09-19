@@ -21,7 +21,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.enums import SOCIAL_CARE_CATEGORIES, one_of
+from app.models.enums import CONDITION_TYPES, SOCIAL_CARE_CATEGORIES, one_of
 from app.models.user import AppUser
 
 
@@ -165,6 +165,7 @@ class UserProfileExtra(Base):
     profile: Mapped[UserProfile] = relationship(back_populates="extras")
 
     __table_args__ = (
+        CheckConstraint(one_of("condition_type", CONDITION_TYPES), name="condition_type"),
         # 답을 받았으면 시각도 있어야 한다
         CheckConstraint("answer_value IS NULL OR answered_at IS NOT NULL", name="answered"),
         Index("ix_user_profile_extra_profile_id", "profile_id"),
