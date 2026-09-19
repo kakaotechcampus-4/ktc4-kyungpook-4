@@ -1,7 +1,7 @@
 # 자주 쓰는 명령의 단축키 모음. **선택 사항이다.**
 # README 에 적힌 명령을 그대로 쳐도 결과는 같다. 어떤 명령으로 펼쳐지는지 보려면 `make -n <타겟>`.
 # Windows 에는 make 가 기본 설치돼 있지 않으니 README 의 명령을 쓰거나 WSL 을 쓴다.
-.PHONY: help up down setup run test lint fmt migrate rollback revision psql redis logs reset
+.PHONY: help up down setup run test lint fmt migrate rollback revision seed psql redis logs reset
 
 help:  ## 이 목록 보기
 	@grep -E '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -40,6 +40,9 @@ rollback:  ## 마이그레이션 한 단계 되돌리기
 
 revision:  ## 모델 변경을 마이그레이션으로 생성 (예: make revision M="add x")
 	uv run alembic revision --autogenerate -m "$(M)"
+
+seed:  ## 개발용 시드 데이터(db/seed_sample.sql, AI 산출물 기반 상품 50건) 삽입
+	docker exec -i ktc4-postgres psql -U ktc4 -d ktc4 < db/seed_sample.sql
 
 psql:  ## DB 접속
 	docker exec -it ktc4-postgres psql -U ktc4 -d ktc4

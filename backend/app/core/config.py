@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     # SQL 로그. 로컬 디버깅용이며 운영에서는 꺼둔다.
     DB_ECHO: bool = False
 
+    # 프론트가 아직 확정된 dev 서버 주소가 없어(Flutter web/모바일 겸용) 흔한 로컬 포트를 모아둔다.
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://localhost:8080",
+    ]
+
     # Redis 는 캐시 전용이다. 원본 데이터는 절대 여기에만 두지 않는다.
     # (추천 결과 캐시 / 공시 API 응답 / 크롤링 중복 체크 / 세션)
     REDIS_HOST: str = "localhost"
