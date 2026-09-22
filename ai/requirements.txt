@@ -1,0 +1,9 @@
+# [리뷰 수정] anthropic 패키지를 실제로 import하는 코드가 하나도 없음 - Claude Sonnet 5는
+# 엘리스 ML API(OpenAI 호환 엔드포인트, src/config.py의 OPENAI_BASE_URL)를 통해 호출하고
+# 있어서 openai 패키지(openai.OpenAI 클라이언트)를 쓴다. 대신 openai를 추가.
+openai>=1.0
+pydantic>=2.0
+requests>=2.31
+python-dotenv>=1.0
+fastapi>=0.110
+uvicorn>=0.29
