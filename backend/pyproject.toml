@@ -1,0 +1,55 @@
+[project]
+name = "ktc4-kyungpook-4-backend"
+version = "0.1.0"
+description = "예적금 금리 비교·포트폴리오 추천 서비스 백엔드"
+requires-python = ">=3.13,<3.14"
+
+# 여기는 "무엇이 필요한가"(의도)를 적는다.
+# "정확히 어느 버전이 깔리는가"는 uv.lock 이 결정한다. 둘을 헷갈리지 말 것.
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy[asyncio]>=2.0",
+    "alembic>=1.13",
+    "pydantic-settings>=2.0",
+    "asyncpg>=0.29",
+    "redis>=5.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",          # FastAPI 테스트 클라이언트가 쓴다
+    "psycopg2-binary>=2.9", # 동기 드라이버. alembic 과 스키마 대조 테스트에서만 쓴다
+    "ruff>=0.6",
+]
+
+[tool.uv]
+# 이 저장소는 라이브러리가 아니라 실행되는 앱이다. 자기 자신을 빌드·설치하지 않는다.
+package = false
+
+# ── 린터 / 포매터 ────────────────────────────────────────────────
+[tool.ruff]
+# 한글 주석·COMMENT 문자열이 많아 100 은 너무 빡빡하다.
+line-length = 120
+target-version = "py313"
+exclude = ["alembic/versions"]  # 자동 생성 파일이라 손대지 않는다
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle - 기본 스타일
+    "F",       # pyflakes - 미사용 import, 정의 안 된 이름
+    "I",       # isort - import 정렬
+    "UP",      # pyupgrade - 옛 문법 현대화
+    "B",       # bugbear - 흔한 버그 패턴
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "tests"]
+
+# ── 테스트 ───────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+asyncio_mode = "auto"
