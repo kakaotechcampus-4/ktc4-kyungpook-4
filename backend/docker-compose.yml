@@ -1,0 +1,37 @@
+# 로컬 개발용 인프라. 팀원은 `docker compose up -d` 한 줄이면 된다.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ktc4-postgres
+    environment:
+      POSTGRES_USER: ktc4
+      POSTGRES_PASSWORD: ktc4
+      POSTGRES_DB: ktc4
+      # 한글 데이터를 넣으므로 UTF8 고정
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # 앱이 뜨기 전에 DB 가 준비됐는지 확인한다
+      test: ["CMD-SHELL", "pg_isready -U ktc4 -d ktc4"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ktc4-redis
+    # 캐시 전용이므로 영속화를 끈다. 날아가도 DB 에 원본이 있다.
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
