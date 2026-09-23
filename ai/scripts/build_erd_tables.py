@@ -25,7 +25,7 @@ deposit_savingsbank_sample.json, saving_savingsbank_sample.json)
   공통상품 14개에만 채움(개별 금고 전용 상품은 카탈로그에 없어 매칭 안 됨 - 09-17
   스코프 결정). 지점별 실측 우대폭이 없어 검증 기준값 자체가 없으므로 항상
   verification_status=UNVERIFIED로 채워짐(정상 - 신뢰도 문제 아님).
-  신협(cu.co.kr prefCondMemo)은 아직 이 파이프라인에 연결 안 해서 여전히 비어있음.
+  신협(cu.co.kr prefCondMemo)도 같은 파이프라인으로 연결함(0.0%p뿐인 빈 템플릿은 제외).
 
 산출물: out/institution.jsonl, out/product.jsonl, out/product_option.jsonl,
 out/product_condition.jsonl
@@ -195,8 +195,11 @@ def cu_product_type(product_type_tag: str, name: str) -> str:
     return "적금(자유적립식)" if is_freeform(name) else "적금(정액적립식)"
 
 
-def process_cu():
+def process_cu(ai_cache):
     n_records = 0
+    n_conditions = 0
+    attached_products = set()  # 같은 product_id가 여러 만기 행으로 반복되므로
+                                # 조건은 그 product_id당 딱 한 번만 붙인다
     with (FIXTURES / "cu_rate_compare.jsonl").open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -256,7 +259,14 @@ def process_cu():
                 max_rate=parse_pct(rec.get("highRate")),
                 snapshot_date=snapshot_date,
             )
-    return n_records
+
+            if product_id not in attached_products:
+                fin_prdt_cd = f"{rec['stockCode']}_{rec.get('tretYn')}"
+                n_conditions += attach_ai_conditions(
+                    ai_cache, "cu_rate_compare.jsonl", rec["cuIngno"], fin_prdt_cd, product_id
+                )
+                attached_products.add(product_id)
+    return n_records, n_conditions
 
 
 # ---------------------------------------------------------------------------
@@ -688,7 +698,7 @@ def main():
         print("       python scripts\\extract_conditions_ai.py")
         print()
 
-    n_cu = process_cu()
+    n_cu, n_cu_conditions = process_cu(ai_cache)
     n_kfcc, n_kfcc_conditions, missing = process_kfcc(ai_cache)
 
     finlife_summary = []
@@ -713,7 +723,8 @@ def main():
         for row in product_conditions.values():
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    print(f"신협 원본 레코드: {n_cu}건, 새마을금고 원본 레코드: {n_kfcc}건 "
+    print(f"신협 원본 레코드: {n_cu}건 (그중 우대조건(AI) 매칭 {n_cu_conditions}건), "
+          f"새마을금고 원본 레코드: {n_kfcc}건 "
           f"(그중 우대조건(AI) 매칭 {n_kfcc_conditions}건 - 중앙 공통상품만 대상)")
     print("은행/저축은행(finlife) 원본:")
     for filename, stats in finlife_summary:
@@ -734,10 +745,10 @@ def main():
     if missing:
         print(f"경고: kfcc branches.json에서 못 찾은 지점 {len(missing)}건 -> {missing}")
     print()
-    print("참고: 신협은 이번에도 product_condition이 비어있습니다 - prefCondMemo 원문을")
-    print("아직 extract_conditions_ai.py 파이프라인에 연결 안 했기 때문입니다(위 docstring 참고).")
-    print("새마을금고는 중앙 공통상품 14개만 조건이 채워지고, 개별 금고 전용 상품은")
-    print("중앙 카탈로그에 없어 매칭이 안 되므로 비어있는 게 정상입니다.")
+    print("참고: 신협은 prefCondMemo가 빈 템플릿(0.0%p)인 경우가 대부분이라 실제 %p가")
+    print("있는 상품만 조건이 채워집니다(위 gather_cu_targets 참고). 새마을금고는 중앙")
+    print("공통상품만 조건이 채워지고, 개별 금고 전용 상품은 중앙 카탈로그에 없어")
+    print("매칭이 안 되므로 비어있는 게 정상입니다.")
 
 
 if __name__ == "__main__":
