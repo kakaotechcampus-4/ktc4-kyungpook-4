@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/next_step_button.dart';
 import '../../widgets/step_indicator.dart';
 
 class InputStep1Screen extends ConsumerStatefulWidget {
@@ -83,7 +84,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
               const SizedBox(height: 32),
               Align(
                 alignment: Alignment.centerRight,
-                child: _NextStepButton(
+                child: NextStepButton(
                   enabled: canProceed,
                   onPressed: () => context.push(AppRoutes.inputStep2),
                 ),
@@ -185,33 +186,6 @@ class _AmountField extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _NextStepButton extends StatelessWidget {
-  final bool enabled;
-  final VoidCallback onPressed;
-
-  const _NextStepButton({required this.enabled, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: enabled ? onPressed : null,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.lavender,
-        disabledBackgroundColor: AppColors.lavender.withValues(alpha: 0.35),
-        foregroundColor: Colors.white,
-        disabledForegroundColor: Colors.white,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-      ),
-      child: const Text('다음 단계'),
     );
   }
 }
