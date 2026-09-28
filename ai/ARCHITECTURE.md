@@ -133,3 +133,27 @@ API에서 받아온 원본 그대로 저장된 파일들(용량이 커서 대부
 
 - `ai_condition_cache.jsonl`: AI Extraction 호출 결과 캐시(재호출 방지 + 검증 상태 기록)
 - `erd/institution.jsonl`, `erd/product.jsonl`, `erd/product_option.jsonl`, `erd/product_condition.jsonl`: `build_erd_tables.py`가 만드는 최종 정규화 테이블. BE와 DB 스키마를 맞출 때 이 4개가 기준이 됨
+
+## condition_type 카테고리 확장 시 체크리스트
+
+(2026-09-28, PR #11 리뷰 — junhee-ko: "새 condition_type 추가 시 어떤 계층까지 코드를
+바꿔야 하는지" 코멘트에 대한 답으로 추가함)
+
+새 카테고리(예: '주택청약보유') 하나를 추가할 때 거쳐야 하는 4단계:
+
+1. **AI prompt/taxonomy** — `extract_conditions_ai.py`의 SYSTEM_PROMPT 카테고리 목록에
+   추가.
+2. **원문 전체 재추출** — 캐시(`output/ai_condition_cache.jsonl`)를 부분이 아니라 전체
+   다시 만듦(현재는 버저닝 없이 전체 재실행이 원칙). 이후 `build_erd_tables.py` 재실행.
+   (`build_erd_tables.py` 자체는 condition_type을 문자열로 그대로 통과시키기만 해서
+   이 단계에서 코드 수정은 필요 없음.)
+3. **BE `CONDITION_TYPES` enum + DB CHECK 제약** (`backend/app/models/enums.py`) — 새
+   값 추가 + 필요 시 Alembic 마이그레이션. AI 쪽에서 목록만 늘리고 여기를 안 맞추면
+   insert가 CHECK 제약에 걸려 실패함(실제로 PR #11에서 한 번 겪은 문제).
+4. **BE의 조건 판정 로직** — 새 카테고리를 "정형 조건"(코드가 자동 판정)으로 다룰지,
+   아니면 "기타"처럼 AI가 자연어 질문을 생성하는 대상으로 둘지는 AI 파트 혼자 못 정하고
+   매번 BE와 상의해서 결정.
+
+지금은 이 목록이 AI(`extract_conditions_ai.py`)와 BE(`enums.py`) 양쪽에 각각
+하드코딩되어 있어서 어긋나기 쉬운 구조임 — 장기적으로 한 곳(공유 설정 파일 등)에서
+관리하는 구조로 바꾸는 걸 검토 중(`claude/PR11_리뷰_후속조치_TODO_20260928.md` 참고).
