@@ -1,0 +1,83 @@
+name: Backend CI
+# 팀 내부 PR(feature/* → develop)을 검증한다.
+#
+# ⭐ 기존 워크플로들(assign-mentor / convention-check / notify-discord)은 전부
+#   `branches: [main]` 필터라 팀 내부 PR 에서는 run 자체가 생성되지 않는다.
+#   이 파일이 그 빈자리를 채운다. 서로 트리거가 겹치지 않으므로 충돌하지 않는다.
+#
+# ⭐ `paths:` 필터로 backend/** 변경일 때만 돈다.
+#   AI·프론트 파트가 PR 을 올릴 때 무의미한 run 이 쌓이지 않게 하려는 것이다.
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches: [develop]
+    paths:
+      - "backend/**"
+
+# 같은 PR 에 연속 push 하면 이전 run 을 취소한다. (PR 검증이라 중간 결과는 필요 없다)
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      # 로컬 docker-compose.yml 과 같은 버전으로 맞춘다.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ktc4
+          POSTGRES_PASSWORD: ktc4
+          POSTGRES_DB: ktc4
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ktc4 -d ktc4"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: uv 설치
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: 의존성 설치
+        # --frozen: uv.lock 을 그대로 쓴다. lock 과 pyproject 가 어긋나면 여기서 실패한다.
+        run: uv sync --frozen
+
+      - name: 린트
+        run: uv run ruff check .
+
+      - name: 포맷 확인
+        run: uv run ruff format --check .
+
+      - name: 마이그레이션 적용
+        # schema.sql 이 아니라 alembic 으로 올린다. 마이그레이션이 깨지면 여기서 잡힌다.
+        run: uv run alembic upgrade head
+
+      - name: 마이그레이션 되돌리기 확인
+        # downgrade 가 깨진 마이그레이션은 운영에서 손을 쓸 수 없게 된다.
+        run: |
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+
+      - name: 테스트
+        run: uv run pytest

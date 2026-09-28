@@ -1,0 +1,50 @@
+{
+  // ── 파이썬 환경 (ms-python.vscode-python-envs 가 담당) ──────────
+  // 워크스페이스 루트는 저장소 최상단이고 .venv 는 backend/ 아래에 있다.
+  // backend 를 별도 파이썬 프로젝트로 선언해야 그 폴더의 .venv 를 잡고
+  // 터미널이 열릴 때 자동 활성화된다. 이게 없으면 루트에서 venv 를 못 찾는다.
+  "python-envs.pythonProjects": [
+    {
+      "path": "backend",
+      "envManager": "ms-python.python:venv",
+      "packageManager": "ms-python.python:pip"
+    }
+  ],
+  // command = 터미널이 열릴 때 activate 명령을 실행한다 (모든 셸에서 동작)
+  "python-envs.terminal.autoActivationType": "command",
+
+  // 구버전 확장(ms-python.python)만 있는 팀원을 위한 설정. 둘 다 둬도 충돌하지 않는다.
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+
+  // 터미널을 backend/ 에서 열어준다. 명령 대부분이 여기서 돌고, 활성화도 안정적이다.
+  "terminal.integrated.cwd": "${workspaceFolder}/backend",
+
+  // ── import 해석 ─────────────────────────────────────────────────
+  // 이게 없으면 `from app.models import ...` 에 Pylance 가 빨간 줄을 긋는다.
+  // app 패키지가 루트가 아니라 backend/ 아래에 있기 때문이다.
+  "python.analysis.extraPaths": ["backend"],
+  "python.analysis.typeCheckingMode": "basic",
+
+  // ── 테스트 ──────────────────────────────────────────────────────
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.cwd": "${workspaceFolder}/backend",
+  "python.testing.pytestArgs": ["tests"],
+
+  // 디버그·테스트 실행 시 읽을 환경변수 파일 (기본값은 루트의 .env 라 어긋난다)
+  "python.envFile": "${workspaceFolder}/backend/.env",
+
+  // ── 편집 ────────────────────────────────────────────────────────
+  "[python]": {
+    "editor.rulers": [120],
+    "editor.tabSize": 4
+  },
+  "search.exclude": {
+    "**/.venv": true,
+    "**/__pycache__": true
+  },
+  "files.watcherExclude": {
+    "**/.venv/**": true
+  }
+}

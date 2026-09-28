@@ -10,4 +10,13 @@ class CalendarEvent {
     required this.productName,
     required this.installmentRound,
   });
+
+  factory CalendarEvent.fromJson(Map<String, dynamic> json) {
+    return CalendarEvent(
+      date: DateTime.parse(json['date'] as String),
+      institutionName: json['institution_name'] as String,
+      productName: json['product_name'] as String,
+      installmentRound: json['installment_round'] as int,
+    );
+  }
 }

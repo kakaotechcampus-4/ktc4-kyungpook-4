@@ -26,7 +26,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    final events = ref.watch(upcomingEventsProvider);
+    final eventsAsync = ref.watch(upcomingEventsProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -64,13 +64,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
-            if (events.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                child: Text('다가오는 일정이 여기에 표시됩니다'),
-              )
-            else
-              for (final event in events) UpcomingEventTile(event: event),
+            eventsAsync.when(
+              data: (events) => events.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      child: Text('다가오는 일정이 여기에 표시됩니다'),
+                    )
+                  : Column(
+                      children: [for (final event in events) UpcomingEventTile(event: event)],
+                    ),
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (error, _) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Text('일정을 불러오지 못했습니다: $error'),
+              ),
+            ),
           ],
         ),
       ),

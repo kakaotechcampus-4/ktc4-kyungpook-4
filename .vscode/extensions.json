@@ -1,0 +1,8 @@
+{
+  // 이 저장소를 열면 VS Code 가 설치를 권한다.
+  "recommendations": [
+    "ms-python.python",           // 인터프리터 선택, 터미널 자동 활성화, 테스트 탐색기
+    "ms-python.vscode-pylance",   // 타입 검사 / 자동완성
+    "ms-python.debugpy"           // 디버거 (F5)
+  ]
+}

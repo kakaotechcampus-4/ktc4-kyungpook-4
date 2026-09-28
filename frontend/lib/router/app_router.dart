@@ -5,6 +5,7 @@ import '../screens/input/input_step1_screen.dart';
 import '../screens/input/input_step2_screen.dart';
 import '../screens/input/input_step3_screen.dart';
 import '../screens/loading/loading_screen.dart';
+import '../screens/result/portfolio_detail_screen.dart';
 import '../screens/result/result_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/tutorial/tutorial_screen.dart';
@@ -20,6 +21,7 @@ class AppRoutes {
   static const inputStep2 = '/input/2';
   static const inputStep3 = '/input/3';
   static const result = '/result';
+  static const resultDetail = '/result/detail';
 }
 
 final appRouter = GoRouter(
@@ -56,6 +58,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.result,
       builder: (context, state) => const ResultScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.resultDetail,
+      builder: (context, state) => const PortfolioDetailScreen(),
     ),
   ],
 );

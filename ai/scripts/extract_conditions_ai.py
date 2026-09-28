@@ -6,10 +6,12 @@ product_condition(우대조건)을 정규식이 아니라 실제 Claude Sonnet 5
 - 은행 2개 파일(deposit_sample.json, saving_sample.json) - 우대조건 원문(spcl_cnd) 있음 -> AI로 뽑음
 - 저축은행 2개 파일(deposit_savingsbank_sample.json, saving_savingsbank_sample.json)
   - 우대조건 원문(spcl_cnd) 있음 -> AI로 뽑음 (지난번엔 범위에서 뺐었는데 이번엔 포함)
-- 신협(cu_rate_compare.jsonl) / 새마을금고(kfcc_rates.jsonl): 지금 가진 파일 안에는
-  우대조건 자유텍스트 필드가 아예 없음(숫자 금리표만 있음) -> 이번 스크립트에서는 처리 대상이
-  없어서 자동으로 스킵됨. 신협 적금 우대조건 원문이 있는 별도 파일(예: saving_cu_saving.json
-  같은 것)이 있으면 FINLIFE_LIKE_SOURCES에 추가만 하면 그대로 처리 가능 - 파일 있으면 알려주세요.
+- 신협(cu_rate_compare.jsonl): prefCondMemo에 우대조건 자유텍스트가 있음(단, 지점별로
+  같은 문구가 반복되고 대부분 "①...: 0.0%p" 처럼 실제 값이 다 0인 빈 템플릿) -> 0이 아닌
+  %p가 하나라도 있는 것만 골라서(gather_cu_targets) AI로 뽑음.
+- 새마을금고(kfcc_rates.jsonl): 숫자 금리표만 있고 우대조건 자유텍스트가 없음 -> 대신
+  중앙 공통상품 카탈로그 원문(kfcc_central_conditions_raw.jsonl)을 gather_kfcc_targets()로
+  처리함(상품명 매칭되는 중앙 공통상품만 대상).
 
 동작 순서:
 1. 소스 파일들을 읽어서, base 상품(fin_co_no+fin_prdt_cd)별로 spcl_cnd 원문을 모은다.
@@ -163,8 +165,10 @@ SYSTEM_PROMPT = (
     "condition_type(중요): 각 조건이 어떤 종류인지, 아래 카테고리 중 하나로 반드시 "
     "분류해서 채워(정확히 이 문자열 그대로 써야 해):\n"
     "  '급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', "
-    "'연금수령', '비대면가입', '기타'\n"
-    "위 8개 중 어디에도 명확히 해당 안 되면 '기타'를 써. description의 표면적인 "
+    "'연금수령', '비대면가입', '공제가입', '연령조건', '기타'\n"
+    "- '공제가입': 신협공제 등 공제 상품 가입 실적 조건\n"
+    "- '연령조건': 가입 연령 기준 충족 조건 (청년/어린이/시니어 등 나이 관련)\n"
+    "위 10개 중 어디에도 명확히 해당 안 되면 '기타'를 써. description의 표면적인 "
     "단어가 아니라 그 조건의 실제 의미로 판단해(예: '급여통장 실적'은 겉보기엔 "
     "'통장'이지만 실제로는 '급여이체' 카테고리).\n\n"
     "bonus_rate(중요): 그 조건 하나에 대한 구체적인 %p 값이 원문에 명확히 있을 "
@@ -403,6 +407,54 @@ def gather_targets():
     return targets
 
 
+CU_JSONL_PATH = FIXTURES / "cu_rate_compare.jsonl"
+CU_EMPTY_MEMO = {"없음", "null", ""}
+NONZERO_RATE_RE = re.compile(r"[1-9]\d*\.?\d*%p|0\.[1-9]\d*%p")
+
+
+def gather_cu_targets():
+    """신협(cu_rate_compare.jsonl)의 prefCondMemo를 AI로 보낼 대상으로 모은다.
+    지점마다 같은 문구가 반복되고 대부분 실제 값이 맨 0.0%p로 채워진 빈 템플릿이라,
+    0이 아닌 %p가 하나라도 있는 것만 골라서 보낸다. 같은 상품(cuIngno+stockCode+tretYn)이
+    지점/만기 개수만큼 같은 문구로 반복되므로 상품 단위로 중복 제거해서 한 번만 호출한다
+    (비용 절약). opts는 항상 빈 리스트로 둔다 - 검증(verification_status)은 BE가 임포트
+    시점에 직접 계산하겠다고 했으니(ai-data-requirements.md), 여기서 신협 고유 필드
+    (baseRate/highRate)를 억지로 끼워맞출 필요는 없다."""
+    targets = []
+    seen = set()
+    if not CU_JSONL_PATH.exists():
+        print(f"[{CU_JSONL_PATH.name}] 파일 없음 - 스킵")
+        return targets
+    with CU_JSONL_PATH.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            rec = json.loads(line)
+            memo = (rec.get("prefCondMemo") or "").strip()
+            if memo in CU_EMPTY_MEMO or not NONZERO_RATE_RE.search(memo):
+                continue
+            cu_ingno = rec.get("cuIngno")
+            stock_code = rec.get("stockCode")
+            tret_yn = rec.get("tretYn")
+            dedup_key = (cu_ingno, stock_code, tret_yn)
+            if dedup_key in seen:
+                continue
+            seen.add(dedup_key)
+            fin_prdt_cd = f"{stock_code}_{tret_yn}"
+            targets.append({
+                "key": f"cu_rate_compare.jsonl:{cu_ingno}:{fin_prdt_cd}",
+                "filename": "cu_rate_compare.jsonl",
+                "institution_type": "신협",
+                "evidence_url": rec.get("stockUrl") or "",
+                "fin_co_no": cu_ingno,
+                "fin_prdt_cd": fin_prdt_cd,
+                "spcl_cnd": memo,
+                "opts": [],
+            })
+    return targets
+
+
 KFCC_FIXTURE = FIXTURES / "kfcc_central_conditions_raw.jsonl"
 
 
@@ -457,7 +509,7 @@ def main():
     client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1")
     cache = {} if args.fresh else load_cache()
 
-    targets = gather_targets() + gather_kfcc_targets()
+    targets = gather_targets() + gather_cu_targets() + gather_kfcc_targets()
     if args.limit:
         targets = targets[: args.limit]
     print(f"처리 대상: {len(targets)}건 (이미 캐시에 있는 것 포함, 모델: {OPENAI_MODEL})\n")
