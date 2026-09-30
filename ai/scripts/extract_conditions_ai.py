@@ -428,13 +428,23 @@ def main():
 
     n_called = 0
     n_cached_reused = 0
+    n_changed = 0
     n_failed = 0
     try:
         for t in targets:
             key = t["key"]
-            if key in cache:
+            cached_row = cache.get(key)
+            # 캐시에 key가 있어도 그때 저장된 spcl_cnd(원문)와 지금 값이 다르면
+            # "재추출 필요"로 본다 - 은행/조합이 우대조건 문구를 바꿨거나 데이터가
+            # 갱신된 경우를 자동으로 잡기 위함. 이러면 --fresh(전체 재추출) 없이
+            # fetch_*.py로 데이터를 새로 받아올 때마다 이 스크립트를 그냥 돌리기만
+            # 해도 신규/변경 상품이 자동으로 반영된다. --fresh는 이제 카테고리
+            # 자체를 새로 추가할 때 전용으로 쓰면 된다.
+            if cached_row is not None and cached_row.get("spcl_cnd") == t["spcl_cnd"]:
                 n_cached_reused += 1
             else:
+                if cached_row is not None:
+                    n_changed += 1
                 conditions, overall_cap, error = call_ai(client, t["spcl_cnd"])
                 n_called += 1
                 if error:
@@ -460,7 +470,7 @@ def main():
     print()
     print("=== 완료 ===")
     print(f"전체 대상: {len(targets)}건")
-    print(f"신규 API 호출: {n_called}건 / 캐시 재사용: {n_cached_reused}건 / 실패: {n_failed}건")
+    print(f"신규 API 호출: {n_called}건(그중 원문 변경 감지: {n_changed}건) / 캐시 재사용: {n_cached_reused}건 / 실패: {n_failed}건")
     print(f"캐시 파일: {CACHE_PATH}")
 
 
