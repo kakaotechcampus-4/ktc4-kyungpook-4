@@ -11,6 +11,14 @@ AI 개입 범위 (PR #11 리뷰, junhee-ko 코멘트에 대한 답):
   처리한다 — 계산값을 부풀리지 않는 방향. AI의 해석 결과를 곧이곧대로 신뢰하지 않는다.
 - evidence_text 원문(공식 공시 텍스트) 자체의 정확성은 이 모듈의 검증 대상이 아니다 —
   소스 데이터의 정확성은 전제로 둔다(BE가 여기까지 재검증하지 않아도 됨).
+- '기타' 질문 생성은 Backend 검증에만 기대지 않고 AI 호출 자체에서 자체 검증한다:
+  AI가 질문과 함께 근거 문구(grounding_quote, evidence_text에서 그대로 옮긴 것)를
+  같이 내고, 그 문구가 실제로 evidence_text 안에 있는지 코드에서 문자열로 대조한다
+  - 없으면(=AI가 원문에 없는 걸 지어낸 정황) 안전한 fallback 질문으로 대체한다.
+- 답변 파싱도 AI 스스로의 확신도(confidence)를 같이 받아서, 확신도가 낮으면 결과가
+  true/false로 나왔어도 애매한 것으로 취급해 conservative_fallback()으로 보낸다.
+- 위 두 자체 검증은 새 LLM 호출 지점을 추가하지 않는다(기존 호출 안에서 JSON 응답
+  구조만 확장) - NFR-04 "정확히 3곳" 그대로 유지.
 
 애매하거나 실패한 경로는 전부 conservative_fallback() 한 곳을 거치도록 만들어서,
 "애매하면 항상 미충족"이라는 규칙이 코드 구조로 강제되게 했다.
@@ -18,6 +26,9 @@ AI 개입 범위 (PR #11 리뷰, junhee-ko 코멘트에 대한 답):
 2026-09-29: FR-04 미니플로우① 구현 — 뼈대(스텁)였던 이 파일을 실제 동작하는 로직으로
 채움(질문 템플릿 10종, '기타' 질문 생성/답변 파싱 AI 호출, 상호금융 조합원 여부
 미니플로우① 포함).
+
+2026-09-30: PR #11 리뷰 코멘트 2번(AI 신뢰 경계) 후속 - '기타' 질문 생성에
+grounding_quote 자체 검증, 답변 파싱에 confidence 게이트 추가.
 """
 import json
 import re
@@ -50,6 +61,22 @@ def _get_client():
             )
         _client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1")
     return _client
+
+
+# ---------------------------------------------------------------------------
+# 공통: AI가 JSON으로 응답할 때 쓰는 유틸 (코드펜스 제거 + 자체 검증용 텍스트 정규화)
+# ---------------------------------------------------------------------------
+CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
+
+
+def _strip_code_fence(text: str) -> str:
+    return CODE_FENCE_RE.sub("", text.strip()).strip()
+
+
+def _normalize(s: str) -> str:
+    """공백/줄바꿈 차이를 무시하고 원문 안에 실제로 있는 문구인지 비교하기 위한
+    정규화 - AI가 띄어쓰기를 살짝 다르게 옮겨 적는 정도는 "지어냈다"고 보지 않는다."""
+    return re.sub(r"\s+", "", s or "")
 
 
 # ---------------------------------------------------------------------------
@@ -105,17 +132,27 @@ _QUESTION_GEN_PROMPT = (
     "규칙:\n"
     "- 예/아니오로 답할 수 있는 질문 형태로 만들어.\n"
     "- 원문에 없는 내용을 지어내지 마. 원문의 의미를 벗어나지 마.\n"
-    "- 질문 문장 하나만 출력해. 설명, 코드블록, 따옴표 없이 순수 텍스트로만."
+    "- grounding_quote: 이 질문을 만든 근거가 되는 원문 속 문구를 한 글자도 바꾸지 "
+    "않고 그대로(띄어쓰기 포함) 옮겨 적어. 최소 10자 이상.\n\n"
+    "반드시 아래 JSON 형식으로만 응답해. 코드블록(```) 없이, 설명 문장 없이, "
+    "순수 JSON 객체 하나만 출력해:\n"
+    '{"question": "질문 문장", "grounding_quote": "원문에서 그대로 가져온 문구"}'
 )
 
 
 def _build_question_ai(condition: dict) -> str:
     """'기타' 조건의 evidence_text(또는 description)를 보고 AI가 질문 문장을 생성.
-    AI 호출이 실패하면(네트워크 오류 등) 원문을 그대로 보여주는 안전한 기본 문구로
-    대체한다 - 질문 생성 실패가 전체 플로우를 중단시키면 안 되므로."""
+
+    AI한테 질문 문장과 함께 근거 문구(grounding_quote)도 같이 받아서, 그 문구가
+    실제로 원문(text) 안에 있는지 대조한다 - 없으면(=AI가 원문에 없는 걸 지어낸
+    정황) AI가 만든 질문을 버리고 안전한 fallback으로 대체한다. 새 LLM 호출을
+    추가하는 게 아니라 같은 호출 안에서 자체 검증하는 것(NFR-04 "정확히 3곳" 유지).
+    AI 호출 자체가 실패하거나(네트워크 오류 등) 응답을 못 알아들어도 마찬가지로
+    fallback으로 대체한다 - 질문 생성 실패가 전체 플로우를 중단시키면 안 되므로."""
     text = condition.get("evidence_text") or condition.get("description") or ""
     if not text:
         return "다음 우대조건에 해당하시나요? (상세 내용은 상품 설명 참고)"
+    fallback = f'다음 조건에 해당하시나요? "{text}"'
     try:
         client = _get_client()
         res = client.chat.completions.create(
@@ -125,13 +162,17 @@ def _build_question_ai(condition: dict) -> str:
                 {"role": "user", "content": text},
             ],
         )
-        question = (res.choices[0].message.content or "").strip()
-        if question:
+        content = _strip_code_fence(res.choices[0].message.content or "")
+        parsed = json.loads(content)
+        question = (parsed.get("question") or "").strip()
+        quote = (parsed.get("grounding_quote") or "").strip()
+        if not question or not quote:
+            return fallback
+        if _normalize(quote) in _normalize(text):
             return question
+        return fallback  # grounding_quote가 원문에 없음 - AI가 지어냈을 가능성
     except Exception:
-        pass
-    # AI 호출 실패 시 fallback: 원문을 그대로 인용해서라도 질문 형태를 유지
-    return f'다음 조건에 해당하시나요? "{text}"'
+        return fallback
 
 
 def build_question(condition: dict) -> str:
@@ -151,11 +192,15 @@ _NO_KEYWORDS = ("아니", "아뇨", "미충족", "해당없음", "해당 없음"
 _UNSURE_KEYWORDS = ("모르겠", "몰라", "글쎄", "잘 모름", "확실하지")
 
 _ANSWER_PARSE_PROMPT = (
-    "사용자의 자유 텍스트 답변을 boolean으로 해석해줘. "
-    "'예/네/응/충족/해당함' 계열이면 true, "
-    "'아니오/아니요/미충족/해당 안 됨' 계열이면 false, "
-    "'모르겠다/잘 모르겠어요'거나 답변이 애매해서 예/아니오를 확정할 수 없으면 반드시 null. "
-    "true / false / null 중 하나만, 다른 텍스트 설명 없이 정확히 그 단어만 출력해."
+    "사용자의 자유 텍스트 답변을 해석해줘. "
+    "'예/네/응/충족/해당함' 계열이면 result=true, "
+    "'아니오/아니요/미충족/해당 안 됨' 계열이면 result=false, "
+    "'모르겠다/잘 모르겠어요'거나 답변이 애매해서 예/아니오를 확정할 수 없으면 "
+    "result=null. confidence는 그 판단이 얼마나 명확한지 - 애매한 표현이거나 "
+    "문맥을 더 봐야 확신할 수 있으면 \"low\", 명백하면 \"high\".\n\n"
+    "반드시 아래 JSON 형식으로만 응답해. 코드블록(```) 없이, 설명 문장 없이, "
+    "순수 JSON 객체 하나만 출력해:\n"
+    '{"result": true, "confidence": "high"}'
 )
 
 
@@ -185,8 +230,11 @@ def _quick_keyword_match(raw_answer: str) -> Optional[bool]:
 
 
 def _parse_answer_ai(raw_answer: str) -> Optional[bool]:
-    """AI에게 자유텍스트를 boolean으로 해석시킨다. 응답이 true/false가 아니면(null
-    포함, 파싱 불가 포함) None을 반환 - 호출부에서 conservative_fallback()으로 처리."""
+    """AI에게 자유텍스트를 해석시킨다. AI 스스로의 확신도(confidence)도 같이 받아서,
+    confidence가 낮으면(=AI 자신도 애매하다고 판단한 경우) result가 true/false로
+    나왔어도 None으로 취급한다 - 호출부(parse_answer)가 None을
+    conservative_fallback()으로 보낸다. result가 null이거나 응답을 못 알아들어도
+    마찬가지로 None."""
     try:
         client = _get_client()
         res = client.chat.completions.create(
@@ -196,13 +244,15 @@ def _parse_answer_ai(raw_answer: str) -> Optional[bool]:
                 {"role": "user", "content": raw_answer},
             ],
         )
-        content = (res.choices[0].message.content or "").strip().lower()
-        content = re.sub(r"[^a-z]", "", content)  # 코드펜스/마침표 등 잡음 제거
-        if content == "true":
-            return True
-        if content == "false":
-            return False
-        return None  # "null" 또는 해석 불가한 응답
+        content = _strip_code_fence(res.choices[0].message.content or "")
+        parsed = json.loads(content)
+        result = parsed.get("result")
+        confidence = parsed.get("confidence")
+        if result not in (True, False):
+            return None  # null 또는 알 수 없는 값
+        if confidence != "high":
+            return None  # AI 스스로 애매하다고 판단 - 보수적으로 처리
+        return result
     except Exception:
         return None
 
