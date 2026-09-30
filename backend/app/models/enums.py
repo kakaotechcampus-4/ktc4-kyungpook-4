@@ -5,7 +5,7 @@ LLM 파싱 프롬프트나 API 검증도 이 목록을 그대로 가져다 쓴�
 목록을 늘리려면 마이그레이션이 필요하다 - 그게 의도다.
 """
 
-INSTITUTION_TYPES = ("은행", "저축은행", "신협")
+INSTITUTION_TYPES = ("은행", "저축은행", "신협", "새마을금고")
 PRODUCT_TYPES = ("예금", "적금", "예탁금")
 
 SOCIAL_PROVIDERS = ("GOOGLE", "KAKAO", "NAVER")
@@ -13,20 +13,18 @@ SOCIAL_CARE_CATEGORIES = ("다자녀", "한부모", "다문화", "신혼부부",
 
 # MATURITY = 만기일 지난 UserHolding 을 만기 처리하는 일배치.
 # 사용자가 앱에 안 들어와도 돌아야 하므로 배치가 필요하다.
-BATCH_TYPES = ("COLLECT", "CRAWL", "VERIFY", "PARSE", "MATURITY")
+BATCH_TYPES = ("COLLECT", "PARSE", "MATURITY")
 BATCH_STATUSES = ("RUNNING", "SUCCESS", "FAILED", "PARTIAL")
 
-OFFER_SOURCE_TYPES = ("지역은행공식", "커뮤니티")
-VERIFICATION_STATUSES = ("PENDING", "VERIFIED", "REJECTED")
-
-PRODUCT_SOURCES = ("OFFICIAL", "SPECIAL")
 JOIN_CHANNELS = ("비대면", "영업점", "전체")
 PARSE_STATUSES = ("PENDING", "PARSED", "FAILED")
 
 RATE_TYPES = ("단리", "복리")
 RESERVE_TYPES = ("해당없음", "정액적립식", "자유적립식")
 
-THRESHOLD_UNITS = ("KRW", "COUNT", "MONTH")
+# 산출물이 쓰는 단위 17종을 손실 없이 담기 위한 목록. 금액은 KRW(원)로, 기간은
+# MONTH(개월)로 환산해 넣고, 환산이 불가능한 축은 고유 단위를 그대로 둔다.
+THRESHOLD_UNITS = ("KRW", "COUNT", "MONTH", "WEEK", "DAY", "HOUR", "AGE", "SCORE", "STEP")
 CONDITION_VERIFY_STATUSES = ("EXACT", "MISSING", "EXCESS")
 CONFIDENCE_BADGES = ("확인됨", "검수대기")
 
@@ -36,8 +34,9 @@ CONFIDENCE_BADGES = ("확인됨", "검수대기")
 # 이 목록은 우리가 새로 지은 게 아니라 AI 파트가 이미 쓰고 있는 어휘를 그대로 받았다
 # (ai/scripts/extract_conditions_ai.py 프롬프트에 분류 카테고리로 박혀 있다).
 # 순서도 프롬프트와 같게 뒀다 - 한쪽이 바뀌면 diff 로 바로 보이게 하기 위해서다.
-# 실측: 2026-09-19 산출물 product_condition 7,068 건에서 이 9개 밖의 값은 0건.
-# 다만 '기타'가 3,622건(51%)이라, 매칭에 실제로 쓸 수 있는 건 절반뿐이다.
+# 2026-09-26 AI 파트가 '공제가입'·'연령조건' 두 개를 추가해 재추출했다(aab0efc).
+# 실측: 산출물 44,285 건에서 이 11개 밖의 값은 0건.
+# 다만 '기타'가 25,118건(56.7%)이라, 매칭에 실제로 쓸 수 있는 건 절반도 안 된다.
 CONDITION_TYPES = (
     "급여이체",
     "자동이체",
@@ -47,6 +46,8 @@ CONDITION_TYPES = (
     "공과금이체",
     "연금수령",
     "비대면가입",
+    "공제가입",
+    "연령조건",
     "기타",
 )
 

@@ -17,14 +17,11 @@ deposit_savingsbank_sample.json, saving_savingsbank_sample.json)
 - product.run_id: 이 스크립트에서는 채우지 않음(null) - batch_run 레코드는
   BE 임포트 단계에서 생성/연결한다고 가정
 - product_condition(우대조건): 은행 + 저축은행(finlife) 데이터의 spcl_cnd 텍스트를
-  AI로 파싱해서 채움. 검증(verification_status)은 만기별 실제 공시 우대폭
-  (intr_rate2-intr_rate)과 AI가 뽑은 조건 합계를 비교해서 MATCHED/MISMATCH/
-  UNVERIFIED/FAILED로 채움.
+  AI로 파싱해서 채움.
   [v3 추가] 새마을금고는 중앙 금융상품몰 상세설명(kfcc_central_conditions_raw.jsonl)
   원문을 같은 AI extraction 파이프라인으로 파싱해서, 상품명 기준으로 매칭되는 중앙
   공통상품 14개에만 채움(개별 금고 전용 상품은 카탈로그에 없어 매칭 안 됨 - 09-17
-  스코프 결정). 지점별 실측 우대폭이 없어 검증 기준값 자체가 없으므로 항상
-  verification_status=UNVERIFIED로 채워짐(정상 - 신뢰도 문제 아님).
+  스코프 결정).
   신협(cu.co.kr prefCondMemo)도 같은 파이프라인으로 연결함(0.0%p뿐인 빈 템플릿은 제외).
 
 산출물: out/institution.jsonl, out/product.jsonl, out/product_option.jsonl,
@@ -147,7 +144,7 @@ def add_product_option(product_id, period_months, rate_type, reserve_type, base_
 
 
 def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
-                           evidence_url, verification_status, confidence_badge,
+                           evidence_url,
                            apply_period_min=None, apply_period_max=None, exclusion_group=None,
                            threshold_value=None, threshold_unit=None):
     # [v9] threshold_value/threshold_unit은 원래 ERD 설계 때부터 있던 컬럼인데, AI 추출
@@ -169,8 +166,6 @@ def add_product_condition(product_id, condition_type, rate_bonus, evidence_text,
         "exclusion_group": exclusion_group,
         "evidence_text": evidence_text,
         "evidence_url": evidence_url,
-        "verification_status": verification_status,
-        "confidence_badge": confidence_badge,
     }
 
 
@@ -433,34 +428,6 @@ def process_kfcc(ai_cache):
 # ---------------------------------------------------------------------------
 # 3) 은행 / 저축은행 (금감원 finlife: deposit_*.json, saving_*.json)
 # ---------------------------------------------------------------------------
-# [v7 이전까지 썼던 방식 - 지금은 안 씀] condition_type을 단순 키워드 매칭으로 채우던
-# 로직. AI 도입 전 정규식 시절 잔재라서 정확도가 낮았음(예: "급여이체"라는 단어가
-# 없는데 실질적으로 급여이체 조건인 경우를 못 잡음). extract_conditions_ai.py의
-# ExtractionResult에 condition_type 필드가 추가되면서 AI가 직접 분류하도록 바뀜 -
-# attach_ai_conditions()가 이제 cond["condition_type"]을 그대로 씀.
-# 함수 자체는 참고용으로 남겨둠(다른 곳에서 쓰지 않음).
-CONDITION_KEYWORDS = [
-    ("급여이체", "급여이체"),
-    ("자동이체", "자동이체"),
-    ("첫거래", "신규고객"),
-    ("신규", "신규고객"),
-    ("카드", "카드실적"),
-    ("마케팅", "마케팅동의"),
-    ("공과금", "공과금이체"),
-    ("연금", "연금수령"),
-    ("비대면", "비대면가입"),
-    ("모바일", "비대면가입"),
-    ("인터넷", "비대면가입"),
-    ("앱", "비대면가입"),
-]
-
-
-def classify_condition_type(text: str) -> str:
-    for kw, label in CONDITION_KEYWORDS:
-        if kw in text:
-            return label
-    return "기타"
-
 
 def _period_bounds(cond):
     """AI가 뽑은 만기 적용범위(정확히 X개월 / X개월 이상 / X개월 이하 / X~Y개월)를
@@ -489,14 +456,10 @@ def load_kfcc_condition_index(ai_cache):
 def attach_ai_conditions_kfcc(condition_index, product_title, product_id) -> int:
     """중앙 카탈로그 상품명(product_title, 결제방식 접미사 붙기 전 원래 이름)으로
     load_kfcc_condition_index() 인덱스를 조회해 조건을 붙인다. 카탈로그에 없는 상품(개별
-    금고 전용 상품 등, 09-17 조사 기준 보류 대상)은 매칭 안 되어 0을 반환한다 - 정상.
-    verification_status는 kfcc 캐시 항목이 항상 opts=[]로 들어와서 UNVERIFIED로 고정됨
-    (중앙 카탈로그 레벨엔 지점별 실측 우대폭이 없어 검증 기준값 자체가 없기 때문 - 정상)."""
+    금고 전용 상품 등, 09-17 조사 기준 보류 대상)은 매칭 안 되어 0을 반환한다 - 정상."""
     row = condition_index.get(product_title)
     if not row:
         return 0
-    status = row["verification_status"]
-    confidence_badge = {"MATCHED": "HIGH", "MISMATCH": "LOW"}.get(status, "UNVERIFIED")
     count = 0
     for cond in row["conditions"]:
         apply_period_min, apply_period_max = _period_bounds(cond)
@@ -506,8 +469,6 @@ def attach_ai_conditions_kfcc(condition_index, product_title, product_id) -> int
             rate_bonus=cond.get("bonus_rate"),
             evidence_text=cond["description"],
             evidence_url=row.get("evidence_url"),
-            verification_status=status,
-            confidence_badge=confidence_badge,
             apply_period_min=apply_period_min,
             apply_period_max=apply_period_max,
             exclusion_group=cond.get("group_id"),
@@ -526,8 +487,6 @@ def attach_ai_conditions(ai_cache, filename, fin_co_no, fin_prdt_cd, product_id)
     row = ai_cache.get(key)
     if not row or row.get("error"):
         return 0
-    status = row["verification_status"]
-    confidence_badge = {"MATCHED": "HIGH", "MISMATCH": "LOW"}.get(status, status)
     count = 0
     for cond in row["conditions"]:
         apply_period_min, apply_period_max = _period_bounds(cond)
@@ -537,8 +496,6 @@ def attach_ai_conditions(ai_cache, filename, fin_co_no, fin_prdt_cd, product_id)
             rate_bonus=cond.get("bonus_rate"),
             evidence_text=cond["description"],
             evidence_url=row.get("evidence_url"),
-            verification_status=status,
-            confidence_badge=confidence_badge,
             apply_period_min=apply_period_min,
             apply_period_max=apply_period_max,
             exclusion_group=cond.get("group_id"),
@@ -710,16 +667,16 @@ def main():
         n_base, n_opt, n_cond, n_missing_opt = process_finlife(filename, itype, ptag, parse_cond, ai_cache)
         finlife_summary.append((filename, (n_base, n_opt, n_cond, n_missing_opt)))
 
-    with (OUT / "institution.jsonl").open("w", encoding="utf-8") as f:
+    with (OUT / "institution.jsonl").open("w", encoding="utf-8", newline="\n") as f:
         for row in institutions.values():
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
-    with (OUT / "product.jsonl").open("w", encoding="utf-8") as f:
+    with (OUT / "product.jsonl").open("w", encoding="utf-8", newline="\n") as f:
         for row in products.values():
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
-    with (OUT / "product_option.jsonl").open("w", encoding="utf-8") as f:
+    with (OUT / "product_option.jsonl").open("w", encoding="utf-8", newline="\n") as f:
         for row in product_options.values():
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
-    with (OUT / "product_condition.jsonl").open("w", encoding="utf-8") as f:
+    with (OUT / "product_condition.jsonl").open("w", encoding="utf-8", newline="\n") as f:
         for row in product_conditions.values():
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
