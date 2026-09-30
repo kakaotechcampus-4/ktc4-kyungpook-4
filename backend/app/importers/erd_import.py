@@ -368,8 +368,10 @@ async def _upsert(session, model, rows: list[dict], pk: str, chunk: int = 1000) 
 
 async def run_import(erd_dir: Path, dry_run: bool = False) -> Report:
     report = Report()
-    src = {name: load_jsonl(erd_dir / f"{name}.jsonl") for name in
-           ("institution", "product", "product_option", "product_condition")}
+    src = {
+        name: load_jsonl(erd_dir / f"{name}.jsonl")
+        for name in ("institution", "product", "product_option", "product_condition")
+    }
     report.notes.append("산출물 " + " / ".join(f"{k} {len(v):,}" for k, v in src.items()))
     tables = build_rows(src, report)
 
