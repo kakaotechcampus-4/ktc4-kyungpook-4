@@ -96,6 +96,7 @@ build_erd_tables.py가 이 값을 그대로 product_condition에 채워넣음(�
   python scripts\\extract_conditions_ai.py --fresh              (전체를 새 스키마로 재실행)
 """
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -105,6 +106,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from src.config import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
 from src.schemas.extraction import ExtractionResult
+from src.schemas.condition_types import CONDITION_TYPE_DEFINITIONS, DEFAULT_CONDITION_TYPE
 
 from openai import OpenAI
 
@@ -125,6 +127,23 @@ FINLIFE_LIKE_SOURCES = [
     ("deposit_savingsbank_sample.json", "저축은행", "https://finlife.fss.or.kr"),
     ("saving_savingsbank_sample.json", "저축은행", "https://finlife.fss.or.kr"),
 ]
+
+_CONDITION_TYPES_STR = "  " + ", ".join(f"'{ct}'" for ct, _ in CONDITION_TYPE_DEFINITIONS) + "\n"
+_CONDITION_TYPE_HINTS_STR = "".join(
+    f"- '{ct}': {desc}\n"
+    for ct, desc in CONDITION_TYPE_DEFINITIONS
+    if desc is not None
+)
+_NON_DEFAULT_COUNT = sum(1 for ct, _ in CONDITION_TYPE_DEFINITIONS if ct != DEFAULT_CONDITION_TYPE)
+_CONDITION_TYPE_PROMPT_SECTION = (
+    "condition_type(중요): 각 조건이 어떤 종류인지, 아래 카테고리 중 하나로 반드시 "
+    "분류해서 채워(정확히 이 문자열 그대로 써야 해):\n"
+    + _CONDITION_TYPES_STR
+    + _CONDITION_TYPE_HINTS_STR
+    + f"위 {_NON_DEFAULT_COUNT}개 중 어디에도 명확히 해당 안 되면 '{DEFAULT_CONDITION_TYPE}'를 써. "
+    "description의 표면적인 단어가 아니라 그 조건의 실제 의미로 판단해"
+    "(예: '급여통장 실적'은 겉보기엔 '통장'이지만 실제로는 '급여이체' 카테고리).\n\n"
+)
 
 SYSTEM_PROMPT = (
     "너는 예적금 상품의 우대조건 원문을 분석하는 어시스턴트야. "
@@ -162,15 +181,7 @@ SYSTEM_PROMPT = (
     "상한이 명시돼 있으면 그 값을 여기에 채워(%p 단위, 예: 0.7). 이런 전체 상한 "
     "문구가 원문에 아예 없으면 null로 비워둬. 이건 개별 조건(conditions 배열의 "
     "각 항목)이 아니라 응답 전체에서 딱 한 번만 채우는 값이야.\n\n"
-    "condition_type(중요): 각 조건이 어떤 종류인지, 아래 카테고리 중 하나로 반드시 "
-    "분류해서 채워(정확히 이 문자열 그대로 써야 해):\n"
-    "  '급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', "
-    "'연금수령', '비대면가입', '공제가입', '연령조건', '기타'\n"
-    "- '공제가입': 신협공제 등 공제 상품 가입 실적 조건\n"
-    "- '연령조건': 가입 연령 기준 충족 조건 (청년/어린이/시니어 등 나이 관련)\n"
-    "위 10개 중 어디에도 명확히 해당 안 되면 '기타'를 써. description의 표면적인 "
-    "단어가 아니라 그 조건의 실제 의미로 판단해(예: '급여통장 실적'은 겉보기엔 "
-    "'통장'이지만 실제로는 '급여이체' 카테고리).\n\n"
+    + _CONDITION_TYPE_PROMPT_SECTION +
     "bonus_rate(중요): 그 조건 하나에 대한 구체적인 %p 값이 원문에 명확히 있을 "
     "때만 채워. 다음처럼 원문만 봐서는 구체적인 값을 알 수 없는 경우엔 절대 "
     "숫자를 지어내지 말고 bonus_rate를 null로 둬:\n"
@@ -200,6 +211,8 @@ SYSTEM_PROMPT = (
     '"min_term_months": null, "max_term_months": null, "group_id": null, '
     '"threshold_value": null, "threshold_unit": null}]}'
 )
+
+PROMPT_HASH = hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest()[:8]
 
 CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
 
@@ -260,6 +273,7 @@ def load_cache():
 
 
 def append_cache(row):
+    row = {**row, "prompt_hash": PROMPT_HASH, "model": OPENAI_MODEL}
     with CACHE_PATH.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 

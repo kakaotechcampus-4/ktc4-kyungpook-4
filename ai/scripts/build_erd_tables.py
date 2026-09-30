@@ -433,34 +433,6 @@ def process_kfcc(ai_cache):
 # ---------------------------------------------------------------------------
 # 3) 은행 / 저축은행 (금감원 finlife: deposit_*.json, saving_*.json)
 # ---------------------------------------------------------------------------
-# [v7 이전까지 썼던 방식 - 지금은 안 씀] condition_type을 단순 키워드 매칭으로 채우던
-# 로직. AI 도입 전 정규식 시절 잔재라서 정확도가 낮았음(예: "급여이체"라는 단어가
-# 없는데 실질적으로 급여이체 조건인 경우를 못 잡음). extract_conditions_ai.py의
-# ExtractionResult에 condition_type 필드가 추가되면서 AI가 직접 분류하도록 바뀜 -
-# attach_ai_conditions()가 이제 cond["condition_type"]을 그대로 씀.
-# 함수 자체는 참고용으로 남겨둠(다른 곳에서 쓰지 않음).
-CONDITION_KEYWORDS = [
-    ("급여이체", "급여이체"),
-    ("자동이체", "자동이체"),
-    ("첫거래", "신규고객"),
-    ("신규", "신규고객"),
-    ("카드", "카드실적"),
-    ("마케팅", "마케팅동의"),
-    ("공과금", "공과금이체"),
-    ("연금", "연금수령"),
-    ("비대면", "비대면가입"),
-    ("모바일", "비대면가입"),
-    ("인터넷", "비대면가입"),
-    ("앱", "비대면가입"),
-]
-
-
-def classify_condition_type(text: str) -> str:
-    for kw, label in CONDITION_KEYWORDS:
-        if kw in text:
-            return label
-    return "기타"
-
 
 def _period_bounds(cond):
     """AI가 뽑은 만기 적용범위(정확히 X개월 / X개월 이상 / X개월 이하 / X~Y개월)를

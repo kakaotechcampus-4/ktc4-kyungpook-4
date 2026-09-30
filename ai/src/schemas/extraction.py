@@ -2,6 +2,8 @@
 from typing import List, Optional
 from pydantic import BaseModel
 
+from .condition_types import DEFAULT_CONDITION_TYPE
+
 
 class PreferentialCondition(BaseModel):
     """개별 우대조건 하나."""
@@ -18,7 +20,7 @@ class PreferentialCondition(BaseModel):
     # 정규식 시절의 잔재라서 AI가 뽑은 다른 값들(우대금리/만기/group_id)에 비해 정확도가
     # 떨어짐 - AI가 description을 보고 직접 분류하도록 여기로 옮김. 값은 미리 정해둔
     # 카테고리 중 하나(프롬프트에 목록 있음), 안 맞으면 "기타".
-    condition_type: str = "기타"
+    condition_type: str = DEFAULT_CONDITION_TYPE
     applicable_term_months: Optional[int] = None  # 정확히 이 만기(개월)에만 적용하면 그 값
     min_term_months: Optional[int] = None  # "X개월 이상"처럼 하한 조건이면 그 값(해당 만기 이상이면 다 적용)
     max_term_months: Optional[int] = None  # "X개월 이하/까지"처럼 상한 조건이면 그 값
