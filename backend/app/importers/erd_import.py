@@ -271,10 +271,11 @@ def build_rows(src: dict[str, list[dict]], report: Report) -> dict[str, list[dic
             report.dropped["product_option (상품을 못 찾음)"] += 1
             continue
         pid, channel = target
-        # 기간이 0 인 행은 상품이 아니라 금리표의 한 구간이다(새마을금고 금리표의 '1개월 미만' 구간으로 보임).
+        # 기간이 0 인 행은 상품이 아니라 금리표의 한 구간이다. 새마을금고 금리표는 '0개월 이상 / 3개월 이상
+        # / 6개월 이상 …' 처럼 구간 시작으로 적혀 있어서, 0 은 '예치기간 0~3개월 미만' 구간이다(AI 파트 확인).
         # 실측 1,485건 = 상품 1,485개에서 1행씩(Block예금 906 / 일일자유적금 579)이고, 이 상품들은
         # 전부 3·6·12개월 같은 정상 기간 행을 같이 갖고 있다. 그래서 이 행만 버려도 상품은 빠지지 않고
-        # 나머지 기간 옵션으로 추천 대상에 남는다. 추천은 기간을 정해서 고르므로 0개월 금리는 쓸 일이 없다.
+        # 나머지 기간 옵션으로 추천 대상에 남는다. 추천은 가입 기간을 정해서 고르므로 0개월 구간은 쓸 일이 없다.
         if not isinstance(row.get("period_months"), int) or row["period_months"] <= 0:
             report.dropped["product_option.period_months (0개월 구간 행만 제외 - 상품은 유지)"] += 1
             continue
