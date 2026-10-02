@@ -18,12 +18,15 @@ class OnboardingInput {
   final String marketingConsent;
   final String canInstallBankApp;
   final List<String> taxExemptEligibility;
-  final String existingTaxExemptAmountText;
-  final bool existingTaxExemptAmountUnknown;
   final List<String> specialHouseholdTypes;
 
   // Step 3
   final String cooperativeMembershipStatus;
+  final List<String> cooperativeJoinChoices;
+  final String mutualFinanceTaxExemptEligible;
+  final String mutualFinanceExistingAmountText;
+  final bool mutualFinanceExistingAmountUnknown;
+  final String additionalNote;
 
   const OnboardingInput({
     this.lumpSum = 0,
@@ -43,10 +46,13 @@ class OnboardingInput {
     this.marketingConsent = '',
     this.canInstallBankApp = '',
     this.taxExemptEligibility = const [],
-    this.existingTaxExemptAmountText = '',
-    this.existingTaxExemptAmountUnknown = false,
     this.specialHouseholdTypes = const [],
     this.cooperativeMembershipStatus = '',
+    this.cooperativeJoinChoices = const [],
+    this.mutualFinanceTaxExemptEligible = '',
+    this.mutualFinanceExistingAmountText = '',
+    this.mutualFinanceExistingAmountUnknown = false,
+    this.additionalNote = '',
   });
 
   OnboardingInput copyWith({
@@ -67,10 +73,13 @@ class OnboardingInput {
     String? marketingConsent,
     String? canInstallBankApp,
     List<String>? taxExemptEligibility,
-    String? existingTaxExemptAmountText,
-    bool? existingTaxExemptAmountUnknown,
     List<String>? specialHouseholdTypes,
     String? cooperativeMembershipStatus,
+    List<String>? cooperativeJoinChoices,
+    String? mutualFinanceTaxExemptEligible,
+    String? mutualFinanceExistingAmountText,
+    bool? mutualFinanceExistingAmountUnknown,
+    String? additionalNote,
   }) {
     return OnboardingInput(
       lumpSum: lumpSum ?? this.lumpSum,
@@ -92,13 +101,17 @@ class OnboardingInput {
       marketingConsent: marketingConsent ?? this.marketingConsent,
       canInstallBankApp: canInstallBankApp ?? this.canInstallBankApp,
       taxExemptEligibility: taxExemptEligibility ?? this.taxExemptEligibility,
-      existingTaxExemptAmountText:
-          existingTaxExemptAmountText ?? this.existingTaxExemptAmountText,
-      existingTaxExemptAmountUnknown:
-          existingTaxExemptAmountUnknown ?? this.existingTaxExemptAmountUnknown,
       specialHouseholdTypes: specialHouseholdTypes ?? this.specialHouseholdTypes,
       cooperativeMembershipStatus:
           cooperativeMembershipStatus ?? this.cooperativeMembershipStatus,
+      cooperativeJoinChoices: cooperativeJoinChoices ?? this.cooperativeJoinChoices,
+      mutualFinanceTaxExemptEligible:
+          mutualFinanceTaxExemptEligible ?? this.mutualFinanceTaxExemptEligible,
+      mutualFinanceExistingAmountText: mutualFinanceExistingAmountText ??
+          this.mutualFinanceExistingAmountText,
+      mutualFinanceExistingAmountUnknown: mutualFinanceExistingAmountUnknown ??
+          this.mutualFinanceExistingAmountUnknown,
+      additionalNote: additionalNote ?? this.additionalNote,
     );
   }
 
@@ -117,6 +130,5 @@ class OnboardingInput {
       marketingConsent.isNotEmpty &&
       canInstallBankApp.isNotEmpty &&
       taxExemptEligibility.isNotEmpty &&
-      (existingTaxExemptAmountUnknown || existingTaxExemptAmountText.isNotEmpty) &&
       specialHouseholdTypes.isNotEmpty;
 }
