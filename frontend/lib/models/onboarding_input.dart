@@ -43,7 +43,10 @@ class OnboardingInput {
     this.marketingConsent = '',
     this.canInstallBankApp = '',
     this.taxExemptEligibility = const [],
-    this.existingTaxExemptAmountText = '',
+    // 입력칸의 hintText가 '0'이라 아무것도 안 건드려도 이미 0인 것처럼 보인다.
+    // 기본값을 실제로 '0'으로 둬서, 비과세종합저축 사용액이 없는(0원인) 사용자가
+    // 아무것도 입력하지 않아도 다음 단계로 넘어갈 수 있게 한다.
+    this.existingTaxExemptAmountText = '0',
     this.existingTaxExemptAmountUnknown = false,
     this.specialHouseholdTypes = const [],
     this.cooperativeMembershipStatus = '',

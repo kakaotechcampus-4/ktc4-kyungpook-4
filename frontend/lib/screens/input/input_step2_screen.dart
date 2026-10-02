@@ -345,7 +345,9 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                         keyboardType: TextInputType.number,
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         textAlign: TextAlign.right,
-                        enabled: !input.existingTaxExemptAmountUnknown,
+                        // "잘 모르겠어요"를 선택해도 막아두지 않는다 - 잘못 눌렀을 때
+                        // 바로 숫자를 다시 입력할 수 있어야 한다. 입력하면
+                        // updateExistingTaxExemptAmountText가 "모르겠어요" 선택을 자동으로 푼다.
                         decoration: InputDecoration(
                           hintText: '0',
                           filled: true,
