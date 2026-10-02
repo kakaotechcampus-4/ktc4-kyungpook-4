@@ -17,8 +17,7 @@ product_condition(우대조건)을 정규식이 아니라 실제 Claude Sonnet 5
 1. 소스 파일들을 읽어서, base 상품(fin_co_no+fin_prdt_cd)별로 spcl_cnd 원문을 모은다.
 2. 원문이 있는 상품마다 Claude Sonnet 5를 호출해서 구조화된 조건 리스트
    (설명 + %p + 적용 만기)로 뽑는다. (src/schemas/extraction.py의 ExtractionResult 그대로 재사용)
-3. 실제 공시된 만기별 우대폭(intr_rate2 - intr_rate)이랑 비교해서 검증(G3)한다.
-4. 이미 처리한 상품은 캐시 파일(output/ai_condition_cache.jsonl)에 남겨서, 중간에
+3. 이미 처리한 상품은 캐시 파일(output/ai_condition_cache.jsonl)에 남겨서, 중간에
    끊기거나 재실행해도 같은 상품을 또 API 호출하지 않는다(비용/시간 절약, 이어서 실행 가능).
 
 [v3 변경사항] 285건 실제로 돌려서 MISMATCH 샘플을 까본 결과, AI가 뽑은 %p 값 자체는
@@ -91,11 +90,20 @@ build_erd_tables.py가 이 값을 그대로 product_condition에 채워넣음(�
 수정 완료, ERD 테이블 구조 자체는 안 바뀜 - 원래 있던 빈 컬럼을 채우는 것뿐).
 스키마 변경이라 --fresh로 다시 뽑아야 반영됨.
 
+[v10 변경사항] 만기별 실제 공시 우대폭과 AI 추출 합계를 비교하던 수치 검증
+(verify_against_options/compute_extracted_total/condition_applies, verification_status/
+confidence_badge 필드)을 완전히 제거함. 이 파이프라인은 커뮤니티/블로그 등 비공식
+소스를 긁어오는 게 아니라 금감원 공시(finlife)/신협/새마을금고 공식 데이터를 그대로
+쓰기 때문에, 원문 자체의 신뢰도를 AI가 재검증할 필요가 낮다고 판단(2026-09-28 팀
+결정). BE ERD에서도 product_condition의 verification_status/confidence_badge
+컬럼을 이미 제거함(관련 커밋 aab0efc). AI 개입 범위(질문 생성/자유텍스트 답변
+해석)의 신뢰 경계는 별도로 ai/scripts/condition_qa.py에 정리함.
 실행:
   python scripts\\extract_conditions_ai.py --limit 20 --fresh   (테스트로 20건만 새로)
   python scripts\\extract_conditions_ai.py --fresh              (전체를 새 스키마로 재실행)
 """
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -105,6 +113,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from src.config import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
 from src.schemas.extraction import ExtractionResult
+from src.schemas.condition_types import CONDITION_TYPE_DEFINITIONS, DEFAULT_CONDITION_TYPE
 
 from openai import OpenAI
 
@@ -112,9 +121,7 @@ FIXTURES = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 CACHE_PATH = Path(__file__).resolve().parent.parent / "output" / "ai_condition_cache.jsonl"
 CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-TERM_RE = re.compile(r"(\d+)")
 EMPTY_SPCL_CND = {"없음", "해당사항 없음", "해당없음", "우대금리 없음", ""}
-BONUS_TOLERANCE = 0.05  # %p, 이 이내 차이는 "일치"로 봄
 
 # (파일명, institution_type, evidence_url) - spcl_cnd(자유텍스트 우대조건) + optionList(intr_rate/intr_rate2)
 # 구조를 가진 소스만 여기 등록. 신협/새마을금고는 지금 가진 파일에 이 구조가 없어서 비어있음 -
@@ -125,6 +132,23 @@ FINLIFE_LIKE_SOURCES = [
     ("deposit_savingsbank_sample.json", "저축은행", "https://finlife.fss.or.kr"),
     ("saving_savingsbank_sample.json", "저축은행", "https://finlife.fss.or.kr"),
 ]
+
+_CONDITION_TYPES_STR = "  " + ", ".join(f"'{ct}'" for ct, _ in CONDITION_TYPE_DEFINITIONS) + "\n"
+_CONDITION_TYPE_HINTS_STR = "".join(
+    f"- '{ct}': {desc}\n"
+    for ct, desc in CONDITION_TYPE_DEFINITIONS
+    if desc is not None
+)
+_NON_DEFAULT_COUNT = sum(1 for ct, _ in CONDITION_TYPE_DEFINITIONS if ct != DEFAULT_CONDITION_TYPE)
+_CONDITION_TYPE_PROMPT_SECTION = (
+    "condition_type(중요): 각 조건이 어떤 종류인지, 아래 카테고리 중 하나로 반드시 "
+    "분류해서 채워(정확히 이 문자열 그대로 써야 해):\n"
+    + _CONDITION_TYPES_STR
+    + _CONDITION_TYPE_HINTS_STR
+    + f"위 {_NON_DEFAULT_COUNT}개 중 어디에도 명확히 해당 안 되면 '{DEFAULT_CONDITION_TYPE}'를 써. "
+    "description의 표면적인 단어가 아니라 그 조건의 실제 의미로 판단해"
+    "(예: '급여통장 실적'은 겉보기엔 '통장'이지만 실제로는 '급여이체' 카테고리).\n\n"
+)
 
 SYSTEM_PROMPT = (
     "너는 예적금 상품의 우대조건 원문을 분석하는 어시스턴트야. "
@@ -162,15 +186,7 @@ SYSTEM_PROMPT = (
     "상한이 명시돼 있으면 그 값을 여기에 채워(%p 단위, 예: 0.7). 이런 전체 상한 "
     "문구가 원문에 아예 없으면 null로 비워둬. 이건 개별 조건(conditions 배열의 "
     "각 항목)이 아니라 응답 전체에서 딱 한 번만 채우는 값이야.\n\n"
-    "condition_type(중요): 각 조건이 어떤 종류인지, 아래 카테고리 중 하나로 반드시 "
-    "분류해서 채워(정확히 이 문자열 그대로 써야 해):\n"
-    "  '급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', "
-    "'연금수령', '비대면가입', '공제가입', '연령조건', '기타'\n"
-    "- '공제가입': 신협공제 등 공제 상품 가입 실적 조건\n"
-    "- '연령조건': 가입 연령 기준 충족 조건 (청년/어린이/시니어 등 나이 관련)\n"
-    "위 10개 중 어디에도 명확히 해당 안 되면 '기타'를 써. description의 표면적인 "
-    "단어가 아니라 그 조건의 실제 의미로 판단해(예: '급여통장 실적'은 겉보기엔 "
-    "'통장'이지만 실제로는 '급여이체' 카테고리).\n\n"
+    + _CONDITION_TYPE_PROMPT_SECTION +
     "bonus_rate(중요): 그 조건 하나에 대한 구체적인 %p 값이 원문에 명확히 있을 "
     "때만 채워. 다음처럼 원문만 봐서는 구체적인 값을 알 수 없는 경우엔 절대 "
     "숫자를 지어내지 말고 bonus_rate를 null로 둬:\n"
@@ -200,6 +216,8 @@ SYSTEM_PROMPT = (
     '"min_term_months": null, "max_term_months": null, "group_id": null, '
     '"threshold_value": null, "threshold_unit": null}]}'
 )
+
+PROMPT_HASH = hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest()[:8]
 
 CODE_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
 
@@ -233,12 +251,6 @@ def _find_valid_result(node, depth=0):
     return None
 
 
-def parse_term_months(s):
-    if s is None:
-        return None
-    m = TERM_RE.search(str(s))
-    return int(m.group(1)) if m else None
-
 
 def load_cache():
     # [수정] 실패(error 있음)했던 건 "이미 처리됨"으로 치지 않는다 - 그래야 파싱 버그를
@@ -260,84 +272,10 @@ def load_cache():
 
 
 def append_cache(row):
+    row = {**row, "prompt_hash": PROMPT_HASH, "model": OPENAI_MODEL}
     with CACHE_PATH.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-
-def condition_applies(cond, term_months):
-    """[수정] 원래는 '정확히 X개월' / 'X개월 이상' 두 가지만 표현할 수 있어서,
-    "3~5개월"처럼 범위로 된 조건이 "3개월 이상 전부"로 잘못 확장 적용되는 문제가 있었음
-    (실제 285건 돌려보고 MISMATCH 샘플 까보다가 발견). max_term_months(상한)를 추가해서
-    범위/미만 조건도 정확히 표현하도록 고침."""
-    exact = cond.get("applicable_term_months")
-    lo = cond.get("min_term_months")
-    hi = cond.get("max_term_months")
-    if term_months is None:
-        return exact is None and lo is None and hi is None
-    if exact is not None:
-        return exact == term_months
-    if lo is not None and term_months < lo:
-        return False
-    if hi is not None and term_months > hi:
-        return False
-    return True  # 만기 제한이 없는 조건 = 모든 만기에 적용
-
-
-def compute_extracted_total(conditions, term_months, overall_cap=None):
-    """[v4] group_id가 같은 조건들은 서로 대체 관계(하나만 인정)라서 그룹
-    안에서는 최댓값만 세고, 그룹이 없는 조건들끼리, 그리고 그룹별 최댓값끼리는 더한다.
-    (원래는 다 더하기만 해서 "①②③ 중 하나만 인정" 같은 경우 실제보다 훨씬 크게 계산됨)
-    [v5 추가] overall_cap(원문에 명시된 전체 상한, 예: "최고우대금리:0.7%")이 있으면
-    그 값을 절대 넘지 않도록 min()을 씌운다.
-    [v8 추가] bonus_rate가 null인 조건(원문에 그 조건 하나만의 구체적 %가 없는 경우 -
-    외부 코드/쿠폰 의존, 고객 속성 의존, 전체 범위만 있고 개별 분배가 없는 경우)은
-    0으로 취급해서 합계에 기여하지 않는다 - 이런 조건은 애초에 이 만기별 공시금리
-    비교 방식으로는 정량 검증이 불가능한 게 정상이고(v5 문서 참고), description/
-    condition_type은 그대로 저장되니 나중에 챗봇/추천엔진이 활용하면 된다."""
-    applicable = [c for c in conditions if condition_applies(c, term_months)]
-    groups = {}
-    ungrouped_total = 0.0
-    for c in applicable:
-        rate = c.get("bonus_rate") or 0.0
-        gid = c.get("group_id")
-        if gid:
-            groups.setdefault(gid, []).append(rate)
-        else:
-            ungrouped_total += rate
-    total = ungrouped_total + sum(max(vals) for vals in groups.values())
-    if overall_cap is not None:
-        total = min(total, overall_cap)
-    return total
-
-
-def verify_against_options(conditions, opts, overall_cap=None):
-    """만기별 실제 공시 우대폭(intr_rate2-intr_rate)과 AI가 뽑은 조건 합계를 비교.
-    [v6 수정] overall_cap을 무조건 min()으로 강제하면, 원문에 "최고 X%p"라고 적힌
-    헤드라인이 실제로는 (24개월만 0.85%p처럼) 특정 만기의 예외를 반영 안 한 값이라서
-    오히려 맞는 계산을 깨버리는 경우가 있었음(실제 20건 테스트에서 발견). 그래서
-    "상한 적용 전 합계 / 적용 후 합계" 둘 다 계산해서 둘 중 하나라도 공시값과
-    맞으면 MATCHED로 인정하도록 완화함 - 상한이 필요한 경우(합쳐서 상한을 넘는 걸
-    막아야 하는 경우)도, 상한이 오히려 틀리는 경우(특정 만기가 상한 이상으로 나오는
-    경우)도 둘 다 커버됨."""
-    checked = 0
-    mismatched = 0
-    for opt in opts:
-        base_rate = opt.get("intr_rate")
-        max_rate = opt.get("intr_rate2")
-        if base_rate is None or max_rate is None:
-            continue
-        disclosed_bonus = round(max_rate - base_rate, 4)
-        term_months = parse_term_months(opt.get("save_trm"))
-        nocap_total = compute_extracted_total(conditions, term_months, None)
-        capped_total = compute_extracted_total(conditions, term_months, overall_cap)
-        checked += 1
-        matches_nocap = abs(disclosed_bonus - nocap_total) <= BONUS_TOLERANCE
-        matches_capped = abs(disclosed_bonus - capped_total) <= BONUS_TOLERANCE
-        if not (matches_nocap or matches_capped):
-            mismatched += 1
-    if checked == 0:
-        return "UNVERIFIED"
-    return "MISMATCH" if mismatched else "MATCHED"
 
 
 def call_ai(client, spcl_cnd_text, retries=3):
@@ -385,11 +323,6 @@ def gather_targets():
         data = json.loads(path.read_text(encoding="utf-8"))
         result = data.get("result", data)
         base_list = result.get("baseList") or []
-        option_list = result.get("optionList") or []
-        options_by_product = {}
-        for opt in option_list:
-            k = (opt.get("fin_co_no"), opt.get("fin_prdt_cd"))
-            options_by_product.setdefault(k, []).append(opt)
 
         for base in base_list:
             spcl_cnd = (base.get("spcl_cnd") or "").strip()
@@ -398,11 +331,10 @@ def gather_targets():
             fin_co_no = base.get("fin_co_no")
             fin_prdt_cd = base.get("fin_prdt_cd")
             key = f"{filename}:{fin_co_no}:{fin_prdt_cd}"
-            opts = options_by_product.get((fin_co_no, fin_prdt_cd), [])
             targets.append({
                 "key": key, "filename": filename, "institution_type": institution_type,
                 "evidence_url": evidence_url, "fin_co_no": fin_co_no, "fin_prdt_cd": fin_prdt_cd,
-                "spcl_cnd": spcl_cnd, "opts": opts,
+                "spcl_cnd": spcl_cnd,
             })
     return targets
 
@@ -417,9 +349,7 @@ def gather_cu_targets():
     지점마다 같은 문구가 반복되고 대부분 실제 값이 맨 0.0%p로 채워진 빈 템플릿이라,
     0이 아닌 %p가 하나라도 있는 것만 골라서 보낸다. 같은 상품(cuIngno+stockCode+tretYn)이
     지점/만기 개수만큼 같은 문구로 반복되므로 상품 단위로 중복 제거해서 한 번만 호출한다
-    (비용 절약). opts는 항상 빈 리스트로 둔다 - 검증(verification_status)은 BE가 임포트
-    시점에 직접 계산하겠다고 했으니(ai-data-requirements.md), 여기서 신협 고유 필드
-    (baseRate/highRate)를 억지로 끼워맞출 필요는 없다."""
+    (비용 절약)."""
     targets = []
     seen = set()
     if not CU_JSONL_PATH.exists():
@@ -450,7 +380,6 @@ def gather_cu_targets():
                 "fin_co_no": cu_ingno,
                 "fin_prdt_cd": fin_prdt_cd,
                 "spcl_cnd": memo,
-                "opts": [],
             })
     return targets
 
@@ -461,8 +390,6 @@ KFCC_FIXTURE = FIXTURES / "kfcc_central_conditions_raw.jsonl"
 def gather_kfcc_targets():
     # 새마을금고 중앙 카탈로그 원문(fetch_kfcc_central_conditions.py가 만든 raw fixture)을
     # 읽어서 gather_targets()와 동일한 shape의 target 딕셔너리로 변환한다.
-    # opts는 항상 빈 리스트 -> verify_against_options가 자동으로 UNVERIFIED 반환(정상 -
-    # 새마을금고는 개별금고마다 금리가 달라 중앙 카탈로그 레벨에서 검증 기준값 자체가 없음).
     targets = []
     if not KFCC_FIXTURE.exists():
         print(f"[{KFCC_FIXTURE.name}] 파일 없음 - 스킵")
@@ -487,7 +414,6 @@ def gather_kfcc_targets():
                 "fin_co_no": None,
                 "fin_prdt_cd": product_name,
                 "spcl_cnd": spcl_cnd,
-                "opts": [],
             })
     return targets
 
@@ -516,43 +442,38 @@ def main():
 
     n_called = 0
     n_cached_reused = 0
+    n_changed = 0
     n_failed = 0
-    n_matched = 0
-    n_mismatch = 0
-    n_unverified = 0
-
     try:
         for t in targets:
             key = t["key"]
-            if key in cache:
+            cached_row = cache.get(key)
+            # 캐시에 key가 있어도 그때 저장된 spcl_cnd(원문)와 지금 값이 다르면
+            # "재추출 필요"로 본다 - 은행/조합이 우대조건 문구를 바꿨거나 데이터가
+            # 갱신된 경우를 자동으로 잡기 위함. 이러면 --fresh(전체 재추출) 없이
+            # fetch_*.py로 데이터를 새로 받아올 때마다 이 스크립트를 그냥 돌리기만
+            # 해도 신규/변경 상품이 자동으로 반영된다. --fresh는 이제 카테고리
+            # 자체를 새로 추가할 때 전용으로 쓰면 된다.
+            if cached_row is not None and cached_row.get("spcl_cnd") == t["spcl_cnd"]:
                 n_cached_reused += 1
-                status = cache[key]["verification_status"]
             else:
+                if cached_row is not None:
+                    n_changed += 1
                 conditions, overall_cap, error = call_ai(client, t["spcl_cnd"])
                 n_called += 1
                 if error:
-                    status = "FAILED"
                     n_failed += 1
                     conditions = []
-                else:
-                    status = verify_against_options(conditions, t["opts"], overall_cap)
                 row = {
                     "key": key, "filename": t["filename"], "institution_type": t["institution_type"],
                     "evidence_url": t["evidence_url"], "fin_co_no": t["fin_co_no"],
                     "fin_prdt_cd": t["fin_prdt_cd"], "spcl_cnd": t["spcl_cnd"],
                     "conditions": conditions, "overall_max_bonus_rate": overall_cap,
-                    "verification_status": status, "error": error,
+                    "error": error,
                 }
                 append_cache(row)
                 cache[key] = row
                 time.sleep(args.sleep)
-
-            if status == "MATCHED":
-                n_matched += 1
-            elif status == "MISMATCH":
-                n_mismatch += 1
-            elif status == "UNVERIFIED":
-                n_unverified += 1
 
             done = n_called + n_cached_reused
             if done % 20 == 0:
@@ -563,9 +484,7 @@ def main():
     print()
     print("=== 완료 ===")
     print(f"전체 대상: {len(targets)}건")
-    print(f"신규 API 호출: {n_called}건 / 캐시 재사용: {n_cached_reused}건")
-    print(f"검증 결과 - 일치(MATCHED): {n_matched}건 / 불일치(MISMATCH): {n_mismatch}건 / "
-          f"검증불가(UNVERIFIED): {n_unverified}건 / 실패(FAILED): {n_failed}건")
+    print(f"신규 API 호출: {n_called}건(그중 원문 변경 감지: {n_changed}건) / 캐시 재사용: {n_cached_reused}건 / 실패: {n_failed}건")
     print(f"캐시 파일: {CACHE_PATH}")
 
 

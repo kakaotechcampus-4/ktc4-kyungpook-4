@@ -33,7 +33,6 @@ from app.models.enums import (
     CONFIDENCE_BADGES,
     JOIN_CHANNELS,
     PARSE_STATUSES,
-    PRODUCT_SOURCES,
     PRODUCT_TYPES,
     RATE_TYPES,
     RESERVE_TYPES,
@@ -41,7 +40,6 @@ from app.models.enums import (
     one_of,
     one_of_or_null,
 )
-from app.models.offer import SpecialOffer
 
 
 class Product(Base):
@@ -49,17 +47,14 @@ class Product(Base):
 
     __tablename__ = "product"
 
-    # 공시 = 금융회사코드 + 상품코드 조합, 특판 = "SP-" + offer_id.
-    # 배치 간 안정적이어야 한다.
+    # 금융회사코드 + 상품코드 조합. 배치 간 안정적이어야 한다.
     product_id: Mapped[str] = mapped_column(
         String(64),
         primary_key=True,
-        comment="공시 = 금융회사코드 + 상품코드 조합, 특판 = 'SP-' || offer_id. 배치 간 안정적이어야 한다",
+        comment="금융회사코드 + 상품코드 조합. 배치 간 안정적이어야 한다",
     )
-    offer_id: Mapped[str | None] = mapped_column(String(64), ForeignKey("special_offer.offer_id", ondelete="SET NULL"))
     # 배치 기록을 정리해도 상품은 남아야 한다 (전에는 CASCADE 라 통째로 삭제됐다)
     run_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("batch_run.run_id", ondelete="SET NULL"))
-    source: Mapped[str] = mapped_column(String(10))
     institution_code: Mapped[str] = mapped_column(String(20), ForeignKey("institution.institution_code"))
     product_name: Mapped[str] = mapped_column(String(200))
     product_type: Mapped[str] = mapped_column(String(20))
@@ -95,8 +90,7 @@ class Product(Base):
     )
     sale_end_date: Mapped[date | None] = mapped_column(
         Date,
-        comment="판매 종료 예정일. 특판은 채워지고 공시 상품은 대개 NULL - "
-        "그쪽은 snapshot_date 가 오래되면 사라진 것으로 본다",
+        comment="판매 종료 예정일. 공시 상품은 대개 NULL - snapshot_date 가 오래되면 사라진 것으로 본다",
     )
     # 행을 지우면 가입자의 금리 근거가 끊긴다. 삭제 대신 이 값을 내린다.
     is_active: Mapped[bool] = mapped_column(
@@ -105,7 +99,6 @@ class Product(Base):
         comment="추천 후보에서 뺄 때 쓴다. 행을 지우면 가입자의 금리 근거가 끊기므로 삭제 대신 이 값을 내린다",
     )
 
-    offer: Mapped[SpecialOffer | None] = relationship(back_populates="product")
     run: Mapped[BatchRun | None] = relationship()
     options: Mapped[list["ProductOption"]] = relationship(
         back_populates="product", cascade="all, delete-orphan", passive_deletes=True
@@ -115,14 +108,6 @@ class Product(Base):
     )
 
     __table_args__ = (
-        # 특판 1건은 상품 1건으로만 승격된다
-        UniqueConstraint("offer_id"),
-        CheckConstraint(one_of("source", PRODUCT_SOURCES), name="source"),
-        # OFFICIAL 은 금감원 공시, SPECIAL 은 반드시 원본 특판을 갖는다
-        CheckConstraint(
-            "(source = 'SPECIAL' AND offer_id IS NOT NULL) OR (source = 'OFFICIAL' AND offer_id IS NULL)",
-            name="source_offer",
-        ),
         CheckConstraint(one_of("product_type", PRODUCT_TYPES), name="product_type"),
         CheckConstraint(one_of_or_null("join_channel", JOIN_CHANNELS), name="join_channel"),
         CheckConstraint(one_of("parse_status", PARSE_STATUSES), name="parse_status"),
@@ -163,12 +148,12 @@ class ProductOption(Base):
 
     __tablename__ = "product_option"
 
-    # product_id + 기간 + 이자방식 조합으로 결정적으로 생성.
+    # product_id + 기간 + 이자방식 + 적립방식 + 채널 조합으로 결정적으로 생성.
     # 배치가 upsert 해도 UserHolding 링크가 유지된다.
     option_id: Mapped[str] = mapped_column(
         String(96),
         primary_key=True,
-        comment="product_id + 기간 + 이자방식 조합으로 결정적으로 생성."
+        comment="product_id + 기간 + 이자방식 + 적립방식 + 채널 조합으로 결정적으로 생성."
         " 배치가 upsert 해도 user_holding 링크가 유지된다",
     )
     product_id: Mapped[str] = mapped_column(String(64), ForeignKey("product.product_id", ondelete="CASCADE"))
@@ -181,17 +166,25 @@ class ProductOption(Base):
         server_default=text("'해당없음'"),
         comment="적금의 적립 방식. 예금은 '해당없음'. NULL 을 쓰면 UNIQUE 가 중복을 못 막아서 기본값을 둔다",
     )
+    # 같은 상품이라도 창구와 비대면의 금리가 다른 경우가 있다(산출물 실측 758건).
+    # 채널을 product 에 두면 그 차이를 표현할 수 없어 상품 행을 통째로 복제하게 된다.
+    join_channel: Mapped[str] = mapped_column(
+        String(20),
+        server_default=text("'전체'"),
+        comment="이 금리가 적용되는 가입 채널. 채널 구분이 없는 상품은 '전체'",
+    )
     base_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2))
     max_rate: Mapped[Decimal] = mapped_column(Numeric(5, 2))
 
     product: Mapped[Product] = relationship(back_populates="options")
 
     __table_args__ = (
-        # 같은 상품에 (기간, 이자방식, 적립방식) 이 겹치는 옵션은 없다
-        UniqueConstraint("product_id", "period_months", "rate_type", "reserve_type"),
+        # 같은 상품에 (기간, 이자방식, 적립방식, 채널) 이 겹치는 옵션은 없다
+        UniqueConstraint("product_id", "period_months", "rate_type", "reserve_type", "join_channel"),
         CheckConstraint("period_months > 0", name="period_months"),
         CheckConstraint(one_of("rate_type", RATE_TYPES), name="rate_type"),
         CheckConstraint(one_of("reserve_type", RESERVE_TYPES), name="reserve_type"),
+        CheckConstraint(one_of("join_channel", JOIN_CHANNELS), name="join_channel"),
         CheckConstraint("base_rate >= 0 AND max_rate >= base_rate", name="rates"),
         Index("ix_product_option_product_id", "product_id"),
         Index("ix_product_option_period_months", "period_months", text("max_rate DESC")),
@@ -214,7 +207,9 @@ class ProductCondition(Base):
         String(50),
         comment="user_profile_extra.condition_type 과 같은 값을 써야 매칭이 된다. 어휘는 enums.CONDITION_TYPES",
     )
-    rate_bonus: Mapped[Decimal] = mapped_column(Numeric(4, 2), server_default=text("0"))
+    # 원문에 우대폭이 적혀 있지 않은 조건이 있다(실측 421건). 0 으로 채우면
+    # "가산 0%p" 와 "원문에 값이 없음" 이 구별되지 않아 NULL 을 허용한다.
+    rate_bonus: Mapped[Decimal | None] = mapped_column(Numeric(4, 2))
     threshold_value: Mapped[int | None] = mapped_column(BigInteger)
     threshold_unit: Mapped[str | None] = mapped_column(String(10))
     applies_period_min: Mapped[int | None] = mapped_column(Integer)
