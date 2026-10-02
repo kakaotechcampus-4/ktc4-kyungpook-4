@@ -70,16 +70,6 @@ class OnboardingNotifier extends Notifier<OnboardingInput> {
     state = state.copyWith(taxExemptEligibility: current);
   }
 
-  void updateExistingTaxExemptAmountText(String value) => state = state.copyWith(
-        existingTaxExemptAmountText: value,
-        existingTaxExemptAmountUnknown: false,
-      );
-
-  void setExistingTaxExemptAmountUnknown() => state = state.copyWith(
-        existingTaxExemptAmountText: '',
-        existingTaxExemptAmountUnknown: true,
-      );
-
   void toggleSpecialHouseholdType(String option, {required String noneOption}) {
     final current = List<String>.from(state.specialHouseholdTypes);
     if (option == noneOption) {

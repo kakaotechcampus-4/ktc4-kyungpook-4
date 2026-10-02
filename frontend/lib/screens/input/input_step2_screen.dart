@@ -39,7 +39,7 @@ class InputStep2Screen extends ConsumerStatefulWidget {
 }
 
 class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
-  static const _questionCount = 13;
+  static const _questionCount = 12;
 
   final _questionKeys = List.generate(_questionCount, (_) => GlobalKey());
   final _revealed = <int>{};
@@ -53,16 +53,12 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
   late final _birthDayController = TextEditingController(
     text: ref.read(onboardingProvider).birthDay,
   );
-  late final _taxAmountController = TextEditingController(
-    text: ref.read(onboardingProvider).existingTaxExemptAmountText,
-  );
 
   @override
   void dispose() {
     _birthYearController.dispose();
     _birthMonthController.dispose();
     _birthDayController.dispose();
-    _taxAmountController.dispose();
     super.dispose();
   }
 
@@ -335,53 +331,6 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               _QuestionBlock(
                 key: _questionKeys[11],
                 index: 12,
-                title: '비과세종합저축으로 이미 가입해서 쓰고 있는 금액이 있나요?',
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      child: TextField(
-                        controller: _taxAmountController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        textAlign: TextAlign.right,
-                        enabled: !input.existingTaxExemptAmountUnknown,
-                        decoration: InputDecoration(
-                          hintText: '0',
-                          filled: true,
-                          fillColor: input.existingTaxExemptAmountUnknown
-                              ? Colors.grey.shade100
-                              : Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                        ),
-                        onChanged: notifier.updateExistingTaxExemptAmountText,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('원'),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OptionChip(
-                        label: '잘 모르겠어요',
-                        selected: input.existingTaxExemptAmountUnknown,
-                        onTap: () {
-                          _taxAmountController.clear();
-                          notifier.setExistingTaxExemptAmountUnknown();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              _QuestionBlock(
-                key: _questionKeys[12],
-                index: 13,
                 title: '다음 중 해당하는 항목이 있으신가요?',
                 description: '(항목별 우대금리 정보를 확인합니다.)',
                 child: CheckboxOptionList(

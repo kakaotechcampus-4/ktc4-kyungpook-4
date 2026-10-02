@@ -28,8 +28,9 @@ const _joinNoneOption = '다 부담스러워요';
 
 const _botTextStyle = TextStyle(fontSize: 14, height: 1.6, color: Colors.black87);
 
-/// 상호금융(신협·새마을금고) 계좌를 보유한 경우에만 진행되는 챗봇형 확인 대화.
-/// 해당 은행이 없으면 확인할 게 없으므로 대화 없이 바로 결과로 넘어간다.
+/// 이미 신협·새마을금고 계좌가 있으면 조합원 여부부터, 없으면 새로 가입할
+/// 의향이 있는지부터 묻는 챗봇형 확인 대화. 상호금융 비과세 혜택은 계좌
+/// 보유 여부와 상관없이(신규 가입도 가능하므로) 모두에게 안내한다.
 List<String> _mutualBanksOf(OnboardingInput input) =>
     input.currentBanks.where((b) => b == '신협' || b == '새마을금고').toList();
 
@@ -66,11 +67,8 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
   @override
   void initState() {
     super.initState();
-    if (_mutualBanks.isEmpty) {
-      _status = _ChatStatus.done;
-    } else {
-      _path.add(_Stage.membership);
-    }
+    // 이미 상호금융 계좌가 있으면 조합원인지부터, 없으면 바로 가입 의향을 묻는다.
+    _path.add(_mutualBanks.isNotEmpty ? _Stage.membership : _Stage.joinChoices);
   }
 
   @override
@@ -139,12 +137,14 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
   }
 
   /// 자동으로 넘어가지 않고, 사용자가 "결과 보기"를 눌렀을 때만 이동한다.
+  /// 결과 화면으로 바로 가지 않고, 모아가 준비하는 모습을 보여주는
+  /// 로딩 화면을 한 번 거친다.
   void _goToResult() {
     final draft = _noteController.text.trim();
     if (draft.isNotEmpty) {
       ref.read(onboardingProvider.notifier).updateAdditionalNote(draft);
     }
-    context.go(AppRoutes.result);
+    context.go(AppRoutes.loading);
   }
 
   void _sendNote() {
@@ -175,32 +175,15 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                   children: [
                     const StepIndicator(currentStep: 3),
                     const SizedBox(height: 32),
-                    if (_mutualBanks.isEmpty) ...[
-                      const BotChatTurn(
-                        content: Text(
-                          '추가로 확인할 사항이 없어요!\n바로 결과를 보여드릴게요 :)',
-                          style: _botTextStyle,
-                        ),
+                    for (final stage in _path) ...[
+                      _buildStageTurn(
+                        stage,
+                        input,
+                        isActive:
+                            stage == _currentStage && _status == _ChatStatus.asking,
                       ),
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: NextStepButton(
-                          label: '결과 보기',
-                          enabled: true,
-                          onPressed: _goToResult,
-                        ),
-                      ),
-                    ] else
-                      for (final stage in _path) ...[
-                        _buildStageTurn(
-                          stage,
-                          input,
-                          isActive:
-                              stage == _currentStage && _status == _ChatStatus.asking,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
+                      const SizedBox(height: 20),
+                    ],
                     for (final note in _sentNotes) ...[
                       UserChatBubble(text: note),
                       const SizedBox(height: 12),
@@ -259,19 +242,26 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
 
       case _Stage.joinChoices:
         final confirmed = !isActive;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const BotChatTurn(
-              content: Text(
-                '괜찮아요! 대부분 헷갈리시는 부분이에요.\n'
+        final message = _mutualBanks.isNotEmpty
+            ? '괜찮아요! 대부분 헷갈리시는 부분이에요.\n'
                 '조합원이 아니어도, 가입할 때 출자금 1~5만원만\n'
                 '내면 바로 조합원이 될 수 있어요.\n'
                 '출자금은 나중에 돌려받을 수 있으니 걱정마세요.\n\n'
                 '그럼 이 중에서 가입하실 수 있는 곳을 골라주세요.\n'
-                '여러 개 선택 가능해요.',
-                style: _botTextStyle,
-              ),
+                '여러 개 선택 가능해요.'
+            : '아직 신협·새마을금고 계좌는 없으시네요!\n'
+                '근데 이것도 알아두시면 좋을 것 같아요.\n\n'
+                '상호금융(신협·새마을금고·농협·수협 등)에 가입하면\n'
+                '3,000만원까지 이자 세금이 15.4% → 1.4%로 낮아져요.\n'
+                '출자금 1~5만원 정도만 내면 가입할 수 있고,\n'
+                '나중에 돌려받을 수 있어요.\n\n'
+                '혹시 가입을 고려해보실 수 있는 곳이 있으신가요?\n'
+                '여러 개 선택 가능해요.';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BotChatTurn(
+              content: Text(message, style: _botTextStyle),
             ),
             const SizedBox(height: 12),
             IgnorePointer(
