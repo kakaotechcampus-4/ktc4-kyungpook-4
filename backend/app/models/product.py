@@ -69,7 +69,9 @@ class Product(Base):
     # 우대조건 파싱(LLM)의 입력 원문
     terms_text: Mapped[str | None] = mapped_column(Text, comment="우대조건 파싱(LLM)의 입력 원문")
     region: Mapped[str | None] = mapped_column(String(50))
-    join_channel: Mapped[str | None] = mapped_column(String(20))
+    # 가입 채널은 여기 두지 않는다. product_option.join_channel 하나만 원본이다.
+    # 두 군데 두면 '상품은 영업점 전용인데 옵션은 비대면' 같은 모순을 DB 가 못 막는다.
+    # 상품 단위 채널이 필요하면 옵션들의 채널을 모아서 계산한다.
     # --- 가입 "자격". 못 채우면 금리가 낮은 게 아니라 아예 가입이 안 된다 ---
     membership_required: Mapped[bool] = mapped_column(
         Boolean,
@@ -109,7 +111,6 @@ class Product(Base):
 
     __table_args__ = (
         CheckConstraint(one_of("product_type", PRODUCT_TYPES), name="product_type"),
-        CheckConstraint(one_of_or_null("join_channel", JOIN_CHANNELS), name="join_channel"),
         CheckConstraint(one_of("parse_status", PARSE_STATUSES), name="parse_status"),
         CheckConstraint(
             "(amount_min IS NULL OR amount_min > 0)"

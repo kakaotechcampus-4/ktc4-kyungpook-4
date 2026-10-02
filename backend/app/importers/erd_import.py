@@ -221,10 +221,6 @@ def build_rows(src: dict[str, list[dict]], report: Report) -> dict[str, list[dic
             continue
         product_type, _ = PRODUCT_TYPE[raw_type]
 
-        # 상품 단위 가입 채널은 옵션에 실린 채널을 모아서 정한다.
-        channels = {where[r["product_id"]][1] for r in rows}
-        join_channel = channels.pop() if len(channels) == 1 else "전체"
-
         products.append(
             {
                 "product_id": pid,
@@ -237,7 +233,7 @@ def build_rows(src: dict[str, list[dict]], report: Report) -> dict[str, list[dic
                 "monthly_cap": head.get("monthly_cap") if product_type == "적금" else None,
                 "terms_text": head.get("terms_text"),
                 "region": head.get("region"),
-                "join_channel": join_channel,
+                # 가입 채널은 product 에 싣지 않는다. 옵션(product_option.join_channel)에만 있다.
                 # 산출물이 NULL 로 주는 칸이다. 우리 컬럼은 NOT NULL 이라 기본값으로 내린다.
                 "membership_required": bool(head.get("membership_required")),
                 "new_customer_only": bool(head.get("new_customer_only")),

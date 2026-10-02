@@ -259,7 +259,8 @@ CREATE TABLE product (
     monthly_cap      bigint,
     terms_text       text,
     region           varchar(50),
-    join_channel     varchar(20),
+    -- 가입 채널은 product_option.join_channel 하나만 원본이다. 여기 두면 둘이 모순돼도
+    -- DB 가 못 막는다. 상품 단위 채널이 필요하면 옵션들의 채널을 모아서 계산한다.
     membership_required boolean   NOT NULL DEFAULT false,
     new_customer_only   boolean   NOT NULL DEFAULT false,
     min_age          int,
@@ -277,8 +278,6 @@ CREATE TABLE product (
         FOREIGN KEY (institution_code) REFERENCES institution (institution_code),
     CONSTRAINT ck_product_product_type
         CHECK (product_type IN ('예금', '적금', '예탁금')),
-    CONSTRAINT ck_product_join_channel
-        CHECK (join_channel IS NULL OR join_channel IN ('비대면', '영업점', '전체')),
     CONSTRAINT ck_product_parse_status
         CHECK (parse_status IN ('PENDING', 'PARSED', 'FAILED')),
     CONSTRAINT ck_product_amounts
