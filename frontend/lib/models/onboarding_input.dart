@@ -24,6 +24,11 @@ class OnboardingInput {
 
   // Step 3
   final String cooperativeMembershipStatus;
+  final List<String> cooperativeJoinChoices;
+  final String mutualFinanceTaxExemptEligible;
+  final String mutualFinanceExistingAmountText;
+  final bool mutualFinanceExistingAmountUnknown;
+  final String additionalNote;
 
   const OnboardingInput({
     this.lumpSum = 0,
@@ -47,6 +52,11 @@ class OnboardingInput {
     this.existingTaxExemptAmountUnknown = false,
     this.specialHouseholdTypes = const [],
     this.cooperativeMembershipStatus = '',
+    this.cooperativeJoinChoices = const [],
+    this.mutualFinanceTaxExemptEligible = '',
+    this.mutualFinanceExistingAmountText = '',
+    this.mutualFinanceExistingAmountUnknown = false,
+    this.additionalNote = '',
   });
 
   OnboardingInput copyWith({
@@ -71,6 +81,11 @@ class OnboardingInput {
     bool? existingTaxExemptAmountUnknown,
     List<String>? specialHouseholdTypes,
     String? cooperativeMembershipStatus,
+    List<String>? cooperativeJoinChoices,
+    String? mutualFinanceTaxExemptEligible,
+    String? mutualFinanceExistingAmountText,
+    bool? mutualFinanceExistingAmountUnknown,
+    String? additionalNote,
   }) {
     return OnboardingInput(
       lumpSum: lumpSum ?? this.lumpSum,
@@ -99,6 +114,14 @@ class OnboardingInput {
       specialHouseholdTypes: specialHouseholdTypes ?? this.specialHouseholdTypes,
       cooperativeMembershipStatus:
           cooperativeMembershipStatus ?? this.cooperativeMembershipStatus,
+      cooperativeJoinChoices: cooperativeJoinChoices ?? this.cooperativeJoinChoices,
+      mutualFinanceTaxExemptEligible:
+          mutualFinanceTaxExemptEligible ?? this.mutualFinanceTaxExemptEligible,
+      mutualFinanceExistingAmountText: mutualFinanceExistingAmountText ??
+          this.mutualFinanceExistingAmountText,
+      mutualFinanceExistingAmountUnknown: mutualFinanceExistingAmountUnknown ??
+          this.mutualFinanceExistingAmountUnknown,
+      additionalNote: additionalNote ?? this.additionalNote,
     );
   }
 
