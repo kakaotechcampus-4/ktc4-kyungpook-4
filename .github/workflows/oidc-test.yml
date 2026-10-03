@@ -1,0 +1,24 @@
+name: OIDC 연결 확인
+
+on:
+  workflow_dispatch:
+  # workflow_dispatch 는 기본 브랜치(develop)에 파일이 있어야 실행 버튼이 생긴다.
+  # 머지 전에 배포 브랜치에서 검증할 수 있도록 이 파일 변경 push 에도 실행한다.
+  push:
+    branches: [feature/be-deploy]
+    paths: [.github/workflows/oidc-test.yml]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/ktc-github-deploy
+          aws-region: ap-northeast-2
+
+      - run: aws sts get-caller-identity
