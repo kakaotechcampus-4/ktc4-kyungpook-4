@@ -29,7 +29,7 @@ class ProductOption(BaseModel):
 
     @property
     def max_bonus(self) -> float:
-        """G3 검산 기준값 - 공시된 총 우대폭."""
+        """공시된 총 우대폭(intr_rate2 - intr_rate). 참고: 원래 수치 검증(G3) 용도로 쓰였으나 2026-09-30 검증 로직 제거 결정 이후 지금은 어디서도 호출하지 않는 참고용 계산값."""
         return round(self.intr_rate2 - self.intr_rate, 4)
 
 

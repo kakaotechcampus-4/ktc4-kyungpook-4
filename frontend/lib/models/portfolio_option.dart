@@ -1,3 +1,5 @@
+import '../services/portfolio_field_mocks.dart';
+
 enum PortfolioTier { simple, balanced, max }
 
 extension PortfolioTierLabel on PortfolioTier {
@@ -51,20 +53,30 @@ class PortfolioProduct {
     required this.detailUrl,
   });
 
-  // TODO(API 연동 PR): 백엔드 응답에 amountDescription/conditionDescription/detailUrl 이
-  // 아직 없어 임시값으로 채운다. 실제 결과 화면에 API 데이터를 연결할 때 값을 채우거나,
-  // 백엔드 스키마에 필드를 추가해달라고 요청해야 한다.
+  // 백엔드 응답에 amountDescription/conditionDescription/detailUrl 이 아직 없어
+  // PortfolioFieldMocks 로 채운다 (백엔드 스키마에 필드가 추가되면 그 파일을
+  // 지우고 여기서 실제 값을 매핑하면 된다).
   factory PortfolioProduct.fromJson(Map<String, dynamic> json) {
+    final institutionName = json['institution_name'] as String;
+    final productName = json['product_name'] as String;
+    final allocatedAmount = json['allocated_amount'] as int;
+    final interestRate = (json['interest_rate'] as num).toDouble();
     return PortfolioProduct(
-      institutionName: json['institution_name'] as String,
-      productName: json['product_name'] as String,
+      institutionName: institutionName,
+      productName: productName,
       termMonths: json['term_months'] as int,
-      interestRate: (json['interest_rate'] as num).toDouble(),
-      allocatedAmount: json['allocated_amount'] as int,
+      interestRate: interestRate,
+      allocatedAmount: allocatedAmount,
       afterTaxInterest: json['after_tax_interest'] as int,
-      amountDescription: '',
-      conditionDescription: '',
-      detailUrl: '',
+      amountDescription: PortfolioFieldMocks.productAmountDescription(
+        allocatedAmount: allocatedAmount,
+        interestRate: interestRate,
+      ),
+      conditionDescription: PortfolioFieldMocks.productConditionDescription(),
+      detailUrl: PortfolioFieldMocks.productDetailUrl(
+        institutionName: institutionName,
+        productName: productName,
+      ),
     );
   }
 }
@@ -90,19 +102,20 @@ class PortfolioOption {
     required this.branchVisitCount,
   });
 
-  // TODO(API 연동 PR): 백엔드 응답에 vsSingleDiff/newAccountCount/branchVisitCount 가
-  // 아직 없어 0으로 채운다. 실제 결과 화면에 API 데이터를 연결할 때 값을 채워야 한다.
+  // 백엔드 응답에 vsSingleDiff/newAccountCount/branchVisitCount 가 아직 없어
+  // PortfolioFieldMocks 로 채운다 (위 fromJson과 동일한 이유).
   factory PortfolioOption.fromJson(Map<String, dynamic> json) {
+    final products = (json['products'] as List<dynamic>)
+        .map((p) => PortfolioProduct.fromJson(p as Map<String, dynamic>))
+        .toList();
     return PortfolioOption(
       tier: PortfolioTierLabel.fromApiValue(json['tier'] as String),
-      products: (json['products'] as List<dynamic>)
-          .map((p) => PortfolioProduct.fromJson(p as Map<String, dynamic>))
-          .toList(),
+      products: products,
       afterTaxTotal: json['after_tax_total'] as int,
       reason: json['reason'] as String,
-      vsSingleDiff: 0,
-      newAccountCount: 0,
-      branchVisitCount: 0,
+      vsSingleDiff: PortfolioFieldMocks.optionVsSingleDiff(),
+      newAccountCount: PortfolioFieldMocks.optionNewAccountCount(products.length),
+      branchVisitCount: PortfolioFieldMocks.optionBranchVisitCount(),
     );
   }
 }
