@@ -24,33 +24,15 @@ CREATE TABLE institution (
     is_active        boolean      NOT NULL DEFAULT true,
 
     CONSTRAINT pk_institution PRIMARY KEY (institution_code),
-    CONSTRAINT uq_institution_name UNIQUE (name),
     CONSTRAINT ck_institution_institution_type
-        CHECK (institution_type IN ('은행', '저축은행', '신협'))
+        CHECK (institution_type IN ('은행', '저축은행', '신협', '새마을금고'))
 );
 
 COMMENT ON TABLE  institution IS '금융기관 마스터. 기관을 가리키는 모든 곳은 이름이 아니라 이 코드를 쓴다';
 COMMENT ON COLUMN institution.institution_code IS '금감원 금융회사코드(fin_co_no). 공시에 없는 기관은 자체 코드 부여';
-COMMENT ON COLUMN institution.name IS '정식 명칭 1개. 표기 변형은 institution_alias 로 흡수한다';
+COMMENT ON COLUMN institution.name IS '정식 명칭. 지역이 다른 동명 기관이 있어 UNIQUE 를 걸지 않는다';
+-- name 에 UNIQUE 를 걸지 않는다. 지역이 다른 동명 새마을금고가 실제로 별개 기관으로 존재한다.
 COMMENT ON COLUMN institution.region IS '지역은행·신협의 영업 지역. 전국구면 NULL';
-
-
-CREATE TABLE institution_alias (
-    id               bigint       GENERATED ALWAYS AS IDENTITY,
-    institution_code varchar(20)  NOT NULL,
-    alias            varchar(100) NOT NULL,
-
-    CONSTRAINT pk_institution_alias PRIMARY KEY (id),
-    CONSTRAINT fk_institution_alias_institution_code_institution
-        FOREIGN KEY (institution_code) REFERENCES institution (institution_code)
-        ON DELETE CASCADE,
-    -- 한 표기가 두 기관을 가리키면 매칭이 불가능해진다
-    CONSTRAINT uq_institution_alias_alias UNIQUE (alias)
-);
-
-COMMENT ON TABLE institution_alias IS
-    '크롤링 문자열을 코드로 되돌리는 사전. "KB국민", "국민은행", "국민" 을 모두 같은 코드로 보낸다';
-
 
 -- ============================================================
 -- 1. 사용자 / 인증
@@ -212,7 +194,7 @@ CREATE TABLE user_profile_extra (
     CONSTRAINT fk_user_profile_extra_profile_id_user_profile
         FOREIGN KEY (profile_id) REFERENCES user_profile (profile_id) ON DELETE CASCADE,
     CONSTRAINT ck_user_profile_extra_condition_type
-        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '기타')),
+        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '공제가입', '연령조건', '기타')),
     -- 답을 받았으면 시각도 있어야 한다
     CONSTRAINT ck_user_profile_extra_answered
         CHECK (answer_value IS NULL OR answered_at IS NOT NULL)
@@ -226,7 +208,7 @@ CREATE INDEX ix_user_profile_extra_profile_id ON user_profile_extra (profile_id)
 
 
 -- ============================================================
--- 3. 배치 / 수집 파이프라인
+-- 3. 배치
 -- ============================================================
 
 CREATE TABLE batch_run (
@@ -241,7 +223,7 @@ CREATE TABLE batch_run (
 
     CONSTRAINT pk_batch_run PRIMARY KEY (run_id),
     CONSTRAINT ck_batch_run_batch_type
-        CHECK (batch_type IN ('COLLECT', 'CRAWL', 'VERIFY', 'PARSE', 'MATURITY')),
+        CHECK (batch_type IN ('COLLECT', 'PARSE', 'MATURITY')),
     CONSTRAINT ck_batch_run_status
         CHECK (status IN ('RUNNING', 'SUCCESS', 'FAILED', 'PARTIAL')),
     CONSTRAINT ck_batch_run_counts
@@ -261,143 +243,13 @@ COMMENT ON COLUMN batch_run.batch_type IS
 CREATE INDEX ix_batch_run_batch_type ON batch_run (batch_type, started_at DESC);
 
 
-CREATE TABLE crawl_history (
-    id           bigint        GENERATED ALWAYS AS IDENTITY,
-    run_id       bigint        NOT NULL,
-    source_type  varchar(50)   NOT NULL,
-    source_url   varchar(1000) NOT NULL,
-    page_hash    varchar(64)   NOT NULL,
-    has_offer    boolean       NOT NULL DEFAULT false,
-    processed_at timestamptz   NOT NULL DEFAULT now(),
-
-    CONSTRAINT pk_crawl_history PRIMARY KEY (id),
-    CONSTRAINT fk_crawl_history_run_id_batch_run
-        FOREIGN KEY (run_id) REFERENCES batch_run (run_id) ON DELETE CASCADE
-);
-
-COMMENT ON TABLE  crawl_history IS '크롤링한 게시글 1건. 같은 글을 다음 배치에서 또 봐도 행은 새로 쌓인다';
-COMMENT ON COLUMN crawl_history.page_hash IS '본문 SHA-256. 이전 run 과 같은 해시면 파싱을 건너뛴다';
-
--- run 간 재수집을 허용해야 하므로 UNIQUE 가 아니라 조회용 인덱스로 둔다
-CREATE INDEX ix_crawl_history_page_hash ON crawl_history (page_hash);
-CREATE INDEX ix_crawl_history_run_id    ON crawl_history (run_id);
-
-
-CREATE TABLE special_offer (
-    offer_id               varchar(64)  NOT NULL,
-    run_id                 bigint       NOT NULL,
-    crawl_history_id       bigint,
-
-    -- 커뮤니티가 "주장"하는 값 (아직 신뢰하지 않는다)
-    claimed_institution    varchar(100) NOT NULL,
-    institution_type       varchar(20),
-    product_type           varchar(20),
-    claimed_product_name   varchar(200),
-    claimed_base_rate      numeric(5, 2),
-    claimed_max_rate       numeric(5, 2),
-    raw_html               text,
-    source_type            varchar(20),
-    source_url             varchar(1000),
-
-    -- 은행 사이트에서 확인한 값
-    institution_code       varchar(20),
-    matched_product_name   varchar(200),
-    verified_amount_cap    bigint,
-    verified_terms_text    text,
-    verify_source_url      varchar(1000),
-
-    verification_status    varchar(20)  NOT NULL DEFAULT 'PENDING',
-    rejected_reason        varchar(200),
-    verify_attempt_count   int          NOT NULL DEFAULT 0,
-    last_verify_at         timestamptz,
-    discovered_at          timestamptz  NOT NULL DEFAULT now(),
-    verified_at            timestamptz,
-
-    CONSTRAINT pk_special_offer PRIMARY KEY (offer_id),
-    CONSTRAINT fk_special_offer_run_id_batch_run
-        FOREIGN KEY (run_id) REFERENCES batch_run (run_id) ON DELETE CASCADE,
-    CONSTRAINT fk_special_offer_crawl_history_id_crawl_history
-        FOREIGN KEY (crawl_history_id) REFERENCES crawl_history (id) ON DELETE SET NULL,
-    CONSTRAINT fk_special_offer_institution_code_institution
-        FOREIGN KEY (institution_code) REFERENCES institution (institution_code),
-    CONSTRAINT ck_special_offer_institution_type
-        CHECK (institution_type IS NULL OR institution_type IN ('은행', '저축은행', '신협')),
-    CONSTRAINT ck_special_offer_product_type
-        CHECK (product_type IS NULL OR product_type IN ('예금', '적금', '예탁금')),
-    CONSTRAINT ck_special_offer_source_type
-        CHECK (source_type IS NULL OR source_type IN ('지역은행공식', '커뮤니티')),
-    CONSTRAINT ck_special_offer_verification_status
-        CHECK (verification_status IN ('PENDING', 'VERIFIED', 'REJECTED')),
-    CONSTRAINT ck_special_offer_rates
-        CHECK ((claimed_base_rate IS NULL OR claimed_base_rate >= 0)
-           AND (claimed_max_rate IS NULL OR claimed_base_rate IS NULL
-                OR claimed_max_rate >= claimed_base_rate)),
-    -- 검증 통과했다면 근거(기관 코드·시각·출처)가 반드시 남아 있어야 한다.
-    -- 확인 금리는 special_offer_option 에 있어 여기서 CHECK 로 막지 못한다 (승격 배치가 검사한다).
-    CONSTRAINT ck_special_offer_verified_evidence
-        CHECK (verification_status <> 'VERIFIED'
-               OR (verified_at IS NOT NULL
-                   AND verify_source_url IS NOT NULL AND institution_code IS NOT NULL)),
-    CONSTRAINT ck_special_offer_rejected_reason
-        CHECK (verification_status <> 'REJECTED' OR rejected_reason IS NOT NULL),
-    CONSTRAINT ck_special_offer_verify_attempt_count
-        CHECK (verify_attempt_count >= 0)
-);
-
-COMMENT ON TABLE  special_offer IS '커뮤니티/지역은행에서 발견한 특판 후보. 검증 전에는 사용자에게 노출하지 않는다';
-COMMENT ON COLUMN special_offer.offer_id IS '출처 URL + 상품명 해시 등으로 만든 애플리케이션 발급 ID';
-COMMENT ON COLUMN special_offer.crawl_history_id IS '이 특판을 발견한 크롤링 건. 원문 추적용';
-COMMENT ON COLUMN special_offer.claimed_institution IS
-    '커뮤니티 글에 적힌 기관명 원문. 검증 단계에서 institution_alias 로 코드를 찾아 붙인다';
-COMMENT ON COLUMN special_offer.institution_code IS '기관 매칭에 성공한 뒤 채워진다. NULL 이면 아직 미해결';
-COMMENT ON COLUMN special_offer.claimed_max_rate IS '커뮤니티 글이 주장한 금리. 검증 전 값이라 노출 금지';
-
-CREATE INDEX ix_special_offer_verification_status
-    ON special_offer (verification_status, discovered_at DESC);
-CREATE INDEX ix_special_offer_run_id ON special_offer (run_id);
-
-
-CREATE TABLE special_offer_option (
-    offer_option_id varchar(96)   NOT NULL,
-    offer_id        varchar(64)   NOT NULL,
-    period_months   int           NOT NULL,
-    rate_type       varchar(10)   NOT NULL DEFAULT '단리',
-    reserve_type    varchar(20)   NOT NULL DEFAULT '해당없음',
-    base_rate       numeric(5, 2) NOT NULL,
-    max_rate        numeric(5, 2) NOT NULL,
-
-    CONSTRAINT pk_special_offer_option PRIMARY KEY (offer_option_id),
-    CONSTRAINT fk_special_offer_option_offer_id_special_offer
-        FOREIGN KEY (offer_id) REFERENCES special_offer (offer_id) ON DELETE CASCADE,
-    CONSTRAINT uq_special_offer_option_offer_id
-        UNIQUE (offer_id, period_months, rate_type, reserve_type),
-    CONSTRAINT ck_special_offer_option_period_months
-        CHECK (period_months > 0),
-    CONSTRAINT ck_special_offer_option_rate_type
-        CHECK (rate_type IN ('단리', '복리')),
-    CONSTRAINT ck_special_offer_option_reserve_type
-        CHECK (reserve_type IN ('해당없음', '정액적립식', '자유적립식')),
-    CONSTRAINT ck_special_offer_option_rates
-        CHECK (base_rate >= 0 AND max_rate >= base_rate)
-);
-
-COMMENT ON TABLE  special_offer_option IS
-    '은행 사이트에서 확인한 특판의 기간별 금리. 특판도 12/24개월 식으로 여러 기간을 줄 수 있다';
-COMMENT ON COLUMN special_offer_option.offer_option_id IS
-    'offer_id + 기간 + 이자방식 조합. 승격 시 product_option 으로 1:1 옮겨간다';
-
-CREATE INDEX ix_special_offer_option_offer_id ON special_offer_option (offer_id);
-
-
 -- ============================================================
 -- 4. 상품 / 기간옵션 / 우대조건
 -- ============================================================
 
 CREATE TABLE product (
     product_id       varchar(64)  NOT NULL,
-    offer_id         varchar(64),
     run_id           bigint,
-    source           varchar(10)  NOT NULL,
     institution_code varchar(20)  NOT NULL,
     product_name     varchar(200) NOT NULL,
     product_type     varchar(20)  NOT NULL,
@@ -418,21 +270,11 @@ CREATE TABLE product (
     is_active        boolean      NOT NULL DEFAULT true,
 
     CONSTRAINT pk_product PRIMARY KEY (product_id),
-    CONSTRAINT fk_product_offer_id_special_offer
-        FOREIGN KEY (offer_id) REFERENCES special_offer (offer_id) ON DELETE SET NULL,
     -- 배치 기록을 정리해도 상품은 남아야 한다 (전에는 CASCADE 라 통째로 삭제됐다)
     CONSTRAINT fk_product_run_id_batch_run
         FOREIGN KEY (run_id) REFERENCES batch_run (run_id) ON DELETE SET NULL,
     CONSTRAINT fk_product_institution_code_institution
         FOREIGN KEY (institution_code) REFERENCES institution (institution_code),
-    -- 특판 1건은 상품 1건으로만 승격된다
-    CONSTRAINT uq_product_offer_id UNIQUE (offer_id),
-    CONSTRAINT ck_product_source
-        CHECK (source IN ('OFFICIAL', 'SPECIAL')),
-    -- OFFICIAL 은 금감원 공시, SPECIAL 은 반드시 원본 특판을 갖는다
-    CONSTRAINT ck_product_source_offer
-        CHECK ((source = 'SPECIAL' AND offer_id IS NOT NULL)
-            OR (source = 'OFFICIAL' AND offer_id IS NULL)),
     CONSTRAINT ck_product_product_type
         CHECK (product_type IN ('예금', '적금', '예탁금')),
     CONSTRAINT ck_product_join_channel
@@ -458,7 +300,7 @@ CREATE TABLE product (
 COMMENT ON TABLE  product IS
     '상품 기본정보(금감원 baseList 에 대응). 금리는 기간마다 달라서 product_option 이 들고 있다';
 COMMENT ON COLUMN product.product_id IS
-    '공시 = 금융회사코드 + 상품코드 조합, 특판 = ''SP-'' || offer_id. 배치 간 안정적이어야 한다';
+    '금융회사코드 + 상품코드 조합. 배치 간 안정적이어야 한다';
 COMMENT ON COLUMN product.terms_text IS '우대조건 파싱(LLM)의 입력 원문';
 COMMENT ON COLUMN product.amount_min IS '최소 가입금액(예금) / 최소 총 납입액(적금)';
 COMMENT ON COLUMN product.amount_cap IS '최대 가입금액(예금) / 최대 총 납입액(적금)';
@@ -472,7 +314,7 @@ COMMENT ON COLUMN product.min_age IS '가입 가능 최소 만 나이. 청년 �
 COMMENT ON COLUMN product.max_age IS '가입 가능 최대 만 나이';
 COMMENT ON COLUMN product.snapshot_date IS '이 상품 정보가 유효한 기준일. 지난 날짜면 재조회 대상';
 COMMENT ON COLUMN product.sale_end_date IS
-    '판매 종료 예정일. 특판은 채워지고 공시 상품은 대개 NULL - 그쪽은 snapshot_date 가 오래되면 사라진 것으로 본다';
+    '판매 종료 예정일. 공시 상품은 대개 NULL - snapshot_date 가 오래되면 사라진 것으로 본다';
 COMMENT ON COLUMN product.is_active IS
     '추천 후보에서 뺄 때 쓴다. 행을 지우면 가입자의 금리 근거가 끊기므로 삭제 대신 이 값을 내린다';
 
@@ -489,21 +331,24 @@ CREATE TABLE product_option (
     period_months int          NOT NULL,
     rate_type     varchar(10)  NOT NULL DEFAULT '단리',
     reserve_type  varchar(20)  NOT NULL DEFAULT '해당없음',
+    join_channel  varchar(20)  NOT NULL DEFAULT '전체',
     base_rate     numeric(5, 2) NOT NULL,
     max_rate      numeric(5, 2) NOT NULL,
 
     CONSTRAINT pk_product_option PRIMARY KEY (option_id),
     CONSTRAINT fk_product_option_product_id_product
         FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE CASCADE,
-    -- 같은 상품에 (기간, 이자방식, 적립방식) 이 겹치는 옵션은 없다
+    -- 같은 상품에 (기간, 이자방식, 적립방식, 채널) 이 겹치는 옵션은 없다
     CONSTRAINT uq_product_option_product_id
-        UNIQUE (product_id, period_months, rate_type, reserve_type),
+        UNIQUE (product_id, period_months, rate_type, reserve_type, join_channel),
     CONSTRAINT ck_product_option_period_months
         CHECK (period_months > 0),
     CONSTRAINT ck_product_option_rate_type
         CHECK (rate_type IN ('단리', '복리')),
     CONSTRAINT ck_product_option_reserve_type
         CHECK (reserve_type IN ('해당없음', '정액적립식', '자유적립식')),
+    CONSTRAINT ck_product_option_join_channel
+        CHECK (join_channel IN ('비대면', '영업점', '전체')),
     CONSTRAINT ck_product_option_rates
         CHECK (base_rate >= 0 AND max_rate >= base_rate)
 );
@@ -511,7 +356,9 @@ CREATE TABLE product_option (
 COMMENT ON TABLE  product_option IS
     '저축기간별 금리(금감원 optionList 에 대응). 추천·포트폴리오가 실제로 고르는 단위';
 COMMENT ON COLUMN product_option.option_id IS
-    'product_id + 기간 + 이자방식 조합으로 결정적으로 생성. 배치가 upsert 해도 user_holding 링크가 유지된다';
+    'product_id + 기간 + 이자방식 + 적립방식 + 채널 조합으로 결정적으로 생성. 배치가 upsert 해도 user_holding 링크가 유지된다';
+COMMENT ON COLUMN product_option.join_channel IS
+    '이 금리가 적용되는 가입 채널. 채널 구분이 없는 상품은 ''전체''';
 COMMENT ON COLUMN product_option.reserve_type IS
     '적금의 적립 방식. 예금은 ''해당없음''. NULL 을 쓰면 UNIQUE 가 중복을 못 막아서 기본값을 둔다';
 
@@ -523,7 +370,7 @@ CREATE TABLE product_condition (
     condition_id        varchar(64)  NOT NULL,
     product_id          varchar(64)  NOT NULL,
     condition_type      varchar(50)  NOT NULL,
-    rate_bonus          numeric(4, 2) NOT NULL DEFAULT 0,
+    rate_bonus          numeric(4, 2),
     threshold_value     bigint,
     threshold_unit      varchar(10),
     applies_period_min  int,
@@ -538,9 +385,9 @@ CREATE TABLE product_condition (
     CONSTRAINT fk_product_condition_product_id_product
         FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE CASCADE,
     CONSTRAINT ck_product_condition_condition_type
-        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '기타')),
+        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '공제가입', '연령조건', '기타')),
     CONSTRAINT ck_product_condition_threshold_unit
-        CHECK (threshold_unit IS NULL OR threshold_unit IN ('KRW', 'COUNT', 'MONTH')),
+        CHECK (threshold_unit IS NULL OR threshold_unit IN ('KRW', 'COUNT', 'MONTH', 'WEEK', 'DAY', 'HOUR', 'AGE', 'SCORE', 'STEP')),
     -- 임계값과 단위는 항상 짝으로 채워진다
     CONSTRAINT ck_product_condition_threshold_pair
         CHECK ((threshold_value IS NULL) = (threshold_unit IS NULL)),
