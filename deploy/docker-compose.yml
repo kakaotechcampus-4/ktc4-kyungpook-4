@@ -50,16 +50,25 @@ services:
       retries: 30
 
   web:
-    image: nginx:1.27-alpine
+    image: caddy:2-alpine
     restart: unless-stopped
+    environment:
+      # 비어 있으면 :80 (HTTP 전용). 빈 문자열로 넘기면 Caddy 기본값이 안 먹어서 여기서 채운다.
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
     ports:
       - "${WEB_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
     volumes:
-      - ../frontend/build/web:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../frontend/build/web:/srv:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # 인증서 보관. 지우면 재발급되는데 Let's Encrypt 발급 횟수 제한에 걸릴 수 있다.
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       backend:
         condition: service_healthy
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

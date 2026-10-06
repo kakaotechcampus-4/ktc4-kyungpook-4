@@ -42,19 +42,41 @@ cd "$BASE/current/deploy"
 log "docker compose up"
 docker compose up -d --build --remove-orphans
 
+# 도메인을 붙이면 Caddy 는 그 이름으로 온 요청에만 응답하므로, 확인은 백엔드에 직접 한다.
+health() {
+  docker compose exec -T backend python -c \
+    "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/api/v1/health/db').read().decode())"
+}
 log "백엔드 응답 대기"
 for _ in $(seq 1 60); do
-  if curl -fsS http://localhost/api/v1/health/db >/dev/null 2>&1; then break; fi
+  if health >/dev/null 2>&1; then break; fi
   sleep 2
 done
-curl -fsS http://localhost/api/v1/health/db
-echo
+health
 
 # 4. AI 산출물 적재. upsert 라 매번 돌려도 건수가 같다.
 log "AI 산출물 적재"
 docker compose exec -T backend python -m app.importers.erd_import --erd-dir /data/erd
 
-# 5. 정리: 최근 릴리스 3개만 남긴다
+# 5. DuckDNS IP 자동 갱신 (shared/.env 에 DUCKDNS_DOMAIN·DUCKDNS_TOKEN 이 있을 때만)
+#    토큰은 root 만 읽을 수 있는 shared/.env 에만 두고, cron 파일에는 적지 않는다.
+cat > "$SHARED/duckdns.sh" <<'EOF'
+#!/usr/bin/env bash
+set -eu
+set -a; . /opt/ktc4/shared/.env; set +a
+[ -n "${DUCKDNS_DOMAIN:-}" ] && [ -n "${DUCKDNS_TOKEN:-}" ] || exit 0
+curl -fsS "https://www.duckdns.org/update?domains=${DUCKDNS_DOMAIN}&token=${DUCKDNS_TOKEN}&ip="
+echo " $(date -Is)"
+EOF
+chmod 700 "$SHARED/duckdns.sh"
+if grep -q '^DUCKDNS_TOKEN=.' "$SHARED/.env"; then
+  echo "*/5 * * * * root $SHARED/duckdns.sh >> /var/log/ktc4-duckdns.log 2>&1" > /etc/cron.d/ktc4-duckdns
+  log "DuckDNS 갱신: $("$SHARED/duckdns.sh")"
+else
+  rm -f /etc/cron.d/ktc4-duckdns
+fi
+
+# 6. 정리: 최근 릴리스 3개만 남긴다
 ls -1dt "$BASE"/releases/* | tail -n +4 | xargs -r rm -rf
 docker image prune -f >/dev/null
 
