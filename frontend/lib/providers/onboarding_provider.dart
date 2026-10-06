@@ -70,16 +70,6 @@ class OnboardingNotifier extends Notifier<OnboardingInput> {
     state = state.copyWith(taxExemptEligibility: current);
   }
 
-  void updateExistingTaxExemptAmountText(String value) => state = state.copyWith(
-        existingTaxExemptAmountText: value,
-        existingTaxExemptAmountUnknown: false,
-      );
-
-  void setExistingTaxExemptAmountUnknown() => state = state.copyWith(
-        existingTaxExemptAmountText: '',
-        existingTaxExemptAmountUnknown: true,
-      );
-
   void toggleSpecialHouseholdType(String option, {required String noneOption}) {
     final current = List<String>.from(state.specialHouseholdTypes);
     if (option == noneOption) {
@@ -95,6 +85,35 @@ class OnboardingNotifier extends Notifier<OnboardingInput> {
 
   void updateCooperativeMembershipStatus(String value) =>
       state = state.copyWith(cooperativeMembershipStatus: value);
+
+  void toggleCooperativeJoinChoice(String option, {required String noneOption}) {
+    final current = List<String>.from(state.cooperativeJoinChoices);
+    if (option == noneOption) {
+      state = state.copyWith(
+        cooperativeJoinChoices: current.contains(noneOption) ? [] : [noneOption],
+      );
+      return;
+    }
+    current.remove(noneOption);
+    if (!current.remove(option)) current.add(option);
+    state = state.copyWith(cooperativeJoinChoices: current);
+  }
+
+  void updateMutualFinanceTaxExemptEligible(String value) =>
+      state = state.copyWith(mutualFinanceTaxExemptEligible: value);
+
+  void updateMutualFinanceExistingAmountText(String value) => state = state.copyWith(
+        mutualFinanceExistingAmountText: value,
+        mutualFinanceExistingAmountUnknown: false,
+      );
+
+  void setMutualFinanceExistingAmountUnknown() => state = state.copyWith(
+        mutualFinanceExistingAmountText: '',
+        mutualFinanceExistingAmountUnknown: true,
+      );
+
+  void updateAdditionalNote(String value) =>
+      state = state.copyWith(additionalNote: value);
 }
 
 final onboardingProvider =
