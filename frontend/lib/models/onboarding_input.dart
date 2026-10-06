@@ -1,4 +1,11 @@
 class OnboardingInput {
+  // 실제 상품 데이터(ai/output/erd) 기준 상한. product_option.period_months는
+  // 1~60개월 범위(최댓값 60)이고, product.amount_cap은 대부분 10억원 이하다.
+  // 이 범위를 벗어나는 입력은 어떤 상품으로도 추천할 수 없으므로 미리 막는다.
+  static const maxLumpSum = 1000000; // 천원 단위 = 10억원
+  static const maxMonthlySaving = 10000; // 천원 단위 = 1천만원
+  static const maxPeriodMonths = 60; // 개월
+
   final int lumpSum;
   final int monthlySaving;
   final int periodMonths;
@@ -115,15 +122,47 @@ class OnboardingInput {
     );
   }
 
+  bool get isStep1Complete =>
+      lumpSum > 0 &&
+      lumpSum <= maxLumpSum &&
+      monthlySaving > 0 &&
+      monthlySaving <= maxMonthlySaving &&
+      periodMonths > 0 &&
+      periodMonths <= maxPeriodMonths;
+
+  /// 년/월/일이 실제 달력에 존재하는 날짜를 이루는지 확인한다.
+  /// (예: 13월, 2월 30일, 자리수가 덜 채워진 연도 등은 전부 false)
+  bool get isBirthDateValid {
+    if (birthYear.length != 4 || birthMonth.isEmpty || birthDay.isEmpty) {
+      return false;
+    }
+    final year = int.tryParse(birthYear);
+    final month = int.tryParse(birthMonth);
+    final day = int.tryParse(birthDay);
+    if (year == null || month == null || day == null) return false;
+    if (year < 1900 || year > DateTime.now().year) return false;
+    if (month < 1 || month > 12) return false;
+    if (day < 1 || day > _daysInMonth(year, month)) return false;
+    return true;
+  }
+
+  static int _daysInMonth(int year, int month) {
+    if (month == 2) {
+      final isLeapYear =
+          (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+      return isLeapYear ? 29 : 28;
+    }
+    const thirtyDayMonths = {4, 6, 9, 11};
+    return thirtyDayMonths.contains(month) ? 30 : 31;
+  }
+
   bool get isStep2Complete =>
       earlyWithdrawalPossibility.isNotEmpty &&
       currentBanks.isNotEmpty &&
       mainBank.isNotEmpty &&
       residenceSido.isNotEmpty &&
       residenceSigungu.isNotEmpty &&
-      birthYear.isNotEmpty &&
-      birthMonth.isNotEmpty &&
-      birthDay.isNotEmpty &&
+      isBirthDateValid &&
       salaryAccountTransferable.isNotEmpty &&
       autoTransferMovable.isNotEmpty &&
       monthlyCardSpending.isNotEmpty &&
