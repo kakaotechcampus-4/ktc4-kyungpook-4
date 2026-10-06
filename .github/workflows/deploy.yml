@@ -72,7 +72,7 @@ jobs:
         run: |
           cat > commands.json <<EOF
           {"commands": [
-            "set -euo pipefail",
+            "set -eu",
             "export PATH=\$PATH:/snap/bin",
             "command -v aws >/dev/null || snap install aws-cli --classic",
             "mkdir -p /opt/ktc4/releases/$GITHUB_SHA",
