@@ -181,56 +181,81 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                 key: _questionKeys[4],
                 index: 5,
                 title: '생년월일을 알려주세요!',
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      flex: 3,
-                      child: _DigitField(
-                        controller: _birthYearController,
-                        maxLength: 4,
-                        onChanged: (v) {
-                          notifier.updateBirthYear(v);
-                          if (v.length == 4) FocusScope.of(context).nextFocus();
-                        },
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: _DigitField(
+                            controller: _birthYearController,
+                            maxLength: 4,
+                            onChanged: (v) {
+                              notifier.updateBirthYear(v);
+                              if (v.length == 4) {
+                                FocusScope.of(context).nextFocus();
+                              }
+                            },
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Text('년'),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: _DigitField(
+                            controller: _birthMonthController,
+                            maxLength: 2,
+                            onChanged: (v) {
+                              notifier.updateBirthMonth(v);
+                              if (v.length == 2) {
+                                FocusScope.of(context).nextFocus();
+                              }
+                            },
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Text('월'),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: _DigitField(
+                            controller: _birthDayController,
+                            maxLength: 2,
+                            onChanged: (v) {
+                              notifier.updateBirthDay(v);
+                              if (v.length == 2) {
+                                FocusScope.of(context).unfocus();
+                                // 실제 존재하지 않는 날짜(13월, 2월 30일 등)면
+                                // 다음 질문을 미리 펼치지 않는다.
+                                if (ref.read(onboardingProvider).isBirthDateValid) {
+                                  _revealNext(4);
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: Text('일'),
+                        ),
+                      ],
+                    ),
+                    // 년/월/일을 다 채웠는데도 실제 존재하는 날짜가 아니면
+                    // (13월, 2월 30일, 미래 연도 등) 안내 문구를 보여준다.
+                    if (input.birthYear.length == 4 &&
+                        input.birthMonth.isNotEmpty &&
+                        input.birthDay.isNotEmpty &&
+                        !input.isBirthDateValid) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '실제 존재하는 생년월일을 입력해주세요 (예: 1990년 2월 30일은 없는 날짜예요)',
+                        style: TextStyle(fontSize: 12, color: Colors.red.shade400),
                       ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('년'),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: _DigitField(
-                        controller: _birthMonthController,
-                        maxLength: 2,
-                        onChanged: (v) {
-                          notifier.updateBirthMonth(v);
-                          if (v.length == 2) FocusScope.of(context).nextFocus();
-                        },
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('월'),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: _DigitField(
-                        controller: _birthDayController,
-                        maxLength: 2,
-                        onChanged: (v) {
-                          notifier.updateBirthDay(v);
-                          if (v.length == 2) {
-                            FocusScope.of(context).unfocus();
-                            _revealNext(4);
-                          }
-                        },
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(left: 8),
-                      child: Text('일'),
-                    ),
+                    ],
                   ],
                 ),
               ),
