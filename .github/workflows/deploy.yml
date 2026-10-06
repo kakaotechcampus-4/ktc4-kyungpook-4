@@ -1,0 +1,108 @@
+name: Deploy (팀 서버)
+
+# 흐름: 프론트 빌드 -> 번들(tar.gz) -> S3 업로드 -> SSM 으로 EC2 에 받아서 deploy/deploy.sh 실행
+# 서버 포트는 하나도 열지 않는다. 인증은 OIDC(ktc-github-deploy), 서버 쪽 S3 다운로드는 인스턴스 역할이 한다.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+      # 머지 전 첫 배포 검증용. develop 에 머지할 때 지운다.
+      - feature/be-deploy
+
+concurrency:
+  group: deploy-team-server
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  INSTANCE_ID: i-08ac2c500bcf4cf59
+  BUCKET: ktc4-kyungpook-4-deploy-${{ vars.AWS_ACCOUNT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+
+      - name: 프론트 웹 빌드
+        working-directory: frontend
+        run: |
+          flutter pub get
+          flutter build web --release --dart-define=API_BASE_URL=/api/v1
+
+      - name: 번들 만들기
+        run: tar czf bundle.tar.gz backend deploy ai/output/erd frontend/build/web
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/ktc-github-deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: S3 버킷 준비 (없을 때만 생성)
+        run: |
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "버킷 있음: $BUCKET"
+            exit 0
+          fi
+          aws s3api create-bucket --bucket "$BUCKET" \
+            --create-bucket-configuration LocationConstraint="$AWS_REGION"
+          aws s3api put-public-access-block --bucket "$BUCKET" \
+            --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+          aws s3api put-bucket-lifecycle-configuration --bucket "$BUCKET" \
+            --lifecycle-configuration '{"Rules":[{"ID":"expire-releases","Status":"Enabled","Filter":{"Prefix":"releases/"},"Expiration":{"Days":14}}]}'
+          echo "버킷 생성: $BUCKET"
+
+      - name: S3 업로드
+        run: aws s3 cp bundle.tar.gz "s3://$BUCKET/releases/$GITHUB_SHA.tar.gz" --only-show-errors
+
+      - name: 서버에 배포 명령 전달 (SSM)
+        id: ssm
+        run: |
+          cat > commands.json <<EOF
+          {"commands": [
+            "set -euo pipefail",
+            "export PATH=\$PATH:/snap/bin",
+            "command -v aws >/dev/null || snap install aws-cli --classic",
+            "mkdir -p /opt/ktc4/releases/$GITHUB_SHA",
+            "aws s3 cp s3://$BUCKET/releases/$GITHUB_SHA.tar.gz /tmp/ktc4-bundle.tar.gz --region $AWS_REGION --only-show-errors",
+            "tar xzf /tmp/ktc4-bundle.tar.gz -C /opt/ktc4/releases/$GITHUB_SHA && rm -f /tmp/ktc4-bundle.tar.gz",
+            "bash /opt/ktc4/releases/$GITHUB_SHA/deploy/deploy.sh"
+          ],
+          "executionTimeout": ["1500"]}
+          EOF
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "deploy $GITHUB_SHA" \
+            --parameters file://commands.json \
+            --query Command.CommandId --output text)
+          echo "command_id=$CMD_ID" >> "$GITHUB_OUTPUT"
+          echo "SSM command: $CMD_ID"
+
+      - name: 배포 결과 기다리기
+        run: |
+          CMD_ID="${{ steps.ssm.outputs.command_id }}"
+          for _ in $(seq 1 150); do
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            case "$STATUS" in Pending|InProgress|Delayed) sleep 10 ;; *) break ;; esac
+          done
+          echo "=== 상태: $STATUS ==="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardOutputContent --output text
+          echo "=== stderr ==="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardErrorContent --output text
+          [ "$STATUS" = "Success" ]
