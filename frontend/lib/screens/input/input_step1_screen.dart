@@ -3,12 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../models/onboarding_input.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
-import '../../utils/currency_formatter.dart';
-import '../../utils/thousands_separator_input_formatter.dart';
 import '../../widgets/next_step_button.dart';
 import '../../widgets/step_indicator.dart';
 
@@ -30,8 +27,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
     text: _initialText(ref.read(onboardingProvider).periodMonths),
   );
 
-  static String _initialText(int value) =>
-      value == 0 ? '' : ThousandsSeparatorInputFormatter.formatDigits('$value');
+  static String _initialText(int value) => value == 0 ? '' : '$value';
 
   @override
   void dispose() {
@@ -45,6 +41,8 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
   Widget build(BuildContext context) {
     final input = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
+    final canProceed =
+        input.lumpSum > 0 && input.monthlySaving > 0 && input.periodMonths > 0;
 
     return Scaffold(
       body: SafeArea(
@@ -54,36 +52,24 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const StepIndicator(currentStep: 1),
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
               _buildHeader(),
               const SizedBox(height: 40),
               _AmountField(
                 label: '목돈',
                 description: '한번에 최대 얼마까지 맡길 수 있으신가요?',
-                suffixText: '원',
+                suffixText: '천 원',
                 controller: _lumpSumController,
-                maxValue: OnboardingInput.maxLumpSum,
-                formatThousands: true,
-                errorText: input.lumpSum > OnboardingInput.maxLumpSum
-                    ? '${CurrencyFormatter.won(OnboardingInput.maxLumpSum)} 이하로 입력해주세요'
-                    : null,
-                onChanged: (v) => notifier
-                    .updateLumpSum(int.tryParse(v.replaceAll(',', '')) ?? 0),
+                onChanged: (v) => notifier.updateLumpSum(int.tryParse(v) ?? 0),
               ),
               const SizedBox(height: 28),
               _AmountField(
                 label: '월저축액',
                 description: '매달 얼마씩 꾸준하게 저축할 계획이신가요?',
-                suffixText: '원',
+                suffixText: '천 원',
                 controller: _monthlySavingController,
-                maxValue: OnboardingInput.maxMonthlySaving,
-                formatThousands: true,
-                errorText:
-                    input.monthlySaving > OnboardingInput.maxMonthlySaving
-                    ? '${CurrencyFormatter.won(OnboardingInput.maxMonthlySaving)} 이하로 입력해주세요'
-                    : null,
-                onChanged: (v) => notifier.updateMonthlySaving(
-                    int.tryParse(v.replaceAll(',', '')) ?? 0),
+                onChanged: (v) =>
+                    notifier.updateMonthlySaving(int.tryParse(v) ?? 0),
               ),
               const SizedBox(height: 28),
               _AmountField(
@@ -91,10 +77,6 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
                 description: '최대 몇 개월까지 저축해도 괜찮을까요?',
                 suffixText: '개월',
                 controller: _periodMonthsController,
-                maxValue: OnboardingInput.maxPeriodMonths,
-                errorText: input.periodMonths > OnboardingInput.maxPeriodMonths
-                    ? '${OnboardingInput.maxPeriodMonths}개월 이하로 입력해주세요'
-                    : null,
                 onChanged: (v) =>
                     notifier.updatePeriodMonths(int.tryParse(v) ?? 0),
               ),
@@ -102,7 +84,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: NextStepButton(
-                  enabled: input.isStep1Complete,
+                  enabled: canProceed,
                   onPressed: () => context.push(AppRoutes.inputStep2),
                 ),
               ),
@@ -141,9 +123,6 @@ class _AmountField extends StatelessWidget {
   final String description;
   final String suffixText;
   final TextEditingController controller;
-  final int maxValue;
-  final String? errorText;
-  final bool formatThousands;
   final ValueChanged<String> onChanged;
 
   const _AmountField({
@@ -151,10 +130,7 @@ class _AmountField extends StatelessWidget {
     required this.description,
     required this.suffixText,
     required this.controller,
-    required this.maxValue,
     required this.onChanged,
-    this.errorText,
-    this.formatThousands = false,
   });
 
   @override
@@ -179,23 +155,11 @@ class _AmountField extends StatelessWidget {
         TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          // 입력 가능한 자릿수를 상한값의 자릿수로 제한해 비현실적인 금액/기간을
-          // 애초에 못 치게 막는다 (예: 기간 상한 60 -> 최대 2자리). 콤마를 넣는
-          // 필드는 콤마 문자까지 포함한 길이로 잡아야 숫자 자릿수가 안 줄어든다.
-          maxLength: formatThousands
-              ? ThousandsSeparatorInputFormatter.formatDigits(
-                  maxValue.toString()).length
-              : maxValue.toString().length,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            if (formatThousands) ThousandsSeparatorInputFormatter(),
-          ],
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           onChanged: onChanged,
           textAlign: TextAlign.right,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           decoration: InputDecoration(
-            counterText: '',
-            errorText: errorText,
             // suffixText는 라벨이 플로팅될 때(포커스/입력값 있음)만 보이므로,
             // 빈 상태에서도 단위가 항상 보이도록 suffixIcon을 대신 쓴다.
             suffixIcon: Padding(
