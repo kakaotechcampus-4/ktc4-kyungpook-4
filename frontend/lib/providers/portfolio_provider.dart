@@ -17,10 +17,10 @@ final recommendationProvider = FutureProvider.autoDispose<RecommendationResult>(
     final input = ref.watch(onboardingProvider);
     final client = ApiClient.instance;
 
-    // 화면 입력 단위는 "천 원" 이라, API 가 기대하는 원 단위로 변환해서 보낸다.
+    // 화면 입력이 이미 원 단위라 변환 없이 그대로 보낸다.
     final profileId = await client.createProfile(
-      lumpSumWon: input.lumpSum * 1000,
-      monthlySavingWon: input.monthlySaving * 1000,
+      lumpSumWon: input.lumpSum,
+      monthlySavingWon: input.monthlySaving,
       periodMonths: input.periodMonths,
     );
     final options = await client.recommendPortfolios(profileId);

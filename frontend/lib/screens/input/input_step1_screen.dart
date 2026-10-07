@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../providers/onboarding_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/thousands_input_formatter.dart';
 import '../../widgets/next_step_button.dart';
 import '../../widgets/step_indicator.dart';
+
+final _fieldBorder = OutlineInputBorder(
+  borderRadius: BorderRadius.circular(14),
+  borderSide: const BorderSide(color: AppColors.gray, width: 1),
+);
 
 class InputStep1Screen extends ConsumerStatefulWidget {
   const InputStep1Screen({super.key});
@@ -27,7 +32,19 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
     text: _initialText(ref.read(onboardingProvider).periodMonths),
   );
 
-  static String _initialText(int value) => value == 0 ? '' : '$value';
+  static String _initialText(int value) {
+    if (value == 0) return '';
+    final digits = '$value';
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i != 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
+  }
+
+  static int _parseAmount(String value) =>
+      int.tryParse(value.replaceAll(',', '')) ?? 0;
 
   @override
   void dispose() {
@@ -58,18 +75,17 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
               _AmountField(
                 label: '목돈',
                 description: '한번에 최대 얼마까지 맡길 수 있으신가요?',
-                suffixText: '천 원',
+                suffixText: '원',
                 controller: _lumpSumController,
-                onChanged: (v) => notifier.updateLumpSum(int.tryParse(v) ?? 0),
+                onChanged: (v) => notifier.updateLumpSum(_parseAmount(v)),
               ),
               const SizedBox(height: 28),
               _AmountField(
                 label: '월저축액',
                 description: '매달 얼마씩 꾸준하게 저축할 계획이신가요?',
-                suffixText: '천 원',
+                suffixText: '원',
                 controller: _monthlySavingController,
-                onChanged: (v) =>
-                    notifier.updateMonthlySaving(int.tryParse(v) ?? 0),
+                onChanged: (v) => notifier.updateMonthlySaving(_parseAmount(v)),
               ),
               const SizedBox(height: 28),
               _AmountField(
@@ -77,8 +93,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
                 description: '최대 몇 개월까지 저축해도 괜찮을까요?',
                 suffixText: '개월',
                 controller: _periodMonthsController,
-                onChanged: (v) =>
-                    notifier.updatePeriodMonths(int.tryParse(v) ?? 0),
+                onChanged: (v) => notifier.updatePeriodMonths(_parseAmount(v)),
               ),
               const SizedBox(height: 32),
               Align(
@@ -99,7 +114,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
     return RichText(
       textAlign: TextAlign.center,
       text: const TextSpan(
-        style: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+        style: TextStyle(fontSize: 16, height: 1.5, color: AppColors.darkGray),
         children: [
           TextSpan(
             text: 'OO님',
@@ -155,10 +170,14 @@ class _AmountField extends StatelessWidget {
         TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          inputFormatters: [ThousandsInputFormatter()],
           onChanged: onChanged,
           textAlign: TextAlign.right,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.darkGray,
+          ),
           decoration: InputDecoration(
             // suffixText는 라벨이 플로팅될 때(포커스/입력값 있음)만 보이므로,
             // 빈 상태에서도 단위가 항상 보이도록 suffixIcon을 대신 쓴다.
@@ -183,10 +202,9 @@ class _AmountField extends StatelessWidget {
               horizontal: 16,
               vertical: 14,
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide.none,
-            ),
+            border: _fieldBorder,
+            enabledBorder: _fieldBorder,
+            focusedBorder: _fieldBorder,
           ),
         ),
       ],

@@ -38,7 +38,7 @@ class ApiClient {
   }
 
   /// STEP1 입력값으로 프로필을 만들고 profile_id 를 반환한다.
-  /// 금액은 원 단위로 넘겨야 한다 (화면 입력은 "천 원" 단위이므로 호출부에서 1000을 곱한다).
+  /// 금액은 원 단위로 넘겨야 한다 (화면 입력도 원 단위라 그대로 넘기면 된다).
   Future<int> createProfile({
     required int lumpSumWon,
     required int monthlySavingWon,
