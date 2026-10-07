@@ -30,6 +30,9 @@ POSTGRES_PORT=5432
 REDIS_PORT=6379
 REDIS_DB=0
 DB_ECHO=false
+# 추천 이유 문구(Summary) AI 호출용. 비워두면 계산된 숫자로 만든 기본 문구가 나간다.
+OPENAI_API_KEY=
+OPENAI_BASE_URL=
 EOF
   chmod 600 "$SHARED/.env"
 fi

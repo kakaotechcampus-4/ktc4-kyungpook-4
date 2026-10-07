@@ -30,7 +30,10 @@ services:
       retries: 20
 
   backend:
-    build: ../backend
+    # backend 가 ../ai 패키지를 쓰므로 레포 루트를 컨텍스트로 빌드한다
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     env_file: .env
     environment:

@@ -5,10 +5,7 @@ name: Deploy (팀 서버)
 on:
   workflow_dispatch:
   push:
-    branches:
-      - develop
-      # 머지 전 첫 배포 검증용. develop 에 머지할 때 지운다.
-      - feature/be-deploy
+    branches: [develop]
 
 concurrency:
   group: deploy-team-server
@@ -43,7 +40,7 @@ jobs:
           flutter build web --release --dart-define=API_BASE_URL=/api/v1
 
       - name: 번들 만들기
-        run: tar czf bundle.tar.gz backend deploy ai/output/erd frontend/build/web
+        run: tar czf bundle.tar.gz backend deploy ai/pyproject.toml ai/src ai/output/erd frontend/build/web
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
