@@ -14,6 +14,7 @@ dependencies = [
     "pydantic-settings>=2.0",
     "asyncpg>=0.29",
     "redis>=5.0",
+    "ktc4-ai",  # AI 파트 모듈(../ai). Summary(추천 이유 문구) 생성에 쓴다
 ]
 
 [dependency-groups]
@@ -28,6 +29,10 @@ dev = [
 [tool.uv]
 # 이 저장소는 라이브러리가 아니라 실행되는 앱이다. 자기 자신을 빌드·설치하지 않는다.
 package = false
+
+[tool.uv.sources]
+# ai/ 를 경로 의존성으로 쓴다. editable 이라 ai/ 코드를 고치면 재설치 없이 바로 반영된다.
+ktc4-ai = { path = "../ai", editable = true }
 
 # ── 린터 / 포매터 ────────────────────────────────────────────────
 [tool.ruff]

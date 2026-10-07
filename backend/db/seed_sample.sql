@@ -59,7 +59,7 @@ INSERT INTO institution (institution_code, name, institution_type, region, is_ac
 INSERT INTO institution (institution_code, name, institution_type, region, is_active) VALUES ('SB-0010345', '애큐온저축은행', '저축은행', NULL, true) ON CONFLICT DO NOTHING;
 
 -- product (50건)
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001B-858625', 'BANK-0010001', 'WON플러스예금', '예금', NULL, NULL, NULL, NULL, '만기 후
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001B-858625', 'BANK-0010001', 'WON플러스예금', '예금', NULL, NULL, NULL, NULL, '만기 후
 - 1개월이내 : 만기시점약정이율×50%
 - 1개월초과 6개월이내: 만기시점약정이율×30%
 - 6개월초과 : 만기시점약정이율×20%
@@ -69,8 +69,8 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 - 가입기간: 1~36개월
 - 최소가입금액: 1만원 이상
 - 만기일을 일,월 단위로 자유롭게 선택 가능
-- 만기해지 시 신규일 당시 영업점과 인터넷 홈페이지에 고시된 계약기간별 금리 적용', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001F-자유적립식-a82ca0', 'BANK-0010001', '우리SUPER주거래적금(자유적립식)', '적금', NULL, NULL, NULL, NULL, '만기 후
+- 만기해지 시 신규일 당시 영업점과 인터넷 홈페이지에 고시된 계약기간별 금리 적용', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001F-자유적립식-a82ca0', 'BANK-0010001', '우리SUPER주거래적금(자유적립식)', '적금', NULL, NULL, NULL, NULL, '만기 후
 - 1개월이내 : 만기시점약정이율×50%
 - 1개월초과 6개월이내: 만기시점약정이율×30%
 - 6개월초과 : 만기시점약정이율×20%
@@ -78,8 +78,8 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 ※ 만기시점 약정이율 : 일반정기적금 금리
 
 1. 가입기간 : 1년/2년/3년
-2. 가입금액 : 월 50만원 이내', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001F-정액적립식-3715ab', 'BANK-0010001', '우리SUPER주거래적금(정액적립식)', '적금', NULL, NULL, NULL, NULL, '만기 후
+2. 가입금액 : 월 50만원 이내', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001F-정액적립식-3715ab', 'BANK-0010001', '우리SUPER주거래적금(정액적립식)', '적금', NULL, NULL, NULL, NULL, '만기 후
 - 1개월이내 : 만기시점약정이율×50%
 - 1개월초과 6개월이내: 만기시점약정이율×30%
 - 6개월초과 : 만기시점약정이율×20%
@@ -87,8 +87,8 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 ※ 만기시점 약정이율 : 일반정기적금 금리
 
 1. 가입기간 : 1년/2년/3년
-2. 가입금액 : 월 50만원 이내', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001L-자유적립식-e47b70', 'BANK-0010001', 'WON적금(자유적립식)', '적금', NULL, NULL, NULL, NULL, '만기 후
+2. 가입금액 : 월 50만원 이내', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001L-자유적립식-e47b70', 'BANK-0010001', 'WON적금(자유적립식)', '적금', NULL, NULL, NULL, NULL, '만기 후
 - 1개월이내 : 만기시점약정이율×50%
 - 1개월초과 6개월이내: 만기시점약정이율×30%
 - 6개월초과 : 만기시점약정이율×20%
@@ -96,8 +96,8 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 ※ 만기시점 약정이율 : 일반정기적금 금리
 
 1. 가입기간 : 1년
-2. 가입금액 : 월 50만원 이내', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001L-정액적립식-c5a8e4', 'BANK-0010001', 'WON적금(정액적립식)', '적금', NULL, NULL, NULL, NULL, '만기 후
+2. 가입금액 : 월 50만원 이내', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010001-WR0001L-정액적립식-c5a8e4', 'BANK-0010001', 'WON적금(정액적립식)', '적금', NULL, NULL, NULL, NULL, '만기 후
 - 1개월이내 : 만기시점약정이율×50%
 - 1개월초과 6개월이내: 만기시점약정이율×30%
 - 6개월초과 : 만기시점약정이율×20%
@@ -105,53 +105,53 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 ※ 만기시점 약정이율 : 일반정기적금 금리
 
 1. 가입기간 : 1년
-2. 가입금액 : 월 50만원 이내', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010002-00266451-자유적립식-08a9a3', 'BANK-0010002', '퍼스트가계적금(자유적립식)', '적금', NULL, 10000000, NULL, NULL, '만기 후 1개월: 약정이율의 50%
+2. 가입금액 : 월 50만원 이내', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010002-00266451-자유적립식-08a9a3', 'BANK-0010002', '퍼스트가계적금(자유적립식)', '적금', NULL, 10000000, NULL, NULL, '만기 후 1개월: 약정이율의 50%
 만기 후 1개월 초과 1년 이내: 약정이율의 30%
 만기 후 1년 초과: 약정이율의 10%
 
-해당없음', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-01'::date, '9999-12-31'::date, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010002-00266451-정액적립식-ba27f3', 'BANK-0010002', '퍼스트가계적금(정액적립식)', '적금', NULL, 10000000, NULL, NULL, '만기 후 1개월: 약정이율의 50%
+해당없음', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-01'::date, '9999-12-31'::date, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010002-00266451-정액적립식-ba27f3', 'BANK-0010002', '퍼스트가계적금(정액적립식)', '적금', NULL, 10000000, NULL, NULL, '만기 후 1개월: 약정이율의 50%
 만기 후 1개월 초과 1년 이내: 약정이율의 30%
 만기 후 1년 초과: 약정이율의 10%
 
-해당없음', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-01'::date, '9999-12-31'::date, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010016-10511008001166004-847cfe', 'BANK-0010016', 'iM함께예금', '예금', NULL, NULL, NULL, NULL, '만기 후 1개월 미만 경과 : 약정이자율 x 50%
+해당없음', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-01'::date, '9999-12-31'::date, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010016-10511008001166004-847cfe', 'BANK-0010016', 'iM함께예금', '예금', NULL, NULL, NULL, NULL, '만기 후 1개월 미만 경과 : 약정이자율 x 50%
 만기 후 3개월 미만 경과 : 약정이자율 x 25% 
 만기 후 3개월 이상 경과 : 약정이자율 x 10%
 
-계좌당 가입 최저한도 : 100만원', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010016-10511008001278000-d42310', 'BANK-0010016', 'iM스마트예금', '예금', NULL, NULL, NULL, NULL, '만기 후 1개월 미만 경과 : 약정이자율 x 50%
+계좌당 가입 최저한도 : 100만원', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010016-10511008001278000-d42310', 'BANK-0010016', 'iM스마트예금', '예금', NULL, NULL, NULL, NULL, '만기 후 1개월 미만 경과 : 약정이자율 x 50%
 만기 후 3개월 미만 경과 : 약정이자율 x 25% 
 만기 후 3개월 이상 경과 : 약정이자율 x 10%
 
-계좌당 가입 최저한도 : 100만원', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010016-10521001001166004-98270d', 'BANK-0010016', 'iM함께적금', '적금', NULL, NULL, NULL, NULL, '만기 후 1개월 미만 경과: 약정이자율 x 50%
+계좌당 가입 최저한도 : 100만원', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010016-10521001001166004-98270d', 'BANK-0010016', 'iM함께적금', '적금', NULL, NULL, NULL, NULL, '만기 후 1개월 미만 경과: 약정이자율 x 50%
 만기 후 3개월 미만 경과: 약정이자율 x 25%
 만기 후 3개월 이상 경과: 약정이자율 x 10%
 
-계좌당 가입 최저한도 : 10만원', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010017-01020400490002-8e925a', 'BANK-0010017', '펫 적금', '적금', NULL, 500000, NULL, NULL, '- 만기후 1년이내:가입기간별 일반정기적금 기본이율 x 50%
+계좌당 가입 최저한도 : 10만원', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010017-01020400490002-8e925a', 'BANK-0010017', '펫 적금', '적금', NULL, 500000, NULL, NULL, '- 만기후 1년이내:가입기간별 일반정기적금 기본이율 x 50%
 - 만기후 1년초과:가입기간별 일반정기적금 기본이율 x 20%
 
 1. 가입한도: 월 1만원 이상 50만원 이하 원단위
-2. 정기적립식', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010017-01020400510001-db5379', 'BANK-0010017', '저탄소 실천 적금', '적금', NULL, 10000000, NULL, NULL, '- 만기후 1년이내:가입기간별 일반정기적금 기본이율 x 50%
+2. 정기적립식', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010017-01020400510001-db5379', 'BANK-0010017', '저탄소 실천 적금', '적금', NULL, 10000000, NULL, NULL, '- 만기후 1년이내:가입기간별 일반정기적금 기본이율 x 50%
 - 만기후 1년초과:가입기간별 일반정기적금 기본이율 x 20%
 
 1. 가입한도: 월 1만원 이상 1천만원 이하 원단위 (월 1천만원 이하 불입 가능)
-2. 자유적립식', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010017-01020400700001-912056', 'BANK-0010017', 'Only One 주거래 우대적금', '적금', NULL, 500000, NULL, NULL, '- 만기후 1년이내:가입기간별 일반정기적금 기본이율 x 50%
+2. 자유적립식', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010017-01020400700001-912056', 'BANK-0010017', 'Only One 주거래 우대적금', '적금', NULL, 500000, NULL, NULL, '- 만기후 1년이내:가입기간별 일반정기적금 기본이율 x 50%
 - 만기후 1년초과:가입기간별 일반정기적금 기본이율 x 20%
 
 1.가입금(적립)금액 : 월 1천원 이상 50만원 이하
-2. 가입기간 : 12개월', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010019-TD11300027000-0e3af9', 'BANK-0010019', '미즈월복리정기예금', '예금', NULL, 50000000, NULL, NULL, '*만기후 1개월 이내: 만기일 당시 최초 가입 기간별 일반정기예금 고시금리의 1/2 
+2. 가입기간 : 12개월', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010019-TD11300027000-0e3af9', 'BANK-0010019', '미즈월복리정기예금', '예금', NULL, 50000000, NULL, NULL, '*만기후 1개월 이내: 만기일 당시 최초 가입 기간별 일반정기예금 고시금리의 1/2 
 *만기후 1개월 초과: 0.01%
 
 1. 가입기간 : 1년이상 3년제
-2. 가입금액 : 5백만원이상 최고 50백만원', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010020-101272000006-7c6c97', 'BANK-0010020', '제주Dream
+2. 가입금액 : 5백만원이상 최고 50백만원', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010020-101272000006-7c6c97', 'BANK-0010020', '제주Dream
 정기예금
 (개인/만기
 지급식)', '예금', NULL, NULL, NULL, NULL, '- 만기후 1개월 이내 : (일반)정기예금 기본이자율의 50%
@@ -160,25 +160,25 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 (단, 최저금리 0.1%)
 - 만기후 3개월 초과 : 0.1%
 
-가입금액 : 1백만원 이상', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010022-10-01-20-024-0059-0000-ed865d', 'BANK-0010022', 'JB 123 정기예금
+가입금액 : 1백만원 이상', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010022-10-01-20-024-0059-0000-ed865d', 'BANK-0010022', 'JB 123 정기예금
  (만기일시지급식)', '예금', NULL, NULL, NULL, NULL, '만기후 1개월 이하 : 만기일 현재 계약기간별 정기예금 실행이율 1/2
 만기후 1개월 초과 : 연 0.01%
 
 예금의 신규 : 인터넷뱅킹, 모바일뱅킹, 모바일웹, BDT
 예금의 해지 : 인터넷뱅킹, 모바일뱅킹, 영업점
-가입금액 최저 1백만원이상', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010022-10-01-30-031-0036-234aae', 'BANK-0010022', 'JB 다이렉트적금(정액적립식)', '적금', NULL, 5000000, NULL, NULL, '√만기후 1개월이내 경과분 : 만기일 현재 계약기간별 정기적금(정액적립식) 실행이율의 1/2
+가입금액 최저 1백만원이상', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010022-10-01-30-031-0036-234aae', 'BANK-0010022', 'JB 다이렉트적금(정액적립식)', '적금', NULL, 5000000, NULL, NULL, '√만기후 1개월이내 경과분 : 만기일 현재 계약기간별 정기적금(정액적립식) 실행이율의 1/2
 √만기후 1개월초과 경과분 : 연 0.1%
 
 1. 초회불입금 1만원이상, 1인당 월별 최고 5백만원이내
-2. 인터넷뱅킹/스마트폰뱅킹 가입상품', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010024-21001236-2dd745', 'BANK-0010024', '주거래 프리미엄 적금', '적금', NULL, 999999999, NULL, NULL, '만기후 1개월 이내: 일반정기예금 기본이율의 50%
+2. 인터넷뱅킹/스마트폰뱅킹 가입상품', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0010024-21001236-2dd745', 'BANK-0010024', '주거래 프리미엄 적금', '적금', NULL, 999999999, NULL, NULL, '만기후 1개월 이내: 일반정기예금 기본이율의 50%
 만기후 1개월 초과: 일반정기예금 기본이율의 20%
 
 1.계악기간은 1년제, 2년제, 3년제로 한다.
-2. 적립금액은 매월 1만원이상, 최고금액은 제한없음', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, '9999-12-31'::date, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0013175-10-003-1387-0001-fda3aa', 'BANK-0013175', 'NH고향사랑기부예금', '예금', NULL, NULL, NULL, NULL, '만기 후 3개월 : 기본금리의 50%
+2. 적립금액은 매월 1만원이상, 최고금액은 제한없음', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, '9999-12-31'::date, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0013175-10-003-1387-0001-fda3aa', 'BANK-0013175', 'NH고향사랑기부예금', '예금', NULL, NULL, NULL, NULL, '만기 후 3개월 : 기본금리의 50%
 만기 후 6개월 : 기본금리의 20%
 만기 후  6개월 초과 : 기본금리의 10%
 
@@ -188,14 +188,14 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 2. 고향사랑기부금 우대금리는 농협은행/농축협 영업점 또는 고향사랑e음 홈페이지를 통한 고향사랑기부금 납부실적이 확인되는 경우 제공
 3. 연간 판매액의 0.1% 공익기금 적립
 
-※ 우대조건 관련 자세한 사항은 상품설명서 참조', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0013175-10-047-1360-0002-342afd', 'BANK-0013175', 'NH올원e 미니적금', '적금', NULL, 1550000, NULL, NULL, '만기후 1년 이내 : 만기시점 계약기간별 자유로우대적금 기본금리의 1/2
+※ 우대조건 관련 자세한 사항은 상품설명서 참조', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0013175-10-047-1360-0002-342afd', 'BANK-0013175', 'NH올원e 미니적금', '적금', NULL, 1550000, NULL, NULL, '만기후 1년 이내 : 만기시점 계약기간별 자유로우대적금 기본금리의 1/2
 만기후 1년 초과 : 보통예금 금리
 
 가입기간 1개월 이상 6개월 이하(일 단위)
 
-초입금 및 매일 1천원이상  5만원이내(천원 단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-08'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0013175-10-047-1387-0001-193efa', 'BANK-0013175', 'NH고향사랑기부적금', '적금', NULL, 500000, NULL, NULL, '만기후 1년 이내 : 만기시점 계약기간별 기본금리의 1/2
+초입금 및 매일 1천원이상  5만원이내(천원 단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-08'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('BANK-0013175-10-047-1387-0001-193efa', 'BANK-0013175', 'NH고향사랑기부적금', '적금', NULL, 500000, NULL, NULL, '만기후 1년 이내 : 만기시점 계약기간별 기본금리의 1/2
 만기후 1년 초과 : 보통예금 금리
 
 1.초입금1만원 이상 및 매회 1천원 이상, 매월50만원이내
@@ -204,54 +204,54 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 
 3. 연간 판매액의 0.1% 공익기금 적립
 
-※자세한 사항은 상품설명서 참조', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-08'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1501-586f1c', 'CU-01002', '정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+※자세한 사항은 상품설명서 참조', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-08'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1501-586f1c', 'CU-01002', '정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
 ㆍ가입금액 : 1만원 이상
-ㆍ가입기간 : 5년 이하(연, 월단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1503-c1799a', 'CU-01002', 'OK회전예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 5년 이하(연, 월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1503-c1799a', 'CU-01002', 'OK회전예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
 ㆍ최소가입금액 : 100만원 이상
-ㆍ가입기간 : 3년 이내', NULL, '영업점', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1504-f9fdef', 'CU-01002', '파워정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 3년 이내', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1504-f9fdef', 'CU-01002', '파워정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
-ㆍ가입기간 : 3개월 이상 36개월 이하(계약기간 종료 후 최장 7년까지 재연장신청 가능)', NULL, '영업점', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1508-36b68d', 'CU-01002', '유니온정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 3개월 이상 36개월 이하(계약기간 종료 후 최장 7년까지 재연장신청 가능)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1508-36b68d', 'CU-01002', '유니온정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
 ㆍ최소가입금액 : 30만원 이상
-ㆍ가입기간 : 3개월 이상 3년 이하(연, 월단위)', NULL, '비대면', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1701-e0434b', 'CU-01002', '정기적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 3개월 이상 3년 이하(연, 월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1701-e0434b', 'CU-01002', '정기적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
 ㆍ가입금액 : 월 1천원 이상
-ㆍ가입기간 : 6년 이하(월단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1703-55c6f8', 'CU-01002', '자유적립적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 6년 이하(월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1703-55c6f8', 'CU-01002', '자유적립적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
-ㆍ가입기간 : 3개월 이상 6년 이하(월단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1713-35cb87', 'CU-01002', 'e-파란적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 3개월 이상 6년 이하(월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1713-35cb87', 'CU-01002', 'e-파란적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
@@ -259,8 +259,8 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 
 ㆍ가입금액 : 월 1만원 이상
 ㆍ납입한도 : 월 100만원 이내
-ㆍ가입기간 : 1년 이상 5년 이내(연단위)', NULL, '비대면', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1714-f879f6', 'CU-01002', '테트리스적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 1년 이상 5년 이내(연단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1714-f879f6', 'CU-01002', '테트리스적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
@@ -269,8 +269,8 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 ㆍ가입금액 : 건당 1천원 이상
 ㆍ납입한도 : 월 40만원 이내
 ㆍ가입기간 : 1년 이상 6년 이하(연단위)
-ㆍ기타제한 : 1인 1계좌에 한해 가입가능', NULL, '영업점', true, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1715-62f0c3', 'CU-01002', '레이디4U적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ기타제한 : 1인 1계좌에 한해 가입가능', NULL, true, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01002-1715-62f0c3', 'CU-01002', '레이디4U적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
@@ -279,87 +279,87 @@ INSERT INTO product (product_id, institution_code, product_name, product_type, a
 ㆍ가입금액 : 건당 1천원 이상
 ㆍ납입한도 : 월 100만원 이내
 ㆍ가입기간 : 1년 이상 3년 이하(연단위)
-ㆍ기타제한 : 1인 1계좌에 한해 가입가능', NULL, '비대면', true, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01003-1501-586f1c', 'CU-01003', '정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ기타제한 : 1인 1계좌에 한해 가입가능', NULL, true, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01003-1501-586f1c', 'CU-01003', '정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
 ㆍ가입금액 : 1만원 이상
-ㆍ가입기간 : 5년 이하(연, 월단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01003-1701-e0434b', 'CU-01003', '정기적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 5년 이하(연, 월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01003-1701-e0434b', 'CU-01003', '정기적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
 ㆍ가입금액 : 월 1천원 이상
-ㆍ가입기간 : 6년 이하(월단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01003-1703-55c6f8', 'CU-01003', '자유적립적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 6년 이하(월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01003-1703-55c6f8', 'CU-01003', '자유적립적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
-ㆍ가입기간 : 3개월 이상 6년 이하(월단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01008-1501-586f1c', 'CU-01008', '정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 3개월 이상 6년 이하(월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01008-1501-586f1c', 'CU-01008', '정기예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
 ㆍ가입금액 : 1만원 이상
-ㆍ가입기간 : 5년 이하(연, 월단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01008-1503-c1799a', 'CU-01008', 'OK회전예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 5년 이하(연, 월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01008-1503-c1799a', 'CU-01008', 'OK회전예탁금(만기지급식)', '예금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
 ㆍ최소가입금액 : 100만원 이상
-ㆍ가입기간 : 3년 이내', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01008-1701-e0434b', 'CU-01008', '정기적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 3년 이내', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01008-1701-e0434b', 'CU-01008', '정기적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
 ㆍ가입금액 : 월 1천원 이상
-ㆍ가입기간 : 6년 이하(월단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01008-1703-55c6f8', 'CU-01008', '자유적립적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
+ㆍ가입기간 : 6년 이하(월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('CU-01008-1703-55c6f8', 'CU-01008', '자유적립적금', '적금', NULL, 1000000000, NULL, NULL, 'ㆍ만기후 1개월 미만 : 만기일 당시 신규 기본이율의 1/2
 ㆍ만기후 1개월 이상 ~ 3개월 미만 : 만기일 당시 신규 기본이율의 1/3
 ㆍ만기후 3개월 이상 ~ 6개월 미만 : 만기일 당시 신규 기본이율의 1/6
 ㆍ만기후 6개월 이상 : 만기일 당시 보통예탁금 이율
 ㆍ기재된 구간별 만기후 이자율은 최저이율이며 그 이상으로 지급 될 수 있습니다.
 
-ㆍ가입기간 : 3개월 이상 6년 이하(월단위)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-Block예금-c28690', 'KFCC-0101-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG New정기적금-fc420f', 'KFCC-0101-001', 'MG New정기적금', '적금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG더뱅킹정기예금-4ce43b', 'KFCC-0101-001', 'MG더뱅킹정기예금', '예금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG더뱅킹정기적금-c3c2a3', 'KFCC-0101-001', 'MG더뱅킹정기적금', '적금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG주거래우대자유적금-ef29a3', 'KFCC-0101-001', 'MG주거래우대자유적금', '적금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG주거래우대정기예금-7ee264', 'KFCC-0101-001', 'MG주거래우대정기예금', '예금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-3341-001-Block예금-c28690', 'KFCC-3341-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '충남 부여군', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-4248-001-Block예금-c28690', 'KFCC-4248-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '강원 속초시', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-4603-001-Block예금-c28690', 'KFCC-4603-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '충북 청주시', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-5113-001-Block예금-c28690', 'KFCC-5113-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '전북 군산시', '전체', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('SB-0010345-HK00001-28bb04', 'SB-0010345', '정기예금', '예금', NULL, NULL, NULL, NULL, '만기후 1개월 이내 해지 시 : 약정금리(2019.07.01 신규부터 적용)
+ㆍ가입기간 : 3개월 이상 6년 이하(월단위)', NULL, false, false, NULL, NULL, 'PARSED', '2026-09-10'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-Block예금-c28690', 'KFCC-0101-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG New정기적금-fc420f', 'KFCC-0101-001', 'MG New정기적금', '적금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG더뱅킹정기예금-4ce43b', 'KFCC-0101-001', 'MG더뱅킹정기예금', '예금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG더뱅킹정기적금-c3c2a3', 'KFCC-0101-001', 'MG더뱅킹정기적금', '적금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG주거래우대자유적금-ef29a3', 'KFCC-0101-001', 'MG주거래우대자유적금', '적금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-0101-001-MG주거래우대정기예금-7ee264', 'KFCC-0101-001', 'MG주거래우대정기예금', '예금', NULL, NULL, NULL, NULL, NULL, '서울 종로구', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-3341-001-Block예금-c28690', 'KFCC-3341-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '충남 부여군', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-4248-001-Block예금-c28690', 'KFCC-4248-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '강원 속초시', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-4603-001-Block예금-c28690', 'KFCC-4603-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '충북 청주시', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('KFCC-5113-001-Block예금-c28690', 'KFCC-5113-001', 'Block예금', '예금', NULL, NULL, NULL, NULL, NULL, '전북 군산시', false, false, NULL, NULL, 'PARSED', '2026-09-27'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('SB-0010345-HK00001-28bb04', 'SB-0010345', '정기예금', '예금', NULL, NULL, NULL, NULL, '만기후 1개월 이내 해지 시 : 약정금리(2019.07.01 신규부터 적용)
 만기후 1개월 초과 이후 해지 시 : 보통예금이율(2019.07.01 신규부터 적용)
 
-가입금액 1백만원이상', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('SB-0010345-HK00002-e0434b', 'SB-0010345', '정기적금', '적금', NULL, NULL, NULL, NULL, '만기후 1개월 이내 해지 시 : 약정금리(2019.07.01 신규부터 적용)
+가입금액 1백만원이상', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('SB-0010345-HK00002-e0434b', 'SB-0010345', '정기적금', '적금', NULL, NULL, NULL, NULL, '만기후 1개월 이내 해지 시 : 약정금리(2019.07.01 신규부터 적용)
 만기후 1개월 초과 이후 해지 시 : 보통예금이율(2019.07.01 신규부터 적용)
 
-불입금액 : 1만원 이상', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
-INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, join_channel, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('SB-0010345-HK00006-e4bf28', 'SB-0010345', '플러스회전식정기예금(영업점)', '예금', NULL, NULL, NULL, NULL, '만기후 1개월 이내 해지 시 : 마지막 회전기간 약정금리
+불입금액 : 1만원 이상', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+INSERT INTO product (product_id, institution_code, product_name, product_type, amount_min, amount_cap, monthly_min, monthly_cap, terms_text, region, membership_required, new_customer_only, min_age, max_age, parse_status, snapshot_date, sale_end_date, is_active) VALUES ('SB-0010345-HK00006-e4bf28', 'SB-0010345', '플러스회전식정기예금(영업점)', '예금', NULL, NULL, NULL, NULL, '만기후 1개월 이내 해지 시 : 마지막 회전기간 약정금리
 만기후 1개월 초과 이후 해지 시 : 보통예금이율
 
 가입금액: 1백만원 이상
 1년단위 변동금리 상품 : 가입기간 36개월(가입후 매1년 회전주기 단위로 약정이율 변동)
 약정이율 : 회전시점 정기예금 12개월금리+0.1% 
 중도해지이율 : 완료된 회전주기기간은 중도해지시에도 회전 구간 별 약정금리제공
-(미완료된 회전주기기간은 당행 정기예금 1년 내 중도해지금리 적용)', NULL, '전체', false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
+(미완료된 회전주기기간은 당행 정기예금 1년 내 중도해지금리 적용)', NULL, false, false, NULL, NULL, 'PARSED', '2026-08-20'::date, NULL, true) ON CONFLICT DO NOTHING;
 
 -- product_option (198건)
 INSERT INTO product_option (option_id, product_id, period_months, rate_type, reserve_type, join_channel, base_rate, max_rate) VALUES ('BANK-0010001-WR0001B-858625-1-단리-해당없음-전체', 'BANK-0010001-WR0001B-858625', 1, '단리', '해당없음', '전체', 2.70, 2.70) ON CONFLICT DO NOTHING;
