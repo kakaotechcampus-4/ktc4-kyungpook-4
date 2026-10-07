@@ -9,6 +9,7 @@
 지점 수가 많으므로(전국 약 3천개+) 중간에 끊겨도 이어할 수 있도록
 결과를 JSONL로 한 줄씩 즉시 저장하고, 이미 처리한 gmgoCd는 재실행 시 건너뜀.
 """
+import argparse
 import json
 import sys
 import time
@@ -82,6 +83,14 @@ def load_done_codes() -> set[str]:
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--refresh", action="store_true", help="기존 결과를 삭제하고 전체 재수집 (매주 갱신용)")
+    args = ap.parse_args()
+
+    if args.refresh and OUT_PATH.exists():
+        OUT_PATH.unlink()
+        print(f"[refresh] {OUT_PATH.name} 삭제 완료")
+
     if not BRANCHES_PATH.exists():
         print(f"{BRANCHES_PATH} 가 없습니다. fetch_kfcc_branches.py 를 먼저 실행하세요.")
         return
