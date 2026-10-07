@@ -7,7 +7,6 @@ import '../screens/input/input_step3_screen.dart';
 import '../screens/loading/loading_screen.dart';
 import '../screens/result/portfolio_detail_screen.dart';
 import '../screens/result/result_screen.dart';
-import '../screens/roadmap/roadmap_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/tutorial/tutorial_screen.dart';
 
@@ -23,7 +22,8 @@ class AppRoutes {
   static const inputStep3 = '/input/3';
   static const result = '/result';
   static const resultDetail = '/result/detail';
-  static const roadmap = '/roadmap';
+
+  static String inputStep(int step) => '/input/$step';
 }
 
 final appRouter = GoRouter(
@@ -64,10 +64,6 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.resultDetail,
       builder: (context, state) => const PortfolioDetailScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.roadmap,
-      builder: (context, state) => const RoadmapScreen(),
     ),
   ],
 );
