@@ -74,9 +74,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               alignment: Alignment.topRight,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.calendar_month_outlined),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () => context.push(AppRoutes.roadmap),
+                      icon: const Icon(Icons.route_outlined),
+                    ),
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.calendar_month_outlined),
+                    ),
+                  ],
                 ),
               ),
             ),
