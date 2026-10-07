@@ -9,14 +9,10 @@ import '../../providers/manual_entry_provider.dart';
 import '../../router/app_router.dart';
 import '../../widgets/manual_entry_tile.dart';
 import '../../widgets/month_calendar_grid.dart';
+import '../../widgets/month_year_picker.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/product_entry_form.dart';
 import '../../widgets/upcoming_event_tile.dart';
-
-const _monthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -27,6 +23,28 @@ class CalendarScreen extends ConsumerStatefulWidget {
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   late DateTime _selectedDate = DateTime.now();
+  late DateTime _displayedMonth =
+      DateTime(DateTime.now().year, DateTime.now().month);
+
+  void _goToPreviousMonth() {
+    setState(() {
+      _displayedMonth = DateTime(_displayedMonth.year, _displayedMonth.month - 1);
+    });
+  }
+
+  void _goToNextMonth() {
+    setState(() {
+      _displayedMonth = DateTime(_displayedMonth.year, _displayedMonth.month + 1);
+    });
+  }
+
+  Future<void> _openMonthYearPicker() async {
+    final picked = await showMonthYearPicker(
+      context: context,
+      initialMonth: _displayedMonth,
+    );
+    if (picked != null) setState(() => _displayedMonth = picked);
+  }
 
   void _openEntrySheet(DateTime date) {
     showModalBottomSheet(
@@ -61,7 +79,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
     final eventsAsync = ref.watch(upcomingEventsProvider);
     final manualEntries = ref.watch(manualEntryProvider);
 
@@ -82,24 +99,38 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       icon: const Icon(Icons.route_outlined),
                     ),
                     IconButton(
-                      onPressed: () {},
+                      onPressed: _openMonthYearPicker,
                       icon: const Icon(Icons.calendar_month_outlined),
                     ),
                   ],
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                '${_monthNames[today.month - 1]} ${today.year}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: _goToPreviousMonth,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                // 화살표는 항상 양쪽 끝에 고정하고, 그 사이 공간 안에서만
+                // 글자를 가운데 정렬한다. "1월"/"10월"처럼 글자 수가 달라도
+                // 화살표 위치가 글자 너비에 따라 움직이지 않는다.
+                Expanded(
+                  child: Text(
+                    '${_displayedMonth.year}년 ${_displayedMonth.month}월',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton(
+                  onPressed: _goToNextMonth,
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             MonthCalendarGrid(
-              month: today,
+              month: _displayedMonth,
               highlightedDate: _selectedDate,
               onDateSelected: (date) {
                 setState(() => _selectedDate = date);
