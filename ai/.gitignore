@@ -2,3 +2,7 @@ logs/
 .env
 tests/fixtures/*
 !tests/fixtures/.gitkeep
+
+# pip install -e 로 패키지 설치할 때 생기는 빌드 산출물
+build/
+*.egg-info/
