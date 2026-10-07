@@ -68,7 +68,10 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const StepIndicator(currentStep: 1),
+              StepIndicator(
+                currentStep: 1,
+                onStepTap: (step) => context.go(AppRoutes.inputStep(step)),
+              ),
               const SizedBox(height: 48),
               _buildHeader(),
               const SizedBox(height: 40),

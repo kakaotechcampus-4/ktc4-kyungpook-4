@@ -63,6 +63,12 @@ const Map<String, List<String>> koreaRegions = {
 };
 
 const List<String> koreaSidoOptions = [
+  '부산광역시',
+  '대구광역시',
+  '인천광역시',
+  '광주광역시',
+  '대전광역시',
+  '울산광역시',
   '서울특별시',
   '경기도',
   '경상북도',
@@ -73,11 +79,5 @@ const List<String> koreaSidoOptions = [
   '전라남도',
   '강원특별자치도',
   '제주특별자치도',
-  '부산광역시',
-  '대구광역시',
-  '인천광역시',
-  '광주광역시',
-  '대전광역시',
-  '울산광역시',
   '세종특별자치시',
 ];

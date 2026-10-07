@@ -173,7 +173,10 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const StepIndicator(currentStep: 3),
+                    StepIndicator(
+                      currentStep: 3,
+                      onStepTap: (step) => context.go(AppRoutes.inputStep(step)),
+                    ),
                     const SizedBox(height: 32),
                     if (_mutualBanks.isEmpty) ...[
                       const BotChatTurn(

@@ -22,6 +22,8 @@ class AppRoutes {
   static const inputStep3 = '/input/3';
   static const result = '/result';
   static const resultDetail = '/result/detail';
+
+  static String inputStep(int step) => '/input/$step';
 }
 
 final appRouter = GoRouter(
