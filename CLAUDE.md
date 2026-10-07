@@ -170,3 +170,25 @@ flutter run
 - 백엔드: http://localhost:8000 (API 문서: `/docs`)
 - 헬스체크: `GET /api/v1/health`, `/health/db`, `/health/redis`
 - CORS: 로컬 개발 포트(5173/3000/8080) 허용하도록 설정됨
+
+## 배포 · 운영 (팀 EC2 서버)
+
+- 서비스 주소: https://safebrother.duckdns.org (API 문서 `/docs`). 프론트(웹)와 API 가 같은 주소라 CORS 불필요
+- **배포는 자동**: `develop` 에 push 되면 `.github/workflows/deploy.yml` 이 실행된다. Actions 탭에서 수동 실행도 가능
+  - 흐름: Flutter 웹 빌드 → 번들(tar.gz) → S3 → SSM 으로 서버에서 `deploy/deploy.sh` 실행
+  - 인증은 OIDC(`ktc-github-deploy` 역할). **액세스 키·SSH 키를 GitHub 에 넣지 않는다**
+  - 배포할 때마다 기동 시 마이그레이션 적용 + AI 산출물 임포트(upsert)가 돈다
+  - **실행 중 실패(마이그레이션 오류 등)는 자동 롤백되지 않는다.** 시연 직전엔 develop 머지를 멈춘다
+- 서버 구성(`deploy/docker-compose.yml`): postgres · redis · backend · Caddy. 외부 포트는 80·443 만
+  (보안 그룹은 운영진 템플릿 관리. **22번은 열지 않는다** — 접속은 SSM)
+- 비밀값은 **서버의 `/opt/ktc4/shared/.env`(root 전용)에만** 있다. 레포·GitHub 에 없음
+  - DB 비밀번호(첫 배포 때 자동 생성 — 바꾸면 기존 DB 볼륨에 못 붙는다), `SITE_ADDRESS`(HTTPS 도메인),
+    `DUCKDNS_DOMAIN`·`DUCKDNS_TOKEN`(5분마다 IP 갱신), `OPENAI_API_KEY`·`OPENAI_BASE_URL`(비우면 AI Summary 대신 기본 문구)
+  - 값을 바꾼 뒤에는 재배포해야 반영된다
+- 서버 접속: 각자 PC 에 AWS SSO 프로필 + SSM 경유 SSH 설정(`ssh ktc-server`)이 필요하다. 설정 방법은 BE 담당에게 문의
+  ```bash
+  aws sso login --profile ktc4-team08          # SSO 만료 시
+  ssh ktc-server 'cd /opt/ktc4/current/deploy && sudo docker compose ps'
+  ssh ktc-server 'cd /opt/ktc4/current/deploy && sudo docker compose logs --tail 100 backend'
+  ```
+- 서버 DB 를 직접 수정할 때는 지우기 전에 대상과 생성 시각을 먼저 확인한다 (로그인이 없어 팀원 테스트 데이터도 게스트로 섞여 있다)
