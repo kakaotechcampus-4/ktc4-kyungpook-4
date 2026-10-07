@@ -33,7 +33,7 @@ async def recommend_portfolios(
 ) -> PortfolioRecommendResponse:
     profile = await _get_profile(session, body.profile_id)
     tiers = await portfolio_service.build_tiers(session, profile)
-    options = [portfolio_service.to_option_out(tier_name, allocations) for tier_name, allocations in tiers.items()]
+    options = await portfolio_service.recommend_options(session, profile, tiers)
     return PortfolioRecommendResponse(options=options)
 
 
