@@ -17,7 +17,7 @@ final recommendationProvider = FutureProvider.autoDispose<RecommendationResult>(
     final input = ref.watch(onboardingProvider);
     final client = ApiClient.instance;
 
-    // 화면 입력 단위가 이미 "원"이라 변환 없이 그대로 보낸다.
+    // 화면 입력이 이미 원 단위라 변환 없이 그대로 보낸다.
     final profileId = await client.createProfile(
       lumpSumWon: input.lumpSum,
       monthlySavingWon: input.monthlySaving,
