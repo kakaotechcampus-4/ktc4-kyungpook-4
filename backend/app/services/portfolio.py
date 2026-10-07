@@ -2,31 +2,45 @@
 
 우대조건(product_condition)은 아직 반영하지 않는다 - base_rate 만으로 계산한다.
 product 테이블만 조회하므로 미검증 특판(product 에 행이 없는 상태)은 자동으로 제외된다.
+
+티어마다 추천 이유(reason)는 AI 파트의 Summary(ktc4_ai.summary)가 만든다. 숫자는 여기서
+계산한 값을 그대로 넘기고, AI 는 문장으로 옮기기만 한다.
 """
 
+import asyncio
 import calendar as calendar_module
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
+# ai/ 패키지는 기존/신규 은행 판정·단순형 대비 차액 같은 파생값 계산(_enrich_options)도 함께 제공한다.
+# 같은 값을 BE 에서 따로 계산하면 reason 문장 속 숫자와 응답 필드가 어긋날 수 있어 그대로 가져다 쓴다.
+from ktc4_ai import config as ai_config
+from ktc4_ai.summary import _enrich_options, generate_summary
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.institution import Institution
 from app.models.portfolio import UserHolding, UserPortfolio
 from app.models.product import Product, ProductOption
-from app.models.profile import UserProfile
+from app.models.profile import UserProfile, UserProfileBank
 from app.schemas.calendar import CalendarEventOut
 from app.schemas.portfolio import PortfolioOptionOut, PortfolioProductOut
 
 TAX_RATE = Decimal("0.154")
 
-# (표시 이름, 상품 몇 개까지 섞을지, 안내 문구)
-TIER_SPECS: list[tuple[str, int, str]] = [
-    ("단순형", 1, "가장 적은 계좌 수로 관리 부담을 줄인 조합"),
-    ("균형형", 2, "안정성과 금리를 절충한 조합"),
-    ("최대형", 3, "세후 수령액을 최대화한 조합"),
+SIMPLE_TIER = "단순형"
+
+# (표시 이름, 상품 몇 개까지 섞을지)
+TIER_SPECS: list[tuple[str, int]] = [
+    (SIMPLE_TIER, 1),  # 주거래·보유 은행만으로, 새 가입 없이 바로 실행할 수 있는 안
+    ("균형형", 2),
+    ("최대형", 3),
 ]
+
+# 신협·새마을금고는 조합·금고마다 별개 법인이라 보유 은행으로 골라도 추천된 그 조합에
+# 계좌가 있다는 보장이 없다. 항상 신규 가입으로 보고 단순형에서 뺀다 (2026-10 팀 결정).
+ALWAYS_NEW_CODE_PREFIXES = ("CU-", "KFCC-")
 
 
 @dataclass
@@ -133,38 +147,66 @@ def _allocate_greedy(
 
 class TierAllocations:
     def __init__(
-        self, reason: str, period_months: int, deposit_allocs: list[Allocation], installment_allocs: list[Allocation]
+        self, period_months: int, deposit_allocs: list[Allocation], installment_allocs: list[Allocation]
     ) -> None:
-        self.reason = reason
         self.period_months = period_months  # 실제로 매칭된 기간. 프로필 요청 기간과 다를 수 있다
         self.deposit_allocs = deposit_allocs
         self.installment_allocs = installment_allocs
+
+
+async def get_held_bank_codes(session: AsyncSession, profile: UserProfile) -> list[str]:
+    # relationship lazy load 는 async 세션에서 쓸 수 없어 직접 조회한다
+    stmt = select(UserProfileBank.institution_code).where(UserProfileBank.profile_id == profile.profile_id)
+    return list((await session.execute(stmt)).scalars().all())
+
+
+def _simple_tier_candidates(
+    candidates: list[tuple[Product, ProductOption, str]], bank_codes: set[str]
+) -> list[tuple[Product, ProductOption, str]]:
+    """단순형 후보: 주거래·보유 은행 상품만, 신협·새마을금고 제외.
+
+    은행 입력이 없으면 어느 은행을 쓰는지 모르므로 은행으로는 거르지 않는다."""
+    return [
+        (product, option, name)
+        for product, option, name in candidates
+        if not product.institution_code.startswith(ALWAYS_NEW_CODE_PREFIXES)
+        and (not bank_codes or product.institution_code in bank_codes)
+    ]
 
 
 async def build_tiers(session: AsyncSession, profile: UserProfile) -> dict[str, TierAllocations]:
     deposit_period, deposits = await _matching_options(session, "예금", profile.period_months)
     installment_period, installments = await _matching_options(session, "적금", profile.period_months)
 
+    bank_codes = set(await get_held_bank_codes(session, profile))
+    if profile.main_bank_code:
+        bank_codes.add(profile.main_bank_code)
+
     tiers: dict[str, TierAllocations] = {}
-    for tier_name, max_products, reason in TIER_SPECS:
+    for tier_name, max_products in TIER_SPECS:
+        tier_deposits, tier_installments = deposits, installments
+        if tier_name == SIMPLE_TIER:
+            tier_deposits = _simple_tier_candidates(deposits, bank_codes)
+            tier_installments = _simple_tier_candidates(installments, bank_codes)
         deposit_allocs = (
-            _allocate_greedy(profile.capital, deposits, "amount_cap", max_products)
+            _allocate_greedy(profile.capital, tier_deposits, "amount_cap", max_products)
             if profile.capital > 0 and deposit_period is not None
             else []
         )
         installment_allocs = (
-            _allocate_greedy(profile.monthly_saving, installments, "monthly_cap", max_products)
+            _allocate_greedy(profile.monthly_saving, tier_installments, "monthly_cap", max_products)
             if profile.monthly_saving > 0 and installment_period is not None
             else []
         )
         tiers[tier_name] = TierAllocations(
-            reason, deposit_period or installment_period or profile.period_months, deposit_allocs, installment_allocs
+            deposit_period or installment_period or profile.period_months, deposit_allocs, installment_allocs
         )
     return tiers
 
 
 def _to_product_out(alloc: Allocation, after_tax: int) -> PortfolioProductOut:
     return PortfolioProductOut(
+        institution_code=alloc.product.institution_code,
         institution_name=alloc.institution_name,
         product_name=alloc.product.product_name,
         term_months=alloc.option.period_months,
@@ -174,7 +216,7 @@ def _to_product_out(alloc: Allocation, after_tax: int) -> PortfolioProductOut:
     )
 
 
-def to_option_out(tier_name: str, allocations: TierAllocations) -> PortfolioOptionOut:
+def _calc_products(allocations: TierAllocations) -> tuple[list[PortfolioProductOut], int]:
     products: list[PortfolioProductOut] = []
     after_tax_total = 0
 
@@ -188,9 +230,47 @@ def to_option_out(tier_name: str, allocations: TierAllocations) -> PortfolioOpti
         after_tax_total += after_tax
         products.append(_to_product_out(alloc, after_tax))
 
-    return PortfolioOptionOut(
-        tier=tier_name, products=products, after_tax_total=after_tax_total, reason=allocations.reason
+    return products, after_tax_total
+
+
+async def recommend_options(
+    session: AsyncSession, profile: UserProfile, tiers: dict[str, TierAllocations]
+) -> list[PortfolioOptionOut]:
+    """3개 티어를 응답 형태로 만들고 AI Summary 로 reason 을 채운다."""
+    raw_options = []
+    for tier_name, allocations in tiers.items():
+        products, after_tax_total = _calc_products(allocations)
+        raw_options.append(
+            {
+                "tier": tier_name,
+                "products": [p.model_dump() for p in products],
+                "after_tax_total": after_tax_total,
+            }
+        )
+
+    held_bank_codes = await get_held_bank_codes(session, profile)
+    # 은행 입력이 전혀 없으면 None 으로 넘긴다 -> 기존/신규 은행 여부를 "판정 불가"로 두고 언급하지 않는다
+    user_context = (
+        {"main_bank_code": profile.main_bank_code, "held_bank_codes": held_bank_codes}
+        if profile.main_bank_code or held_bank_codes
+        else None
     )
+
+    # generate_summary 는 동기 함수이고 실패 시 sleep 하며 재시도한다. 이벤트 루프를 막지 않게 스레드로 돌린다.
+    # 키가 없으면 어차피 실패하므로 재시도 대기 없이 바로 기본 문구로 넘어가게 한다.
+    retries = 3 if ai_config.OPENAI_API_KEY and ai_config.OPENAI_BASE_URL else 1
+    reasons = await asyncio.to_thread(generate_summary, raw_options, user_context, retries)
+    enriched = {o["tier"]: o for o in _enrich_options(raw_options, user_context)}
+
+    return [
+        PortfolioOptionOut(
+            **raw,
+            reason=reasons[raw["tier"]],
+            extra_vs_simple=enriched[raw["tier"]]["extra_vs_simple"],
+            new_bank_count=len(enriched[raw["tier"]]["new_banks"]),
+        )
+        for raw in raw_options
+    ]
 
 
 async def persist_portfolio(
