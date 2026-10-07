@@ -52,7 +52,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const StepIndicator(currentStep: 1),
-              const SizedBox(height: 32),
+              const SizedBox(height: 48),
               _buildHeader(),
               const SizedBox(height: 40),
               _AmountField(
@@ -60,8 +60,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
                 description: '한번에 최대 얼마까지 맡길 수 있으신가요?',
                 suffixText: '천 원',
                 controller: _lumpSumController,
-                onChanged: (v) =>
-                    notifier.updateLumpSum(int.tryParse(v) ?? 0),
+                onChanged: (v) => notifier.updateLumpSum(int.tryParse(v) ?? 0),
               ),
               const SizedBox(height: 28),
               _AmountField(
@@ -174,11 +173,16 @@ class _AmountField extends StatelessWidget {
                 ),
               ),
             ),
-            suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+            suffixIconConstraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
+            ),
             filled: true,
             fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,
