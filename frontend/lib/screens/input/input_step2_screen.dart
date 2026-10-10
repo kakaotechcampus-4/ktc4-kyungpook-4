@@ -39,7 +39,7 @@ class InputStep2Screen extends ConsumerStatefulWidget {
 }
 
 class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
-  static const _questionCount = 13;
+  static const _questionCount = 12;
 
   final _questionKeys = List.generate(_questionCount, (_) => GlobalKey());
   final _revealed = <int>{};
@@ -53,16 +53,12 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
   late final _birthDayController = TextEditingController(
     text: ref.read(onboardingProvider).birthDay,
   );
-  late final _taxAmountController = TextEditingController(
-    text: ref.read(onboardingProvider).existingTaxExemptAmountText,
-  );
 
   @override
   void dispose() {
     _birthYearController.dispose();
     _birthMonthController.dispose();
     _birthDayController.dispose();
-    _taxAmountController.dispose();
     super.dispose();
   }
 
@@ -185,56 +181,81 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                 key: _questionKeys[4],
                 index: 5,
                 title: '생년월일을 알려주세요!',
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      flex: 3,
-                      child: _DigitField(
-                        controller: _birthYearController,
-                        maxLength: 4,
-                        onChanged: (v) {
-                          notifier.updateBirthYear(v);
-                          if (v.length == 4) FocusScope.of(context).nextFocus();
-                        },
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: _DigitField(
+                            controller: _birthYearController,
+                            maxLength: 4,
+                            onChanged: (v) {
+                              notifier.updateBirthYear(v);
+                              if (v.length == 4) {
+                                FocusScope.of(context).nextFocus();
+                              }
+                            },
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Text('년'),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: _DigitField(
+                            controller: _birthMonthController,
+                            maxLength: 2,
+                            onChanged: (v) {
+                              notifier.updateBirthMonth(v);
+                              if (v.length == 2) {
+                                FocusScope.of(context).nextFocus();
+                              }
+                            },
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Text('월'),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: _DigitField(
+                            controller: _birthDayController,
+                            maxLength: 2,
+                            onChanged: (v) {
+                              notifier.updateBirthDay(v);
+                              if (v.length == 2) {
+                                FocusScope.of(context).unfocus();
+                                // 실제 존재하지 않는 날짜(13월, 2월 30일 등)면
+                                // 다음 질문을 미리 펼치지 않는다.
+                                if (ref.read(onboardingProvider).isBirthDateValid) {
+                                  _revealNext(4);
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(left: 8),
+                          child: Text('일'),
+                        ),
+                      ],
+                    ),
+                    // 년/월/일을 다 채웠는데도 실제 존재하는 날짜가 아니면
+                    // (13월, 2월 30일, 미래 연도 등) 안내 문구를 보여준다.
+                    if (input.birthYear.length == 4 &&
+                        input.birthMonth.isNotEmpty &&
+                        input.birthDay.isNotEmpty &&
+                        !input.isBirthDateValid) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '실제 존재하는 생년월일을 입력해주세요 (예: 1990년 2월 30일은 없는 날짜예요)',
+                        style: TextStyle(fontSize: 12, color: Colors.red.shade400),
                       ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('년'),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: _DigitField(
-                        controller: _birthMonthController,
-                        maxLength: 2,
-                        onChanged: (v) {
-                          notifier.updateBirthMonth(v);
-                          if (v.length == 2) FocusScope.of(context).nextFocus();
-                        },
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('월'),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: _DigitField(
-                        controller: _birthDayController,
-                        maxLength: 2,
-                        onChanged: (v) {
-                          notifier.updateBirthDay(v);
-                          if (v.length == 2) {
-                            FocusScope.of(context).unfocus();
-                            _revealNext(4);
-                          }
-                        },
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.only(left: 8),
-                      child: Text('일'),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -335,53 +356,6 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               _QuestionBlock(
                 key: _questionKeys[11],
                 index: 12,
-                title: '비과세종합저축으로 이미 가입해서 쓰고 있는 금액이 있나요?',
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      child: TextField(
-                        controller: _taxAmountController,
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        textAlign: TextAlign.right,
-                        enabled: !input.existingTaxExemptAmountUnknown,
-                        decoration: InputDecoration(
-                          hintText: '0',
-                          filled: true,
-                          fillColor: input.existingTaxExemptAmountUnknown
-                              ? Colors.grey.shade100
-                              : Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                        ),
-                        onChanged: notifier.updateExistingTaxExemptAmountText,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('원'),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OptionChip(
-                        label: '잘 모르겠어요',
-                        selected: input.existingTaxExemptAmountUnknown,
-                        onTap: () {
-                          _taxAmountController.clear();
-                          notifier.setExistingTaxExemptAmountUnknown();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              _QuestionBlock(
-                key: _questionKeys[12],
-                index: 13,
                 title: '다음 중 해당하는 항목이 있으신가요?',
                 description: '(항목별 우대금리 정보를 확인합니다.)',
                 child: CheckboxOptionList(

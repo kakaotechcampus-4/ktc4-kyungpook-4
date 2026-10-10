@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/onboarding_input.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
@@ -41,8 +42,6 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
   Widget build(BuildContext context) {
     final input = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
-    final canProceed =
-        input.lumpSum > 0 && input.monthlySaving > 0 && input.periodMonths > 0;
 
     return Scaffold(
       body: SafeArea(
@@ -58,10 +57,13 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
               _AmountField(
                 label: '목돈',
                 description: '한번에 최대 얼마까지 맡길 수 있으신가요?',
-                suffixText: '천 원',
+                suffixText: '만 원',
                 controller: _lumpSumController,
-                onChanged: (v) =>
-                    notifier.updateLumpSum(int.tryParse(v) ?? 0),
+                maxValue: OnboardingInput.maxLumpSum,
+                errorText: input.lumpSum > OnboardingInput.maxLumpSum
+                    ? '${OnboardingInput.maxLumpSum}천 원 이하로 입력해주세요'
+                    : null,
+                onChanged: (v) => notifier.updateLumpSum(int.tryParse(v) ?? 0),
               ),
               const SizedBox(height: 28),
               _AmountField(
@@ -69,6 +71,11 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
                 description: '매달 얼마씩 꾸준하게 저축할 계획이신가요?',
                 suffixText: '천 원',
                 controller: _monthlySavingController,
+                maxValue: OnboardingInput.maxMonthlySaving,
+                errorText:
+                    input.monthlySaving > OnboardingInput.maxMonthlySaving
+                    ? '${OnboardingInput.maxMonthlySaving}천 원 이하로 입력해주세요'
+                    : null,
                 onChanged: (v) =>
                     notifier.updateMonthlySaving(int.tryParse(v) ?? 0),
               ),
@@ -78,6 +85,10 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
                 description: '최대 몇 개월까지 저축해도 괜찮을까요?',
                 suffixText: '개월',
                 controller: _periodMonthsController,
+                maxValue: OnboardingInput.maxPeriodMonths,
+                errorText: input.periodMonths > OnboardingInput.maxPeriodMonths
+                    ? '${OnboardingInput.maxPeriodMonths}개월 이하로 입력해주세요'
+                    : null,
                 onChanged: (v) =>
                     notifier.updatePeriodMonths(int.tryParse(v) ?? 0),
               ),
@@ -85,7 +96,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: NextStepButton(
-                  enabled: canProceed,
+                  enabled: input.isStep1Complete,
                   onPressed: () => context.push(AppRoutes.inputStep2),
                 ),
               ),
@@ -124,6 +135,8 @@ class _AmountField extends StatelessWidget {
   final String description;
   final String suffixText;
   final TextEditingController controller;
+  final int maxValue;
+  final String? errorText;
   final ValueChanged<String> onChanged;
 
   const _AmountField({
@@ -131,7 +144,9 @@ class _AmountField extends StatelessWidget {
     required this.description,
     required this.suffixText,
     required this.controller,
+    required this.maxValue,
     required this.onChanged,
+    this.errorText,
   });
 
   @override
@@ -156,11 +171,16 @@ class _AmountField extends StatelessWidget {
         TextField(
           controller: controller,
           keyboardType: TextInputType.number,
+          // 입력 가능한 자릿수를 상한값의 자릿수로 제한해 비현실적인 금액/기간을
+          // 애초에 못 치게 막는다 (예: 기간 상한 60 -> 최대 2자리).
+          maxLength: maxValue.toString().length,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           onChanged: onChanged,
           textAlign: TextAlign.right,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           decoration: InputDecoration(
+            counterText: '',
+            errorText: errorText,
             // suffixText는 라벨이 플로팅될 때(포커스/입력값 있음)만 보이므로,
             // 빈 상태에서도 단위가 항상 보이도록 suffixIcon을 대신 쓴다.
             suffixIcon: Padding(
@@ -174,11 +194,16 @@ class _AmountField extends StatelessWidget {
                 ),
               ),
             ),
-            suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+            suffixIconConstraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
+            ),
             filled: true,
             fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,
