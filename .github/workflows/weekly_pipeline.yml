@@ -38,3 +38,10 @@ jobs:
           git add ai/output/erd/ ai/output/ai_condition_cache.jsonl ai/output/missing_counts.json ai/output/pipeline_logs/
           git diff --staged --quiet || git commit -m "chore: weekly pipeline $(date +%Y-%m-%d)"
           git push
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          curl -s -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": \"⚠️ 주간 파이프라인 실패 (${{ github.run_id }}) - AI 추출 또는 ERD 빌드 오류. 수동 확인 필요.\"}"
