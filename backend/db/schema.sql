@@ -194,7 +194,7 @@ CREATE TABLE user_profile_extra (
     CONSTRAINT fk_user_profile_extra_profile_id_user_profile
         FOREIGN KEY (profile_id) REFERENCES user_profile (profile_id) ON DELETE CASCADE,
     CONSTRAINT ck_user_profile_extra_condition_type
-        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '공제가입', '연령조건', '기타')),
+        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '공제가입', '연령조건', '주거래은행', '기타')),
     -- 답을 받았으면 시각도 있어야 한다
     CONSTRAINT ck_user_profile_extra_answered
         CHECK (answer_value IS NULL OR answered_at IS NOT NULL)
@@ -384,7 +384,7 @@ CREATE TABLE product_condition (
     CONSTRAINT fk_product_condition_product_id_product
         FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE CASCADE,
     CONSTRAINT ck_product_condition_condition_type
-        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '공제가입', '연령조건', '기타')),
+        CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '공제가입', '연령조건', '주거래은행', '기타')),
     CONSTRAINT ck_product_condition_threshold_unit
         CHECK (threshold_unit IS NULL OR threshold_unit IN ('KRW', 'COUNT', 'MONTH', 'WEEK', 'DAY', 'HOUR', 'AGE', 'SCORE', 'STEP')),
     -- 임계값과 단위는 항상 짝으로 채워진다
