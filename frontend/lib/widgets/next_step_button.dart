@@ -6,8 +6,14 @@ import '../theme/app_colors.dart';
 class NextStepButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback onPressed;
+  final String label;
 
-  const NextStepButton({super.key, required this.enabled, required this.onPressed});
+  const NextStepButton({
+    super.key,
+    required this.enabled,
+    required this.onPressed,
+    this.label = '다음 단계',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +31,7 @@ class NextStepButton extends StatelessWidget {
         ),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
       ),
-      child: const Text('다음 단계'),
+      child: Text(label),
     );
   }
 }
