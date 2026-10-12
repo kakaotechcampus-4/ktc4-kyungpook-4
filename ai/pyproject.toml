@@ -1,0 +1,32 @@
+# ai/ 를 BE 가 가져다 쓸 수 있는 파이썬 패키지로 배포하기 위한 설정.
+#
+# 폴더 이름은 src/ 그대로 두고(기존 scripts/*.py 의 `from src.xxx` 를 안 깨려고),
+# 설치될 때의 import 이름만 ktc4_ai 로 바꾼다. (`src` 라는 이름으로 설치하면
+# 다른 패키지와 이름이 겹치기 쉬워서)
+#
+# BE 쪽 사용법 (backend/ 에서):
+#   uv add --editable ../ai
+#   from ktc4_ai.summary import generate_summary
+#
+# --editable 이라 ai/ 코드를 고치면 재설치 없이 BE 에 바로 반영된다.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ktc4-ai"
+version = "0.1.0"
+description = "예적금 포트폴리오 서비스 AI 모듈 (우대조건 추출 / 조건 질문 / Summary)"
+# BE 는 3.13, AI 개발 PC 는 3.10 이라 둘 다 되게 넓게 잡는다
+requires-python = ">=3.10"
+# 패키지로 가져다 쓸 때 필요한 것만. 수집 스크립트 전용(requests 등)은 requirements.txt 에만 둔다.
+dependencies = [
+    "openai>=1.0",
+    "pydantic>=2.0",
+    "python-dotenv>=1.0",
+]
+
+[tool.setuptools]
+package-dir = { "ktc4_ai" = "src" }
+packages = ["ktc4_ai", "ktc4_ai.schemas", "ktc4_ai.discovery", "ktc4_ai.extraction"]

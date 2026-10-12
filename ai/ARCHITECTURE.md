@@ -27,11 +27,14 @@ ai/
 
 이 프로젝트의 "제품 코드"에 해당하는 부분. 나머지(scripts/, scripts_check/)는 전부 이 모듈들을 만들거나 검증하기 위한 보조 도구예요.
 
+**패키지 배포**: `ai/pyproject.toml`이 이 `src/` 폴더를 `ktc4_ai`라는 이름의 파이썬 패키지로 배포해요. BE는 `backend/`에서 `uv add --editable ../ai`로 설치하고 `from ktc4_ai.summary import generate_summary`처럼 import 해요. 스크립트(`scripts/*.py`)는 기존처럼 `from src.xxx`로 쓰면 되고, 대신 `src/` 안의 모듈끼리는 **반드시 상대 import**(`from .config import ...`)를 써야 두 방식 모두에서 동작해요.
+
 | 파일 | 역할 |
 | --- | --- |
 | `config.py` | `.env`에서 API 키(`FSS_AUTH_KEY`, `OPENAI_API_KEY` 등) 로드. 민감정보는 여기서만 읽음 |
 | `schemas/product.py` | finlife API 원본 응답 스키마 (정기예금/적금 공통정보 + 옵션) |
 | `schemas/extraction.py` | LLM(Claude Sonnet 5)이 우대조건 원문을 구조화한 결과 스키마 |
+| `summary.py` | Summary(호출 B) 본체 - 포트폴리오 3개 티어의 reason 생성(`generate_summary`). 기존/신규 은행 구분, 단순형 대비 차액 등 파생값은 `_enrich_options()`에서 코드로 계산, 신협(`CU-`)·새마을금고(`KFCC-`)는 항상 신규 가입 처리. BE가 `ktc4_ai.summary`로 호출 |
 | `schemas/summary.py` | Summary(호출 B) 결과 스키마 - 포트폴리오 3개 티어(단순형/균형형/최대형)별 추천 설명(reason) |
 | `discovery/__init__.py` | 공시 API 호출 + 커뮤니티 크롤링 (Discovery 단계) — 아직 스텁 |
 | `extraction/__init__.py` | 약관 원문 → 우대조건 구조화, LLM 호출 지점 A — 아직 스텁 |
@@ -124,9 +127,9 @@ API를 처음 뚫을 때 구조를 확인하던 일회성 스크립트. 발견 �
 | 파일 | 역할 |
 | --- | --- |
 | `condition_qa.py` ★ | FR-04 미니플로우① - '기타' 조건 AI 질문 생성(호출 A-1) + 자유텍스트 답변 파싱(호출 A-2). 고정 10개 카테고리는 템플릿 질문(AI 미사용), 모든 불확실/실패 케이스는 `conservative_fallback()`로 "조건 미충족" 단일 처리 |
-| `summary_prompt.py` ★ | Summary(호출 B) - 계산 엔진(W9, 별도 트랙/미착수)이 만든 포트폴리오 3개 티어(단순형/균형형/최대형)의 reason을 한 번의 배치 호출로 생성. 숫자는 재계산하지 않고 인용만 함, AI 실패 시 `_fallback_reason()`으로 대체 |
+| `summary_prompt.py` ★ | Summary(호출 B) 로컬 품질 확인용 실행 스크립트. 본체는 `src/summary.py`로 이동. 손으로 만든 예시 포트폴리오로 AI 응답(3문단, 4~6문장)을 눈으로 확인. 숫자는 재계산하지 않고 인용만 함, AI 실패 시 `_fallback_reason()`으로 대체 |
 
-NFR-04("LLM 호출 지점이 정확히 3곳") 대응: (A) `condition_qa.py`의 질문 생성, (B) `condition_qa.py`의 답변 파싱, (C) `summary_prompt.py`의 Summary - 3곳으로 고정. Summary는 티어마다 따로 호출하지 않고 3개 티어를 한 번에 묶어서 호출함(4번째 호출 지점이 생기는 걸 방지).
+NFR-04("LLM 호출 지점이 정확히 3곳") 대응: (A) `condition_qa.py`의 질문 생성, (B) `condition_qa.py`의 답변 파싱, (C) `src/summary.py`의 Summary - 3곳으로 고정. Summary는 티어마다 따로 호출하지 않고 3개 티어를 한 번에 묶어서 호출함(4번째 호출 지점이 생기는 걸 방지).
 
 ## tests/fixtures/ — 원본 데이터 스냅샷
 

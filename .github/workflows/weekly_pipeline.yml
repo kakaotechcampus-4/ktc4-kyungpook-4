@@ -1,0 +1,47 @@
+name: Weekly Data Pipeline
+
+on:
+  schedule:
+    - cron: '0 1 * * 1'  # 매주 월요일 KST 10:00 (UTC 01:00)
+  workflow_dispatch:       # 수동 실행 가능
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        working-directory: ai
+
+      - name: Run pipeline
+        env:
+          FSS_AUTH_KEY: ${{ secrets.FSS_AUTH_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+        run: python scripts/run_pipeline.py
+        working-directory: ai
+
+      - name: Commit and push results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ai/output/erd/ ai/output/ai_condition_cache.jsonl ai/output/missing_counts.json ai/output/pipeline_logs/
+          git diff --staged --quiet || git commit -m "chore: weekly pipeline $(date +%Y-%m-%d)"
+          git push
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          curl -s -X POST "${{ secrets.DISCORD_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": \"⚠️ 주간 파이프라인 실패 (${{ github.run_id }}) - AI 추출 또는 ERD 빌드 오류. 수동 확인 필요.\"}"
