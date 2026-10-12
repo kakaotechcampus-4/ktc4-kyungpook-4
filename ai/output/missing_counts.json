@@ -1,0 +1,4312 @@
+{
+  "deposit_sample.json:0010022:10-01-20-024-0063-0000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01216:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08186:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010421:KH2401": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04035:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02068:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09299:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010022:10-01-20-024-0046-0000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07133:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010388:310011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07026:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010456:240052": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01283:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08074:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0017801:1001303001009": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010001:WR0001L": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03170:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06036:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010017:01030500510002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11036:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06183:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013166:310001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130312007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08095:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03123:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10021:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06139:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0011767:240050": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06005:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013313:31010": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09010:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07051:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03080:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01003:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010026:01211310121": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09061:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0017801:1001303001004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010024:21001115": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06135:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09011:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06198:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08078:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05088:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01275:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06103:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03196:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06164:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013127:240004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03233:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08116:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06198:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010488:240048": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010358:310002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08088:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010019:TD11330031000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06101:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010471:31-0027": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0011551:240001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010017:01020400660001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05070:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07047:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014674:01012000210000000000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01003:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03249:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06161:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010001:WR0001F": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010358:240023": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02094:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05138:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010533:31": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05120:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02020:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11011:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09301:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05138:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02122:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08008:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010370:250033": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07004:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010358:240025": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013127:310003": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010927:010200100070": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02093:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07142:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013350:1120241011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01038:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03107:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03037:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06082:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0017801:1001303001003": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07119:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06014:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0014674:01013000110000000001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010020:220002501": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010358:310004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010471:24-0069": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05060:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01278:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07022:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05120:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0015130:10-01-20-388-0002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07079:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11002:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03122:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04016:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010349:310806": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010020:220002101": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010345:HK00013": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03166:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03174:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07047:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010390:310017": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07128:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08092:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010349:240860": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04035:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01159:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03120:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010016:10511008001278000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05088:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02133:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07005:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11034:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11004:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08116:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03009:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0011767:240048": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06108:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07012:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04076:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0011767:240046": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08087:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03138:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010488:310024": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01169:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06010:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0011551:310013": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010359:240037": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11013:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06081:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03173:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08119:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09049:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07128:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01020:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0013175:10-003-1225-0001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01171:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07096:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013166:240010": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08106:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03214:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03006:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0013175:10-047-1365-0001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130311001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010551:310018": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07073:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07007:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02015:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06082:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03149:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014674:01012000200000000005": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06164:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010453:310006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010020:101272000006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01171:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010421:KH2404": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06105:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01147:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07011:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10151:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02063:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013166:240010": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06205:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03116:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01063:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02116:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03120:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010388:310006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010426:240012": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0011551:310020": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05135:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010019:TD11300036000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08078:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0013175:10-047-1387-0001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130315011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010026:01211210122": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08185:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010019:TD11300031000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09111:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010358:240021": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03015:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10049:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05019:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010356:1001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010345:HK00007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03222:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03240:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03167:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010019:TD11300035000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0011625:230-0119-85": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010017:01030500600002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04045:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010488:240053": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03009:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0011551:310023": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08020:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03197:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01015:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06143:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05005:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06103:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10146:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01291:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01252:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0013909:4": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01260:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01169:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04068:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06100:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0011625:207-0134-16": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01220:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03207:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010471:31-0030": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01092:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02068:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03119:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08009:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11028:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010426:310010": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02127:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11041:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08061:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010370:250039": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03105:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05069:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08071:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07093:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05136:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010426:240018": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04084:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06201:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08186:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05113:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010349:240806": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08006:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0015130:10-01-30-355-0006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013350:1120243003": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06038:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06022:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014807:10141109800021": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013166:240001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010468:310001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02118:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11023:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010022:10-01-30-031-0018-0000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03020:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08172:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010026:01211210121": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02003:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08006:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06132:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130313504": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010002:00320342": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010471:24-0085": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03100:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0011625:207-0135-12": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05081:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03196:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05032:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010453:310005": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010349:240800": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03002:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01328:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07063:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07108:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013127:240006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010017:01020400700001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05019:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03123:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06130:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03021:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013350:1120242003": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07086:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01117:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014807:10140114700041": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05051:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010017:01020400530001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01302:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08172:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06003:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010024:21001236": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03207:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010456:240056": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010927:010200100104": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010421:KH2400": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07120:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01002:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01010:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11015:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013127:310002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010370:310000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06098:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02096:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05013:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03175:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11047:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05135:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01020:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07005:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0013175:10-003-1387-0001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06122:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10146:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06201:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09300:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01008:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010354:MK310001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09111:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010421:KH2403": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01207:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010016:10511008001166004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05110:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010024:21001116": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04073:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07048:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02065:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04069:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05080:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010426:310006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06098:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05001:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03225:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010349:240862": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06053:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05018:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05107:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010572:310010": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06110:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10115:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06008:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09010:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03150:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02103:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06027:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06036:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010345:HK00103": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04033:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09040:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06105:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010349:310821": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08165:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06003:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03087:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010533:24": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10119:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07007:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06137:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03239:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014807:10141114300011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06147:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09260:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09228:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05051:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130315008": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03215:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010024:21001199": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03237:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010354:MK240002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02009:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09013:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07111:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013166:240002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09228:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010550:310006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10186:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08070:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013166:240006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0013175:10-047-1360-0002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010551:310020": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07051:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03150:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03225:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0017801:1001303001005": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010358:240032": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06016:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10112:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03215:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03133:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013308:JTCSB310013": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08153:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010022:10-01-30-031-0036": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010370:310035": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03201:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03184:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05128:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04042:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08149:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07112:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010354:MK310022": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010350:310013": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01147:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08007:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09185:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08171:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02042:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03002:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02133:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11031:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06008:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08159:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09185:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03074:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0017801:1001202000002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0015130:10-01-30-355-0002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03074:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02132:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05047:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08075:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01183:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010358:240004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01092:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02065:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010927:010300100335": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010551:310012": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010359:310005": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010421:KH3100": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010349:0803": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010388:310012": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010421:KH3103": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013351:240062": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01107:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05110:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06170:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010471:24-0086": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04042:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03063:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05069:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013127:310004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09265:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09049:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06183:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013313:31000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05068:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11022:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03243:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010468:310056": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010390:310023": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02113:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10075:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010456:240054": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130312001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07096:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06108:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11036:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0012711:31001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010349:310007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013351:240070": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02107:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010359:240039": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010456:240062": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010349:240802": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010345:HK00012": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06011:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010349:310820": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010019:TD11330029000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03187:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08071:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11023:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010534:WR0001V": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010349:240007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010020:101272000057": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06017:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010390:310008": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07114:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06167:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08185:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0012711:31535": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06128:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010456:240066": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07108:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010464:380001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01047:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01252:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010464:310008": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010551:240010": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010426:310009": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01159:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05105:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02031:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03019:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03147:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05113:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04008:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03218:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08171:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010533:310005": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10007:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010354:MK310017": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03022:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013127:310005": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0014807:10120114300011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03010:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010024:21001292": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06083:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07130:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09007:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04066:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010927:010200100051": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010354:MK240020": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010358:240035": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06171:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10002:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05001:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06165:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010533:240007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010350:310011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11010:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010426:240020": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010390:310009": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01146:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06122:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05064:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11038:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07087:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01107:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11024:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03111:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130313507": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010359:240031": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010370:380008": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01301:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07023:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010019:TD11330030000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01181:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03111:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06195:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010020:101272000058": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010426:240014": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05047:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08183:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03170:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010471:24-0055": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013127:310006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010467:310011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010017:01030500560002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01208:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02137:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06119:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06193:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03112:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06032:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03175:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010457:240008": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013350:1120243002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09084:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06109:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130315004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010358:240033": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01038:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08035:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08007:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08183:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03018:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06091:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010421:KH3102": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09211:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03020:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010456:240064": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03219:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014674:01012000200000000003": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03011:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06067:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03133:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11015:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08106:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0013175:10-003-1381-0001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09151:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010024:21001259": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06069:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010390:310025": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03006:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01326:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10036:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01181:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11027:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0013909:53": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03244:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0013175:10-059-1264-0001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010024:21001280": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03235:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010026:01211210113": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010537:240202": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01059:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03008:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010389:31-2": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05038:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06204:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09002:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10151:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11041:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04016:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0013175:10-047-1381-0001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04065:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09007:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01207:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03221:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010463:240001 240002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01011:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06005:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130313563": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08174:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07100:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07078:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02013:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03094:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05048:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10007:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06081:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014807:10140114300011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08005:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010421:KH3101": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03187:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03235:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06206:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08061:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06054:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013313:31110": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130313562": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010390:310022": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03024:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03240:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03201:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10179:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010468:310601": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06200:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010421:KH3104": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05052:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02116:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013166:240011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010350:240031": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03110:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03011:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010026:01211210129": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05105:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06171:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010426:310007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01062:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02019:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03110:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08120:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08080:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06140:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03122:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01302:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09264:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10207:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010468:310052": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0015130:10-01-30-355-0007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08142:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03116:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08159:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02138:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03142:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02037:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11032:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010354:MK240018": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010349:240000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06147:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08173:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03018:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010471:24-0059": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010345:HK00102": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02107:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10172:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02090:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03221:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03112:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08112:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06130:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0014807:10120116100011": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08087:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07053:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010359:310006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01116:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04008:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11002:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09058:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05059:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09265:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08024:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02002:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09215:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08161:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013166:240008": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10039:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07112:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01202:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08141:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10179:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013166:240009": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09254:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05027:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04033:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03010:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010471:24-0081": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03249:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03184:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08075:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07001:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010349:240801": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07020:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01216:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013313:31115": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01250:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010521:310005": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03142:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07142:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01309:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07079:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010017:01020400510001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013002:BNK1001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010359:240033": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06023:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03197:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05059:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010345:HK00104": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010358:240027": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05068:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05072:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06141:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05032:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04005:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10021:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01002:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010359:310007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010366:024310001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010350:310010": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02003:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03136:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07109:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11032:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03007:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07130:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07127:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010354:MK310004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010359:240041": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10039:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130313561": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03147:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02037:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08095:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014674:01012000200000000006": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03101:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07057:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06186:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07052:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04084:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130315009": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010022:10-01-20-024-0059-0000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03012:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09178:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01047:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03119:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07126:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05064:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010388:310005": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010488:240050": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08022:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11013:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01266:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01146:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010488:240036": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01292:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010471:31-0031": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130313002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09061:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07068:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02102:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010471:31-0026": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05015:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09087:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02094:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013350:1120242001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05018:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:10144:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03039:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03008:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010927:010200100084": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06032:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06083:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06067:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05027:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06019:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0015130:10-01-30-355-0005": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08005:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010350:240023": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010421:KH2402": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010551:240007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014807:10141114700041": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08037:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08080:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06152:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02031:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010017:01020400490002": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03126:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03195:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09087:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013127:240000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03063:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07039:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010020:220002701": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010016:10521001001166004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010471:31-0032": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06053:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07027:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09200:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03021:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07119:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0012840:JJ09": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010354:MK240001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06010:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013350:1120241001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:02132:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01033:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0013350:1130313506": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08173:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07027:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010488:240027": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01189:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06042:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11046:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010488:310034": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010024:21001285": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0012889:310057": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06110:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05023:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03056:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06021:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:06190:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:01174:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05107:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03237:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:05060:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:11011:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0013166:240007": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010358:240018": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010358:310003": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03037:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07097:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010359:240029": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0014674:01012000200000000004": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03105:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0010024:21000111": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:04005:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:03025:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_sample.json:0013909:52": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08009:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:08179:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_savingsbank_sample.json:0010551:240001": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:07003:1715:스마트폰": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "saving_savingsbank_sample.json:0010370:310037": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "cu:09002:1714:영업점": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  },
+  "deposit_sample.json:0010019:TD11300027000": {
+    "count": 1,
+    "first_missing": "2026-10-12",
+    "last_checked": "2026-10-12"
+  }
+}
