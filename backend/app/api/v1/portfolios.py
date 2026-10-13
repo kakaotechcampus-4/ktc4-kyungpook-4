@@ -26,15 +26,17 @@ async def _get_profile(session: AsyncSession, profile_id: int) -> UserProfile:
     return profile
 
 
-@router.post("/recommend", response_model=PortfolioRecommendResponse, summary="세후 실수령액 기준 3안 추천 (STEP3)")
+@router.post(
+    "/recommend", response_model=PortfolioRecommendResponse, summary="세후 실수령액 기준 4안 + 단일형 기준선 (STEP3)"
+)
 async def recommend_portfolios(
     body: PortfolioRecommendRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> PortfolioRecommendResponse:
     profile = await _get_profile(session, body.profile_id)
-    tiers = await portfolio_service.build_tiers(session, profile)
-    options = await portfolio_service.recommend_options(session, profile, tiers)
-    return PortfolioRecommendResponse(options=options)
+    plan = await portfolio_service.build_tiers(session, profile)
+    options, baseline = await portfolio_service.recommend_options(session, profile, plan)
+    return PortfolioRecommendResponse(options=options, baseline=baseline)
 
 
 @router.post("", response_model=PortfolioOut, status_code=201, summary="추천안 확정 가입 (STEP4)")
@@ -43,7 +45,7 @@ async def select_portfolio(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> PortfolioOut:
     profile = await _get_profile(session, body.profile_id)
-    tiers = await portfolio_service.build_tiers(session, profile)
+    tiers = (await portfolio_service.build_tiers(session, profile)).tiers
     allocations = tiers.get(body.tier)
     if allocations is None:
         raise HTTPException(status_code=422, detail=f"tier 는 {list(tiers)} 중 하나여야 합니다")

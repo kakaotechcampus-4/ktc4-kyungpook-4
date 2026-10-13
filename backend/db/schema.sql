@@ -443,7 +443,7 @@ CREATE TABLE user_portfolio (
     CONSTRAINT fk_user_portfolio_profile_id_user_profile
         FOREIGN KEY (profile_id) REFERENCES user_profile (profile_id) ON DELETE RESTRICT,
     CONSTRAINT ck_user_portfolio_portfolio_type
-        CHECK (portfolio_type IN ('단순형', '균형형', '최대형')),
+        CHECK (portfolio_type IN ('단순형', '균형형', '최대형', '안정형')),
     CONSTRAINT ck_user_portfolio_status
         CHECK (status IN ('진행중', '완료')),
     CONSTRAINT ck_user_portfolio_amounts

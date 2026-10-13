@@ -51,6 +51,13 @@ def coop_rate(join_year: int, low_income: bool) -> Decimal:
 
 
 @dataclass
+class TaxResult:
+    after_tax: int  # 세후 이자(원)
+    tax_saving: int  # 일반 15.4% 대비 줄어든 세금(원). 감면이 없으면 0
+    general_interest: Decimal  # 일반과세된 세전 이자. 분리과세분은 금융소득종합과세 합산에서 빠진다
+
+
+@dataclass
 class TaxContext:
     """한 포트폴리오 안에서 조합 예탁금 감면 한도를 상품끼리 나눠 쓰기 위한 상태."""
 
@@ -74,17 +81,28 @@ class TaxContext:
             coop_room=max(0, COOP_EXEMPT_LIMIT - (coop_exempt_used or 0)),
         )
 
-    def after_tax(self, institution_code: str, interest: Decimal, principal: int) -> int:
+    def after_tax(self, institution_code: str, interest: Decimal, principal: int) -> TaxResult:
         """세전 이자에서 세금을 뺀다. 조합 예탁금이면 남은 한도만큼만 감면 세율을 쓰고 한도를 줄인다.
 
         principal 은 한도 판정 기준 금액 - 예금은 원금, 적금은 만기까지의 총 납입액.
         한도를 일부만 쓰면 이자도 같은 비율로 나눈다 (단리라 이자가 원금에 비례한다).
         """
+        general_after_tax = int((interest * (1 - GENERAL_RATE)).to_integral_value())
         if not (self.is_member and is_coop(institution_code)) or principal <= 0 or self.coop_room <= 0:
-            return int((interest * (1 - GENERAL_RATE)).to_integral_value())
+            return TaxResult(after_tax=general_after_tax, tax_saving=0, general_interest=interest)
 
         exempt_principal = min(principal, self.coop_room)
         self.coop_room -= exempt_principal
         exempt_interest = interest * exempt_principal / principal
-        tax = exempt_interest * self.coop_rate + (interest - exempt_interest) * GENERAL_RATE
-        return int((interest - tax).to_integral_value())
+        general_interest = interest - exempt_interest
+        tax = exempt_interest * self.coop_rate + general_interest * GENERAL_RATE
+        after_tax = int((interest - tax).to_integral_value())
+        return TaxResult(
+            after_tax=after_tax, tax_saving=after_tax - general_after_tax, general_interest=general_interest
+        )
+
+    def effective_rate(self, institution_code: str) -> Decimal:
+        """후보 정렬용 세율 - 한도는 보지 않고 이 상품에 기대할 수 있는 세율."""
+        if self.is_member and is_coop(institution_code) and self.coop_room > 0:
+            return self.coop_rate
+        return GENERAL_RATE

@@ -51,6 +51,11 @@ async def create_profile(
         monthly_saving=body.monthly_saving,
         period_months=body.period_months,
         main_bank_code=body.main_bank_code,
+        salary_transfer=body.salary_transfer,
+        auto_transfer=body.auto_transfer,
+        monthly_card_usage=body.monthly_card_usage,
+        marketing_consent=body.marketing_consent is True,  # 컬럼이 NOT NULL 이라 모름은 미동의로 저장
+        app_install=body.app_install,
         accepts_membership=body.accepts_membership,
         coop_tax_eligible=body.coop_tax_eligible,
         coop_exempt_used=body.coop_exempt_used,
