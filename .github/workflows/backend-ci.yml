@@ -74,7 +74,8 @@ jobs:
         run: uv run alembic upgrade head
 
       - name: 마이그레이션 되돌리기 확인
-        # downgrade 가 깨진 마이그레이션은 운영에서 손을 쓸 수 없게 된다.
+        # downgrade 코드가 실제로 도는지만 본다. 통과해도 운영 롤백이 안전하다는 뜻은 아니다 -
+        # downgrade 는 테스트 전용이고, 운영은 백업 복원이나 새 forward 마이그레이션으로 되돌린다.
         run: |
           uv run alembic downgrade base
           uv run alembic upgrade head
