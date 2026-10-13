@@ -104,6 +104,8 @@ CREATE TABLE user_profile (
     marketing_consent    boolean     NOT NULL DEFAULT false,
     app_install          boolean,
     accepts_membership   boolean,
+    coop_tax_eligible    boolean,
+    coop_exempt_used     bigint,
     tax_exempt_used      bigint      NOT NULL DEFAULT 0,
     created_at           timestamptz NOT NULL DEFAULT now(),
 
@@ -117,7 +119,8 @@ CREATE TABLE user_profile (
         CHECK (period_months > 0),
     CONSTRAINT ck_user_profile_amounts
         CHECK (capital >= 0 AND monthly_saving >= 0 AND tax_exempt_used >= 0
-               AND (monthly_card_usage IS NULL OR monthly_card_usage >= 0)),
+               AND (monthly_card_usage IS NULL OR monthly_card_usage >= 0)
+               AND (coop_exempt_used IS NULL OR coop_exempt_used >= 0)),
     -- 목돈도 월 저축액도 0 이면 배분할 게 없다
     CONSTRAINT ck_user_profile_has_money
         CHECK (capital > 0 OR monthly_saving > 0)
@@ -131,6 +134,10 @@ COMMENT ON COLUMN user_profile.marketing_consent IS
     '이 조회 건에서 받은 동의 기록. 계정 단위 최신 동의는 app_user.marketing_consent 를 본다';
 COMMENT ON COLUMN user_profile.accepts_membership IS
     '신협·새마을금고 조합원 가입(출자금 납입) 의향. 예탁금 가입 자격 판정에 쓴다. NULL = 미확인';
+COMMENT ON COLUMN user_profile.coop_tax_eligible IS
+    '총급여 7천만원(종합소득 6천만원) 이하 여부. 조합 예탁금 감면 세율이 갈린다. NULL = 모름(초과로 계산)';
+COMMENT ON COLUMN user_profile.coop_exempt_used IS
+    '다른 조합에 이미 감면으로 넣어 둔 예탁금(원). 1인당 3천만원 한도에서 뺀다. NULL = 모름(0 으로 계산)';
 COMMENT ON COLUMN user_profile.tax_exempt_used IS '올해 이미 사용한 비과세 한도(원)';
 
 CREATE INDEX ix_user_profile_user_id ON user_profile (user_id, created_at DESC);

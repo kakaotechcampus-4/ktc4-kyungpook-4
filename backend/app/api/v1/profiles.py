@@ -51,6 +51,9 @@ async def create_profile(
         monthly_saving=body.monthly_saving,
         period_months=body.period_months,
         main_bank_code=body.main_bank_code,
+        accepts_membership=body.accepts_membership,
+        coop_tax_eligible=body.coop_tax_eligible,
+        coop_exempt_used=body.coop_exempt_used,
         banks=[UserProfileBank(institution_code=code) for code in held_bank_codes],
     )
     session.add(profile)
@@ -64,5 +67,8 @@ async def create_profile(
         period_months=profile.period_months,
         main_bank_code=profile.main_bank_code,
         held_bank_codes=held_bank_codes,
+        accepts_membership=profile.accepts_membership,
+        coop_tax_eligible=profile.coop_tax_eligible,
+        coop_exempt_used=profile.coop_exempt_used,
         created_at=profile.created_at,
     )

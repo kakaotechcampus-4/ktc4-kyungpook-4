@@ -1,6 +1,7 @@
 """포트폴리오 계산 엔진.
 
 우대조건(product_condition)은 아직 반영하지 않는다 - base_rate 만으로 계산한다.
+세금은 services/tax.py 가 정한다 (일반 15.4% / 신협·새마을금고 조합 예탁금 감면).
 product 테이블만 조회하므로 미검증 특판(product 에 행이 없는 상태)은 자동으로 제외된다.
 
 티어마다 추천 이유(reason)는 AI 파트의 Summary(ktc4_ai.summary)가 만든다. 숫자는 여기서
@@ -26,8 +27,7 @@ from app.models.product import Product, ProductOption
 from app.models.profile import UserProfile, UserProfileBank
 from app.schemas.calendar import CalendarEventOut
 from app.schemas.portfolio import PortfolioOptionOut, PortfolioProductOut
-
-TAX_RATE = Decimal("0.154")
+from app.services.tax import TaxContext, is_coop
 
 SIMPLE_TIER = "단순형"
 
@@ -37,10 +37,6 @@ TIER_SPECS: list[tuple[str, int]] = [
     ("균형형", 2),
     ("최대형", 3),
 ]
-
-# 신협·새마을금고는 조합·금고마다 별개 법인이라 보유 은행으로 골라도 추천된 그 조합에
-# 계좌가 있다는 보장이 없다. 항상 신규 가입으로 보고 단순형에서 뺀다 (2026-10 팀 결정).
-ALWAYS_NEW_CODE_PREFIXES = ("CU-", "KFCC-")
 
 
 @dataclass
@@ -59,15 +55,13 @@ def _add_months(d: date, months: int) -> date:
     return date(year, month, day)
 
 
-def _deposit_after_tax(principal: int, rate: Decimal, months: int) -> int:
-    interest = Decimal(principal) * rate / 100 * Decimal(months) / 12
-    return int((interest * (1 - TAX_RATE)).to_integral_value())
+def _deposit_interest(principal: int, rate: Decimal, months: int) -> Decimal:
+    return Decimal(principal) * rate / 100 * Decimal(months) / 12
 
 
-def _installment_after_tax(monthly: int, rate: Decimal, months: int) -> int:
+def _installment_interest(monthly: int, rate: Decimal, months: int) -> Decimal:
     # 정액적립식 단리: n회차 납입분은 만기까지 (전체기간 - n + 1)개월치 이자만 받는다
-    interest = Decimal(monthly) * months * (months + 1) / 2 * rate / 100 / 12
-    return int((interest * (1 - TAX_RATE)).to_integral_value())
+    return Decimal(monthly) * months * (months + 1) / 2 * rate / 100 / 12
 
 
 async def _closest_period(session: AsyncSession, product_type: str, period_months: int) -> int | None:
@@ -169,8 +163,9 @@ def _simple_tier_candidates(
     return [
         (product, option, name)
         for product, option, name in candidates
-        if not product.institution_code.startswith(ALWAYS_NEW_CODE_PREFIXES)
-        and (not bank_codes or product.institution_code in bank_codes)
+        # 신협·새마을금고는 조합·금고마다 별개 법인이라 보유 은행으로 골라도 추천된 그 조합에
+        # 계좌가 있다는 보장이 없다. 항상 신규 가입으로 보고 단순형에서 뺀다 (2026-10 팀 결정).
+        if not is_coop(product.institution_code) and (not bank_codes or product.institution_code in bank_codes)
     ]
 
 
@@ -204,6 +199,39 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> dict[str, 
     return tiers
 
 
+def _tax_context(profile: UserProfile, join_date: date) -> TaxContext:
+    return TaxContext.for_profile(
+        join_year=join_date.year,
+        accepts_membership=profile.accepts_membership,
+        coop_tax_eligible=profile.coop_tax_eligible,
+        coop_exempt_used=profile.coop_exempt_used,
+    )
+
+
+def _after_tax_interests(allocations: TierAllocations, tax: TaxContext) -> tuple[list[int], list[int]]:
+    """예금·적금 배분마다 세후 이자를 구한다. 추천 응답과 가입 저장이 같은 값을 쓰도록 여기 한 곳에서만 계산한다.
+
+    조합 예탁금 감면 한도는 포트폴리오 전체가 나눠 쓰므로 tax 의 남은 한도가 순서대로 줄어든다.
+    """
+    deposits = [
+        tax.after_tax(
+            alloc.product.institution_code,
+            _deposit_interest(alloc.amount, alloc.option.base_rate, alloc.option.period_months),
+            principal=alloc.amount,
+        )
+        for alloc in allocations.deposit_allocs
+    ]
+    installments = [
+        tax.after_tax(
+            alloc.product.institution_code,
+            _installment_interest(alloc.amount, alloc.option.base_rate, alloc.option.period_months),
+            principal=alloc.amount * alloc.option.period_months,
+        )
+        for alloc in allocations.installment_allocs
+    ]
+    return deposits, installments
+
+
 def _to_product_out(alloc: Allocation, after_tax: int) -> PortfolioProductOut:
     return PortfolioProductOut(
         institution_code=alloc.product.institution_code,
@@ -216,30 +244,27 @@ def _to_product_out(alloc: Allocation, after_tax: int) -> PortfolioProductOut:
     )
 
 
-def _calc_products(allocations: TierAllocations) -> tuple[list[PortfolioProductOut], int]:
-    products: list[PortfolioProductOut] = []
-    after_tax_total = 0
-
-    for alloc in allocations.deposit_allocs:
-        after_tax = _deposit_after_tax(alloc.amount, alloc.option.base_rate, alloc.option.period_months)
-        after_tax_total += after_tax
-        products.append(_to_product_out(alloc, after_tax))
-
-    for alloc in allocations.installment_allocs:
-        after_tax = _installment_after_tax(alloc.amount, alloc.option.base_rate, alloc.option.period_months)
-        after_tax_total += after_tax
-        products.append(_to_product_out(alloc, after_tax))
-
-    return products, after_tax_total
+def _calc_products(allocations: TierAllocations, tax: TaxContext) -> tuple[list[PortfolioProductOut], int]:
+    deposit_taxed, installment_taxed = _after_tax_interests(allocations, tax)
+    products = [
+        _to_product_out(alloc, after_tax)
+        for alloc, after_tax in [
+            *zip(allocations.deposit_allocs, deposit_taxed, strict=True),
+            *zip(allocations.installment_allocs, installment_taxed, strict=True),
+        ]
+    ]
+    return products, sum(deposit_taxed) + sum(installment_taxed)
 
 
 async def recommend_options(
     session: AsyncSession, profile: UserProfile, tiers: dict[str, TierAllocations]
 ) -> list[PortfolioOptionOut]:
     """3개 티어를 응답 형태로 만들고 AI Summary 로 reason 을 채운다."""
+    today = date.today()
     raw_options = []
     for tier_name, allocations in tiers.items():
-        products, after_tax_total = _calc_products(allocations)
+        # 티어는 서로 다른 안이라 감면 한도도 티어마다 새로 시작한다
+        products, after_tax_total = _calc_products(allocations, _tax_context(profile, today))
         raw_options.append(
             {
                 "tier": tier_name,
@@ -290,9 +315,8 @@ async def persist_portfolio(
     session.add(portfolio)
     await session.flush()  # portfolio_id 발급
 
-    after_tax_total = 0
+    deposit_taxed, installment_taxed = _after_tax_interests(allocations, _tax_context(profile, today))
     for alloc in allocations.deposit_allocs:
-        after_tax_total += _deposit_after_tax(alloc.amount, alloc.option.base_rate, alloc.option.period_months)
         session.add(
             UserHolding(
                 portfolio_id=portfolio.portfolio_id,
@@ -308,7 +332,6 @@ async def persist_portfolio(
             )
         )
     for alloc in allocations.installment_allocs:
-        after_tax_total += _installment_after_tax(alloc.amount, alloc.option.base_rate, alloc.option.period_months)
         session.add(
             UserHolding(
                 portfolio_id=portfolio.portfolio_id,
@@ -324,7 +347,7 @@ async def persist_portfolio(
             )
         )
 
-    portfolio.after_tax_total = after_tax_total
+    portfolio.after_tax_total = sum(deposit_taxed) + sum(installment_taxed)
     await session.commit()
     await session.refresh(portfolio)
     return portfolio

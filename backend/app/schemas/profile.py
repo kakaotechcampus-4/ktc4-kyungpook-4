@@ -14,6 +14,10 @@ class ProfileCreate(BaseModel):
     # ("국민은행", "주식회사 카카오뱅크" 등)이 서로 달라 이름으로는 비교할 수 없다.
     main_bank_code: str | None = Field(default=None, description="주거래은행 institution_code")
     held_bank_codes: list[str] = Field(default_factory=list, description="보유(거래 중) 은행 institution_code 목록")
+    # 신협·새마을금고 조합 예탁금 세금 감면 판정용 (STEP3). 모르면 null - 혜택을 부풀리지 않는 쪽으로 계산한다.
+    accepts_membership: bool | None = Field(default=None, description="조합원이거나 조합원 가입(출자) 의향이 있음")
+    coop_tax_eligible: bool | None = Field(default=None, description="총급여 7천만원 이하")
+    coop_exempt_used: int | None = Field(default=None, ge=0, description="다른 조합에 이미 감면으로 넣어 둔 예탁금(원)")
 
 
 class ProfileOut(BaseModel):
@@ -26,4 +30,7 @@ class ProfileOut(BaseModel):
     period_months: int
     main_bank_code: str | None
     held_bank_codes: list[str]
+    accepts_membership: bool | None
+    coop_tax_eligible: bool | None
+    coop_exempt_used: int | None
     created_at: datetime
