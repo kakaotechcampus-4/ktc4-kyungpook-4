@@ -221,10 +221,6 @@ def build_rows(src: dict[str, list[dict]], report: Report) -> dict[str, list[dic
             continue
         product_type, _ = PRODUCT_TYPE[raw_type]
 
-        # 상품 단위 가입 채널은 옵션에 실린 채널을 모아서 정한다.
-        channels = {where[r["product_id"]][1] for r in rows}
-        join_channel = channels.pop() if len(channels) == 1 else "전체"
-
         products.append(
             {
                 "product_id": pid,
@@ -237,7 +233,7 @@ def build_rows(src: dict[str, list[dict]], report: Report) -> dict[str, list[dic
                 "monthly_cap": head.get("monthly_cap") if product_type == "적금" else None,
                 "terms_text": head.get("terms_text"),
                 "region": head.get("region"),
-                "join_channel": join_channel,
+                # 가입 채널은 product 에 싣지 않는다. 옵션(product_option.join_channel)에만 있다.
                 # 산출물이 NULL 로 주는 칸이다. 우리 컬럼은 NOT NULL 이라 기본값으로 내린다.
                 "membership_required": bool(head.get("membership_required")),
                 "new_customer_only": bool(head.get("new_customer_only")),
@@ -275,10 +271,13 @@ def build_rows(src: dict[str, list[dict]], report: Report) -> dict[str, list[dic
             report.dropped["product_option (상품을 못 찾음)"] += 1
             continue
         pid, channel = target
-        # 기간별 금리 테이블이라 기간이 0 인 행은 담을 자리가 없다(실측 1,485건, 전부 "Block예금").
-        # 추천은 기간옵션 단위로 고르므로 기간을 모르는 금리는 쓸 수도 없다. AI 파트에 확인 요청한 항목.
+        # 기간이 0 인 행은 상품이 아니라 금리표의 한 구간이다. 새마을금고 금리표는 '0개월 이상 / 3개월 이상
+        # / 6개월 이상 …' 처럼 구간 시작으로 적혀 있어서, 0 은 '예치기간 0~3개월 미만' 구간이다(AI 파트 확인).
+        # 실측 1,485건 = 상품 1,485개에서 1행씩(Block예금 906 / 일일자유적금 579)이고, 이 상품들은
+        # 전부 3·6·12개월 같은 정상 기간 행을 같이 갖고 있다. 그래서 이 행만 버려도 상품은 빠지지 않고
+        # 나머지 기간 옵션으로 추천 대상에 남는다. 추천은 가입 기간을 정해서 고르므로 0개월 구간은 쓸 일이 없다.
         if not isinstance(row.get("period_months"), int) or row["period_months"] <= 0:
-            report.dropped["product_option.period_months (0 이하 - 담을 수 없음)"] += 1
+            report.dropped["product_option.period_months (0개월 구간 행만 제외 - 상품은 유지)"] += 1
             continue
         reserve = RESERVE_TYPE.get(row.get("reserve_type"))
         if reserve is None:
