@@ -191,11 +191,15 @@ def cu_product_type(product_type_tag: str, name: str) -> str:
 
 
 def process_cu(ai_cache):
+    cu_path = FIXTURES / "cu_rate_compare.jsonl"
+    if not cu_path.exists():
+        print(f"[스킵] cu_rate_compare.jsonl 없음 - 신협 데이터 제외")
+        return 0, 0
     n_records = 0
     n_conditions = 0
     attached_products = set()  # 같은 product_id가 여러 만기 행으로 반복되므로
                                 # 조건은 그 product_id당 딱 한 번만 붙인다
-    with (FIXTURES / "cu_rate_compare.jsonl").open("r", encoding="utf-8") as f:
+    with cu_path.open("r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -327,6 +331,11 @@ def _build_kfcc_fallback_div_cd(records, branch_idx):
 
 
 def process_kfcc(ai_cache):
+    kfcc_required = ["kfcc_branches.json", "kfcc_rates.jsonl", "kfcc_central_conditions_raw.jsonl"]
+    missing_files = [f for f in kfcc_required if not (FIXTURES / f).exists()]
+    if missing_files:
+        print(f"[스킵] 새마을금고 fixture 없음({', '.join(missing_files)}) - 새마을금고 데이터 제외")
+        return 0, 0, []
     branch_idx = load_kfcc_branch_index()
     records = _load_kfcc_records()
     fallback_div_cd = _build_kfcc_fallback_div_cd(records, branch_idx)

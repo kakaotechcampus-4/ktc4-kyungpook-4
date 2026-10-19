@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python scripts/build_erd_tables.py)",
+      "Bash(/c/Users/2023user/AppData/Local/Programs/Python/Python313/Scripts/uv.exe run python -c ' *)",
+      "Bash(/c/Users/2023user/AppData/Local/Programs/Python/Python313/Scripts/uv.exe run *)"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+Total rows: 42737
+Sample count (non-zero memo): 2
+
+cuIngno=03138 stockCode=1715 tretYn=스마트폰
+prefCondMemo: 거래조건에 따라 최고 1.2%p 우대금리 제공
+①신협체크카드 결제실적 : 최대 0.4%p
+②신협공제 가입실적 : 최대 0.2%p
+
+cuIngno=04016 stockCode=1715 tretYn=스마트폰
+prefCondMemo: 거래조건에 따라 최고 1.2%p 우대금리 제공
+①신협체크카드 결제실적 : 최대 0.4%p
+②신협공제 가입실적 : 최대 0.2%p
+
