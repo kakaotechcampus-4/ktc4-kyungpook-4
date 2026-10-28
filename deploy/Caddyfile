@@ -1,0 +1,22 @@
+# SITE_ADDRESS 가 비어 있으면 :80 (HTTP) 으로만 서빙한다.
+# 도메인(예: ktc4-safe.duckdns.org)을 넣으면 Let's Encrypt 인증서를 자동 발급·갱신하고
+# HTTP 요청은 HTTPS 로 돌려보낸다. 이때 보안 그룹에서 80·443 이 열려 있어야 발급된다.
+{$SITE_ADDRESS::80} {
+	encode gzip
+
+	# 프론트와 API 를 같은 주소로 서빙해서 CORS 가 필요 없게 한다.
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	@docs path /docs /redoc /openapi.json
+	handle @docs {
+		reverse_proxy backend:8000
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
