@@ -14,9 +14,6 @@ class OnboardingNotifier extends Notifier<OnboardingInput> {
   void updatePeriodMonths(int value) =>
       state = state.copyWith(periodMonths: value);
 
-  void updateEarlyWithdrawalPossibility(String value) =>
-      state = state.copyWith(earlyWithdrawalPossibility: value);
-
   void toggleCurrentBank(String bank) {
     final banks = List<String>.from(state.currentBanks);
     if (!banks.remove(bank)) banks.add(bank);
@@ -25,14 +22,6 @@ class OnboardingNotifier extends Notifier<OnboardingInput> {
 
   void updateMainBank(String value) =>
       state = state.copyWith(mainBank: value);
-
-  void updateResidenceSido(String value) => state = state.copyWith(
-        residenceSido: value,
-        residenceSigungu: '',
-      );
-
-  void updateResidenceSigungu(String value) =>
-      state = state.copyWith(residenceSigungu: value);
 
   void updateBirthYear(String value) =>
       state = state.copyWith(birthYear: value);
@@ -47,6 +36,15 @@ class OnboardingNotifier extends Notifier<OnboardingInput> {
 
   void updateAutoTransferMovable(String value) =>
       state = state.copyWith(autoTransferMovable: value);
+
+  void updateSavingsAutoTransferPossible(String value) =>
+      state = state.copyWith(savingsAutoTransferPossible: value);
+
+  void updatePensionAccountTransferable(String value) =>
+      state = state.copyWith(pensionAccountTransferable: value);
+
+  void updateCooperativeInsuranceJoinStatus(String value) =>
+      state = state.copyWith(cooperativeInsuranceJoinStatus: value);
 
   void updateMonthlyCardSpending(String value) =>
       state = state.copyWith(monthlyCardSpending: value);

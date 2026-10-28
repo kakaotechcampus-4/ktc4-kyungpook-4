@@ -434,14 +434,8 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
   }
 
   String _buildEligibilityMessage(List<String> institutions, OnboardingInput input) {
-    final mentionsMg = institutions.contains('새마을금고');
-    final region = [input.residenceSido, input.residenceSigungu]
-        .where((s) => s.isNotEmpty)
-        .join(' ');
     final label = institutions.isEmpty ? _mutualBanks.join('·') : institutions.join('·');
-    final intro = (mentionsMg && region.isNotEmpty)
-        ? '좋아요, 거주지(직장)를 기준으로 새마을금고는\n$region 지역 금고로 찾아볼게요.\n\n'
-        : '좋아요, $label 조건으로 찾아볼게요.\n\n';
+    final intro = '좋아요, $label 조건으로 찾아볼게요.\n\n';
     return '$intro'
         '비과세 혜택은 총급여 7,000만원 이하일 때\n적용돼요.\n'
         '(2026년부터 기준이 이렇게 바뀌었어요)\n\n'
