@@ -80,8 +80,15 @@ def parse_branches(html: str, r1: str, r2: str) -> list[dict]:
     return out
 
 
+_ERROR_BODY_SHOWN = False  # 오류 응답 본문은 한 번만 출력
+
+
 def fetch_region(session: requests.Session, r1: str, r2: str) -> list[dict]:
     resp = session.get(BASE_URL, params={"r1": r1, "r2": r2}, headers=HEADERS, timeout=20)
+    global _ERROR_BODY_SHOWN
+    if resp.status_code != 200 and not _ERROR_BODY_SHOWN:
+        _ERROR_BODY_SHOWN = True
+        print(f"  [응답 {resp.status_code} 본문 앞부분] {resp.text[:300]!r}")
     resp.raise_for_status()
     resp.encoding = "utf-8"
     return parse_branches(resp.text, r1, r2)

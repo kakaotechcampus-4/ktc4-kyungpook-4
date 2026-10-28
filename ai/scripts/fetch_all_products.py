@@ -49,6 +49,9 @@ def fetch_all_pages(url, top_fin_grp_no):
         res.raise_for_status()
         data = res.json()
         result = data["result"]
+        err_cd, err_msg = result.get("err_cd"), result.get("err_msg")
+        if err_cd not in (None, "000"):
+            print(f"    [API 오류] err_cd={err_cd} err_msg={err_msg}")
 
         if merged_result is None:
             merged_result = result
