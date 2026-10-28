@@ -71,7 +71,7 @@ def fetch_all_pages(url, top_fin_grp_no):
 def main():
     if not FSS_AUTH_KEY:
         print("FSS_AUTH_KEY가 없습니다. .env를 확인하세요.")
-        return
+        sys.exit(1)
 
     for label, url, top_fin_grp_no, filename in TARGETS:
         print(f"[{label}] 수집 시작...")
@@ -83,6 +83,10 @@ def main():
         total_count = result.get("total_count")
 
         print(f"[{label}] total_count(API 보고)={total_count} / 실제 수집 baseList={base_count}, optionList={option_count}")
+
+        if base_count == 0:
+            print(f"[{label}] 0건 수집 - 실패로 처리 (기존 파일 유지)")
+            sys.exit(1)
 
         out_path = FIXTURES_DIR / filename
         out_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
