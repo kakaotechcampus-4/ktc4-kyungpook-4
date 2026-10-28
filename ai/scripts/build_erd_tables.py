@@ -356,7 +356,7 @@ def process_kfcc(ai_cache):
         add_institution(inst_code, inst_name, "새마을금고", region)
 
         for category in ("거치식예탁금", "적립식예탁금"):
-            for entry in rec.get(category, []):
+            for entry in rec.get(category) or []:
                 product_title = entry["product_title"]
                 headers = entry["headers"]
                 rate_headers = headers[2:]

@@ -105,6 +105,9 @@ def main():
             print(f"  [{done}/{total_requests}] {r1} {r2}: {len(branches)}건 (누적 {len(all_branches)}건)")
             time.sleep(0.3)
 
+    if not all_branches:
+        print("지점 0건 수집 - 실패로 처리 (기존 파일 유지)")
+        sys.exit(1)
     OUT_PATH.write_text(json.dumps(all_branches, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n총 {len(all_branches)}개 지점 수집 완료 -> {OUT_PATH}")
 
