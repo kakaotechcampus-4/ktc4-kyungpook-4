@@ -173,7 +173,7 @@ class _PortfolioIntroText extends StatelessWidget {
           ),
           TextSpan(text: '\n'),
           TextSpan(
-            text: '세 가지 포트폴리오',
+            text: '네 가지 포트폴리오',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           TextSpan(text: '를 보여드릴게요!'),
