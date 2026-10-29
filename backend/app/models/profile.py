@@ -18,10 +18,11 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.enums import CONDITION_TYPES, SOCIAL_CARE_CATEGORIES, one_of
+from app.models.enums import CONDITION_TYPES, SOCIAL_CARE_CATEGORIES, TAX_EXEMPT_CATEGORIES, one_of
 from app.models.user import AppUser
 
 
@@ -56,6 +57,16 @@ class UserProfile(Base):
         comment="이 조회 건에서 받은 동의 기록. 계정 단위 최신 동의는 app_user.marketing_consent 를 본다",
     )
     app_install: Mapped[bool | None] = mapped_column(Boolean)
+    savings_auto_transfer: Mapped[bool | None] = mapped_column(
+        Boolean, comment="적금 납입을 자동이체로 걸 수 있음. NULL = 모름"
+    )
+    pension_transfer: Mapped[bool | None] = mapped_column(
+        Boolean, comment="연금 수령 계좌를 옮길 수 있음. 연금수령 우대조건 판정용. NULL = 모름"
+    )
+    coop_insurance: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment="공제(새마을금고·신협 등) 가입 실적이 있거나 가입 의사가 있음. 공제가입 우대조건 판정용. NULL = 모름",
+    )
     accepts_membership: Mapped[bool | None] = mapped_column(
         Boolean,
         comment="신협·새마을금고 조합원 가입(출자금 납입) 의향. 예탁금 가입 자격 판정에 쓴다. NULL = 미확인",
@@ -71,6 +82,10 @@ class UserProfile(Base):
     )
     tax_exempt_used: Mapped[int] = mapped_column(
         BigInteger, server_default=text("0"), comment="올해 이미 사용한 비과세 한도(원)"
+    )
+    # 위 컬럼들은 답을 해석한 결과다. 해석 규칙이 바뀌어도 다시 계산할 수 있게 원문을 같이 둔다.
+    answers: Mapped[dict | None] = mapped_column(
+        JSONB, comment="STEP2·3 원문 답변(앱 선택지 문구 그대로). 해석 규칙이 바뀌어도 다시 계산할 수 있게 보관"
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -132,6 +147,7 @@ class UserProfileTaxExempt(Base):
     profile: Mapped[UserProfile] = relationship(back_populates="tax_exempts")
 
     __table_args__ = (
+        CheckConstraint(one_of("category", TAX_EXEMPT_CATEGORIES), name="category"),
         UniqueConstraint("profile_id", "category"),
         {"comment": "비과세 대상 항목 복수선택 (청년/노인/장애인 등)"},
     )
