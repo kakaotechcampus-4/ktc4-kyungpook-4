@@ -178,6 +178,12 @@ class UserProfileExtra(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(always=True), primary_key=True)
     profile_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("user_profile.profile_id", ondelete="CASCADE"))
+    # 어느 상품의 어느 조건에 대한 답인지. '기타' 조건은 상품마다 내용이 달라 condition_type 만으로는 구분이 안 된다.
+    # FK 를 걸지 않는다 - ERD 재임포트로 조건 ID 가 바뀌거나 사라질 수 있고, 답변은 조회 1건 안에서만 쓴다.
+    condition_id: Mapped[str] = mapped_column(
+        String(64),
+        comment="챗봇이 물어본 우대조건 product_condition.condition_id. FK 없음 - ERD 재임포트로 바뀔 수 있다",
+    )
     # ProductCondition.condition_type 과 반드시 같은 어휘를 쓴다.
     # 어긋나면 에러 없이 우대금리만 조용히 누락된다.
     condition_type: Mapped[str] = mapped_column(
@@ -186,6 +192,10 @@ class UserProfileExtra(Base):
     )
     question_text: Mapped[str] = mapped_column(Text)
     answer_value: Mapped[str | None] = mapped_column(String(255))
+    raw_answer: Mapped[str | None] = mapped_column(
+        Text,
+        comment="사용자가 입력한 원문 답변. answer_value 는 이것을 해석한 결과(true/false)",
+    )
     answered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     profile: Mapped[UserProfile] = relationship(back_populates="extras")
@@ -194,6 +204,8 @@ class UserProfileExtra(Base):
         CheckConstraint(one_of("condition_type", CONDITION_TYPES), name="condition_type"),
         # 답을 받았으면 시각도 있어야 한다
         CheckConstraint("answer_value IS NULL OR answered_at IS NOT NULL", name="answered"),
+        # 조회 1건에서 같은 조건의 답은 하나만 둔다. 다시 답하면 덮어쓴다
+        UniqueConstraint("profile_id", "condition_id"),
         Index("ix_user_profile_extra_profile_id", "profile_id"),
         {"comment": "고정 문항으로 못 채운 우대조건을 챗봇이 되물은 기록"},
     )

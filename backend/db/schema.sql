@@ -205,14 +205,18 @@ COMMENT ON TABLE user_profile_social IS '사회적 배려 대상 복수선택. �
 CREATE TABLE user_profile_extra (
     id             bigint      GENERATED ALWAYS AS IDENTITY,
     profile_id     bigint      NOT NULL,
+    condition_id   varchar(64) NOT NULL,
     condition_type varchar(50) NOT NULL,
     question_text  text        NOT NULL,
     answer_value   varchar(255),
+    raw_answer     text,
     answered_at    timestamptz,
 
     CONSTRAINT pk_user_profile_extra PRIMARY KEY (id),
     CONSTRAINT fk_user_profile_extra_profile_id_user_profile
         FOREIGN KEY (profile_id) REFERENCES user_profile (profile_id) ON DELETE CASCADE,
+    -- 조회 1건에서 같은 조건의 답은 하나만 둔다. condition_id 는 FK 없음 (ERD 재임포트로 바뀔 수 있다)
+    CONSTRAINT uq_user_profile_extra_profile_id UNIQUE (profile_id, condition_id),
     CONSTRAINT ck_user_profile_extra_condition_type
         CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '공제가입', '연령조건', '주거래은행', '기타')),
     -- 답을 받았으면 시각도 있어야 한다
@@ -223,6 +227,10 @@ CREATE TABLE user_profile_extra (
 COMMENT ON TABLE  user_profile_extra IS '고정 문항으로 못 채운 우대조건을 챗봇이 되물은 기록';
 COMMENT ON COLUMN user_profile_extra.condition_type IS
     'product_condition.condition_type 과 반드시 같은 어휘를 쓴다. 어긋나면 우대금리가 조용히 누락된다';
+COMMENT ON COLUMN user_profile_extra.condition_id IS
+    '챗봇이 물어본 우대조건 product_condition.condition_id. FK 없음 - ERD 재임포트로 바뀔 수 있다';
+COMMENT ON COLUMN user_profile_extra.raw_answer IS
+    '사용자가 입력한 원문 답변. answer_value 는 이것을 해석한 결과(true/false)';
 
 CREATE INDEX ix_user_profile_extra_profile_id ON user_profile_extra (profile_id);
 
