@@ -24,12 +24,16 @@ NFR-04("LLM 호출 지점이 정확히 3곳"): (A) _build_question_ai, (B) _pars
 """
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 # 상대 import: 스크립트에서는 `src`, 패키지로 설치하면 `ktc4_ai`로 불리므로 반드시 상대 import.
 from .config import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
 
 ETC_TYPE = "기타"
+# 질문 문장 생성에서 AI 를 동시에 부르는 수. 질문마다 1번씩 부르므로 하나씩 하면 질문이 많을 때 느리고,
+# 너무 많이 동시에 보내면 API 프록시가 거부할 수 있다. 호출 지점은 그대로 하나(A)라 NFR-04 와 무관하다.
+MAX_PARALLEL_QUESTIONS = 5
 
 _client = None
 
@@ -126,15 +130,18 @@ def _build_question_ai(text: str) -> str:
         return fallback
 
 
-def build_etc_questions(conditions: list) -> list:
+def build_etc_questions(conditions: list, max_workers: int = MAX_PARALLEL_QUESTIONS) -> list:
     """'기타' 조건 목록 -> 질문 목록. 원문이 같은 조건은 질문 1개로 묶는다.
 
-    반환: [{"question": 질문 문장, "evidence_text": 원문, "condition_ids": [...]}, ...]
-    BE는 사용자의 답을 condition_ids 각각에 같은 값으로 저장하면 된다."""
-    return [
-        {**group, "question": _build_question_ai(group["evidence_text"])}
-        for group in group_etc_conditions(conditions)
-    ]
+    반환: [{"question": 질문 문장, "evidence_text": 원문, "condition_ids": [...]}, ...] - 묶은 순서 그대로
+    BE는 사용자의 답을 condition_ids 각각에 같은 값으로 저장하면 된다.
+    질문 문장은 동시에 max_workers 개까지 만든다 (각 호출은 실패해도 fallback 이라 예외가 나지 않는다)."""
+    groups = group_etc_conditions(conditions)
+    if not groups:
+        return []
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(groups))) as pool:
+        questions = list(pool.map(lambda g: _build_question_ai(g["evidence_text"]), groups))
+    return [{**group, "question": q} for group, q in zip(groups, questions)]
 
 
 # ---------------------------------------------------------------------------
