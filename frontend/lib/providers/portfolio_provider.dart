@@ -17,12 +17,7 @@ final recommendationProvider = FutureProvider.autoDispose<RecommendationResult>(
     final input = ref.watch(onboardingProvider);
     final client = ApiClient.instance;
 
-    // 화면 입력 단위가 이미 "원"이라 변환 없이 그대로 보낸다.
-    final profileId = await client.createProfile(
-      lumpSumWon: input.lumpSum,
-      monthlySavingWon: input.monthlySaving,
-      periodMonths: input.periodMonths,
-    );
+    final profileId = await client.createProfile(input);
     final options = await client.recommendPortfolios(profileId);
     return RecommendationResult(profileId: profileId, options: options);
   },
