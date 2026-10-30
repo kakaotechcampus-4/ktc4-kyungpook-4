@@ -37,8 +37,9 @@ def _option(base="3.00", max_="5.00", period=12):
     return SimpleNamespace(base_rate=Decimal(base), max_rate=Decimal(max_), period_months=period)
 
 
-def _cond(ctype, bonus="0.50", group=None, pmin=None, pmax=None, value=None, unit=None):
+def _cond(ctype, bonus="0.50", group=None, pmin=None, pmax=None, value=None, unit=None, cid=None):
     return SimpleNamespace(
+        condition_id=cid,
         condition_type=ctype,
         rate_bonus=None if bonus is None else Decimal(bonus),
         exclusive_group=group,
@@ -49,11 +50,39 @@ def _cond(ctype, bonus="0.50", group=None, pmin=None, pmax=None, value=None, uni
     )
 
 
-def _eval(conds, scope, profile=None, *, main=False, new=False, option=None):
-    return evaluate(option or _option(), conds, scope, profile or _profile(), is_main_bank=main, is_new_institution=new)
+def _eval(conds, scope, profile=None, *, main=False, new=False, option=None, etc_answers=None):
+    return evaluate(
+        option or _option(),
+        conds,
+        scope,
+        profile or _profile(),
+        is_main_bank=main,
+        is_new_institution=new,
+        etc_answers=etc_answers,
+    )
 
 
 # --- 우대조건 범위 -----------------------------------------------------------
+
+
+def test_etc_condition_follows_chatbot_answer():
+    # A: 충족 / B: 미충족(모름 포함) / C: 챗봇이 묻지 않음
+    conds = [_cond("기타", cid="A"), _cond("기타", cid="B"), _cond("기타", cid="C")]
+    answers = {"A": True, "B": False}
+
+    def picked(scope):
+        _, applied = _eval(conds, scope, etc_answers=answers)
+        return {a.condition.condition_id for a in applied}
+
+    assert picked(Scope.SIMPLE) == set()
+    assert picked(Scope.BALANCED) == {"A"}  # 충족이면 균형형부터
+    assert picked(Scope.MAX) == {"A", "C"}  # 미충족은 최대형에서도 빠지고, 안 물은 건 계속 가정
+
+
+def test_etc_condition_without_answers_is_max_only():
+    conds = [_cond("기타", cid="A")]
+    assert _eval(conds, Scope.BALANCED)[1] == []
+    assert [a.condition.condition_id for a in _eval(conds, Scope.MAX)[1]] == ["A"]
 
 
 def test_simple_counts_only_facts():
