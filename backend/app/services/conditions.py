@@ -8,8 +8,10 @@
            / 자동이체(적금 자동이체 못 한다고 답하지 않은 경우)
            + STEP2 에서 '가능해요'라고 답한 조건: 급여이체·공과금이체·연금수령·공제가입
            + 카드실적: 월 카드 사용액이 실적 기준 이상인 경우 (쓰던 만큼 그 은행 카드로 옮기면 된다)
+           + 기타: 챗봇에서 충족한다고 답한 조건
   최대형 : 모든 우대조건 달성을 가정. 급여이체·카드실적·공과금이체·공제가입·연금수령·기타 포함.
-           단 '불가능해요'라고 답한 조건, 카드 사용액이 실적 기준에 못 미치는 카드실적은 뺀다.
+           단 '불가능해요'라고 답한 조건, 카드 사용액이 실적 기준에 못 미치는 카드실적,
+           챗봇에서 미충족(모름 포함)으로 답한 기타 조건은 뺀다. 챗봇이 묻지 않은 기타 조건은 계속 가정한다.
   안정형 : 균형형과 같은 범위 (1금융만 쓰는 다른 축의 안이라 조건 범위는 균형형을 따른다).
   단일형 : 단순형과 같은 범위 (주거래은행 상품 하나에 그대로 넣는 기준선).
 
@@ -20,6 +22,7 @@
 실효금리 = min(기본금리 + 인정된 우대폭 합, 최고금리). 같은 exclusive_group 은 가장 큰 것 하나만.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import IntEnum
@@ -104,9 +107,17 @@ def _card_scope(cond: ProductCondition, usage: int | None) -> Scope | None:
     return Scope.MAX if usage > 0 else None
 
 
-def _answer_scope(cond: ProductCondition, profile: UserProfile) -> Scope | None:
+def _answer_scope(cond: ProductCondition, profile: UserProfile, etc_answers: Mapping[str, bool]) -> Scope | None:
     """행동으로 채우는 조건을 인정하기 시작하는 범위. None = 어느 티어에서도 인정하지 않음."""
     ctype = cond.condition_type
+    if ctype == "기타":
+        # 상품마다 내용이 달라 STEP2 고정 문항으로 못 묻고, 챗봇이 조건별로 묻는다 (condition_id 로 찾는다)
+        answer = etc_answers.get(cond.condition_id)
+        if answer is True:
+            return Scope.BALANCED
+        if answer is False:
+            return None  # 미충족(모름 포함)으로 답했다 - 최대형이라도 가정하지 않는다
+        return Scope.MAX  # 챗봇이 묻지 않았다 - 지금처럼 최대형에서만 가정한다
     if ctype == "카드실적":
         return _card_scope(cond, profile.monthly_card_usage)
     if ctype == "마케팅동의":
@@ -123,7 +134,13 @@ def _answer_scope(cond: ProductCondition, profile: UserProfile) -> Scope | None:
     return Scope.MAX
 
 
-def _counts(cond: ProductCondition, scope: Scope, profile: UserProfile, already_met: bool) -> bool:
+def _counts(
+    cond: ProductCondition,
+    scope: Scope,
+    profile: UserProfile,
+    already_met: bool,
+    etc_answers: Mapping[str, bool],
+) -> bool:
     ctype = cond.condition_type
     if ctype in _NEVER or cond.rate_bonus is None:
         return False
@@ -132,7 +149,7 @@ def _counts(cond: ProductCondition, scope: Scope, profile: UserProfile, already_
     if ctype in ("주거래은행", "신규고객"):
         # 사실로 정해지는 조건이라 행동으로 채울 수 없다. 최대형만 '달성 가정'으로 인정한다
         return scope >= Scope.MAX and ctype == "주거래은행"
-    start = _answer_scope(cond, profile)
+    start = _answer_scope(cond, profile, etc_answers)
     return start is not None and scope >= start
 
 
@@ -149,15 +166,20 @@ def evaluate(
     *,
     is_main_bank: bool,
     is_new_institution: bool,
+    etc_answers: Mapping[str, bool] | None = None,
 ) -> tuple[Decimal, list[AppliedCondition]]:
-    """이 범위에서 받는다고 보는 우대조건과 그 결과 실효금리를 돌려준다."""
+    """이 범위에서 받는다고 보는 우대조건과 그 결과 실효금리를 돌려준다.
+
+    etc_answers: 챗봇에서 받은 '기타' 조건 답 {condition_id: 충족 여부}. 없으면 아무것도 묻지 않은 것으로 본다.
+    """
+    etc_answers = etc_answers or {}
     picked: list[AppliedCondition] = []
     best_in_group: dict[str, AppliedCondition] = {}
     for cond in conditions:
         if not _applies_to_period(cond, option.period_months):
             continue
         met = _already_met(cond, is_main_bank, is_new_institution)
-        if not _counts(cond, scope, profile, met):
+        if not _counts(cond, scope, profile, met, etc_answers):
             continue
         applied = AppliedCondition(condition=cond, rate_bonus=cond.rate_bonus, already_met=met)
         if cond.exclusive_group:
