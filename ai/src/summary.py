@@ -46,7 +46,7 @@ AI 개입 범위(중요): 숫자(after_tax_total/interest_rate 등)를 다시 �
 않도록 전부 이 파이썬 코드에서 미리 계산해서 넘긴다(_enrich_options). 저율과세 절감액,
 금융소득종합과세 초과 여부는 엔진이 계산한 값을 그대로 통과시킨다.
 
-NFR-04("LLM 호출 지점이 정확히 3곳"): (A) condition_qa.build_question, (B) condition_qa.
+NFR-04("LLM 호출 지점이 정확히 3곳"): (A) condition_qa.build_etc_questions, (B) condition_qa.
 parse_answer, (C) 이 Summary. 4개 티어 reason을 반드시 한 번의 호출로 묶어서 만든다.
 """
 import json
