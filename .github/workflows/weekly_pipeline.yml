@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 1 * * 1'  # 매주 월요일 KST 10:00 (UTC 01:00)
   workflow_dispatch:       # 수동 실행 가능
+    inputs:
+      skip_drop_check:
+        description: '급감 검사 무시 (실제 판매 종료 등 정상 감소를 확인한 경우에만 체크)'
+        type: boolean
+        default: false
 
 jobs:
   pipeline:
@@ -23,6 +28,7 @@ jobs:
         working-directory: ai
 
       - name: Run pipeline
+        id: pipeline
         env:
           FSS_AUTH_KEY: ${{ secrets.FSS_AUTH_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -31,13 +37,38 @@ jobs:
         run: python scripts/run_pipeline.py
         working-directory: ai
 
+      # 급감 검사 결과표를 이 실행의 요약 화면(Summary)에 남긴다. 막혔을 때 무엇이 얼마나 줄었는지,
+      # develop 에 어떤 데이터가 유지됐는지 기록이 남는다. (*.log 는 gitignore 라 커밋으로는 안 남는다)
+      - name: Report data drop check
+        if: always() && hashFiles('ai/output/pipeline_logs/drop_check.log') != ''
+        run: |
+          cat ai/output/pipeline_logs/drop_check.log >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.pipeline.outputs.drop_detected }}" = "true" ]; then
+            if [ "${{ inputs.skip_drop_check }}" = "true" ]; then
+              echo "**수동 실행에서 '급감 검사 무시'를 체크해 커밋을 진행합니다.**" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "**커밋하지 않음 - develop 은 위 '비교 기준' 커밋의 데이터를 그대로 유지합니다.**" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+
+      # 급감이 아니거나, 수동 실행에서 '급감 검사 무시'를 체크한 경우에만 커밋한다
       - name: Commit and push results
+        if: steps.pipeline.outputs.drop_detected == 'false' || inputs.skip_drop_check
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add ai/output/erd/ ai/output/ai_condition_cache.jsonl ai/output/missing_counts.json ai/output/pipeline_logs/
           git diff --staged --quiet || git commit -m "chore: weekly pipeline $(date +%Y-%m-%d)"
           git push
+
+      # 급감인데 무시 체크가 없으면 실패로 끝낸다 -> 아래 실패 알림이 간다.
+      # 판단 결과가 비어 있는 경우(예상 못 한 상황)도 커밋하지 않고 실패로 본다.
+      - name: Stop on data drop
+        if: steps.pipeline.outputs.drop_detected != 'false' && !inputs.skip_drop_check
+        run: |
+          echo "급감 감지 - 커밋하지 않고 실패로 종료합니다. develop 데이터는 그대로 유지됩니다."
+          echo "이 실행의 Summary 화면에서 급감 검사 결과표를 확인하세요."
+          exit 1
 
       - name: Notify failure
         if: failure()
