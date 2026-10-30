@@ -7,6 +7,8 @@ import '../../models/onboarding_input.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/currency_formatter.dart';
+import '../../utils/thousands_separator_input_formatter.dart';
 import '../../widgets/next_step_button.dart';
 import '../../widgets/step_indicator.dart';
 
@@ -28,7 +30,8 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
     text: _initialText(ref.read(onboardingProvider).periodMonths),
   );
 
-  static String _initialText(int value) => value == 0 ? '' : '$value';
+  static String _initialText(int value) =>
+      value == 0 ? '' : ThousandsSeparatorInputFormatter.formatDigits('$value');
 
   @override
   void dispose() {
@@ -57,27 +60,30 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
               _AmountField(
                 label: '목돈',
                 description: '한번에 최대 얼마까지 맡길 수 있으신가요?',
-                suffixText: '만 원',
+                suffixText: '원',
                 controller: _lumpSumController,
                 maxValue: OnboardingInput.maxLumpSum,
+                formatThousands: true,
                 errorText: input.lumpSum > OnboardingInput.maxLumpSum
-                    ? '${OnboardingInput.maxLumpSum}천 원 이하로 입력해주세요'
+                    ? '${CurrencyFormatter.won(OnboardingInput.maxLumpSum)} 이하로 입력해주세요'
                     : null,
-                onChanged: (v) => notifier.updateLumpSum(int.tryParse(v) ?? 0),
+                onChanged: (v) => notifier
+                    .updateLumpSum(int.tryParse(v.replaceAll(',', '')) ?? 0),
               ),
               const SizedBox(height: 28),
               _AmountField(
                 label: '월저축액',
                 description: '매달 얼마씩 꾸준하게 저축할 계획이신가요?',
-                suffixText: '천 원',
+                suffixText: '원',
                 controller: _monthlySavingController,
                 maxValue: OnboardingInput.maxMonthlySaving,
+                formatThousands: true,
                 errorText:
                     input.monthlySaving > OnboardingInput.maxMonthlySaving
-                    ? '${OnboardingInput.maxMonthlySaving}천 원 이하로 입력해주세요'
+                    ? '${CurrencyFormatter.won(OnboardingInput.maxMonthlySaving)} 이하로 입력해주세요'
                     : null,
-                onChanged: (v) =>
-                    notifier.updateMonthlySaving(int.tryParse(v) ?? 0),
+                onChanged: (v) => notifier.updateMonthlySaving(
+                    int.tryParse(v.replaceAll(',', '')) ?? 0),
               ),
               const SizedBox(height: 28),
               _AmountField(
@@ -137,6 +143,7 @@ class _AmountField extends StatelessWidget {
   final TextEditingController controller;
   final int maxValue;
   final String? errorText;
+  final bool formatThousands;
   final ValueChanged<String> onChanged;
 
   const _AmountField({
@@ -147,6 +154,7 @@ class _AmountField extends StatelessWidget {
     required this.maxValue,
     required this.onChanged,
     this.errorText,
+    this.formatThousands = false,
   });
 
   @override
@@ -172,9 +180,16 @@ class _AmountField extends StatelessWidget {
           controller: controller,
           keyboardType: TextInputType.number,
           // 입력 가능한 자릿수를 상한값의 자릿수로 제한해 비현실적인 금액/기간을
-          // 애초에 못 치게 막는다 (예: 기간 상한 60 -> 최대 2자리).
-          maxLength: maxValue.toString().length,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          // 애초에 못 치게 막는다 (예: 기간 상한 60 -> 최대 2자리). 콤마를 넣는
+          // 필드는 콤마 문자까지 포함한 길이로 잡아야 숫자 자릿수가 안 줄어든다.
+          maxLength: formatThousands
+              ? ThousandsSeparatorInputFormatter.formatDigits(
+                  maxValue.toString()).length
+              : maxValue.toString().length,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            if (formatThousands) ThousandsSeparatorInputFormatter(),
+          ],
           onChanged: onChanged,
           textAlign: TextAlign.right,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),

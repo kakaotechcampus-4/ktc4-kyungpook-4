@@ -1114,11 +1114,10 @@
 {"institution_code": "KFCC-2307-001", "name": "남동새마을금고 본점", "institution_type": "새마을금고", "region": "인천 남동구", "is_active": true}
 {"institution_code": "KFCC-2309-001", "name": "구월남촌새마을금고 본점", "institution_type": "새마을금고", "region": "인천 남동구", "is_active": true}
 {"institution_code": "KFCC-3734-001", "name": "김포새마을금고 본점", "institution_type": "새마을금고", "region": "경기 김포시", "is_active": true}
+{"institution_code": "KFCC-4029-011", "name": "고양누리새마을금고 운정", "institution_type": "새마을금고", "region": "경기 파주시", "is_active": true}
 {"institution_code": "KFCC-4124-001", "name": "우리새마을금고 본점", "institution_type": "새마을금고", "region": "경기 파주시", "is_active": true}
-{"institution_code": "KFCC-4141-001", "name": "파주중앙새마을금고 본점", "institution_type": "새마을금고", "region": "경기 파주시", "is_active": true}
 {"institution_code": "KFCC-4145-001", "name": "파주새마을금고 본점", "institution_type": "새마을금고", "region": "경기 파주시", "is_active": true}
 {"institution_code": "KFCC-4126-001", "name": "전곡새마을금고 본점", "institution_type": "새마을금고", "region": "경기 연천군", "is_active": true}
-{"institution_code": "KFCC-4029-001", "name": "고양누리새마을금고 본점", "institution_type": "새마을금고", "region": "경기 고양시", "is_active": true}
 {"institution_code": "KFCC-4030-001", "name": "고양동부새마을금고 본점", "institution_type": "새마을금고", "region": "경기 고양시", "is_active": true}
 {"institution_code": "KFCC-4032-001", "name": "일산새마을금고 본점", "institution_type": "새마을금고", "region": "경기 고양시", "is_active": true}
 {"institution_code": "KFCC-4116-001", "name": "양주중앙새마을금고 본점", "institution_type": "새마을금고", "region": "경기 양주시", "is_active": true}
@@ -1320,8 +1319,7 @@
 {"institution_code": "KFCC-3234-001", "name": "백제새마을금고 본점", "institution_type": "새마을금고", "region": "충남 공주시", "is_active": true}
 {"institution_code": "KFCC-3235-001", "name": "삼성새마을금고 본점", "institution_type": "새마을금고", "region": "충남 공주시", "is_active": true}
 {"institution_code": "KFCC-3412-001", "name": "서천군새마을금고 본점", "institution_type": "새마을금고", "region": "충남 서천군", "is_active": true}
-{"institution_code": "KFCC-3339-001", "name": "부여새마을금고 본점", "institution_type": "새마을금고", "region": "충남 부여군", "is_active": true}
-{"institution_code": "KFCC-3341-001", "name": "금강새마을금고 본점", "institution_type": "새마을금고", "region": "충남 부여군", "is_active": true}
+{"institution_code": "KFCC-3341-001", "name": "부여금강새마을금고 본점", "institution_type": "새마을금고", "region": "충남 부여군", "is_active": true}
 {"institution_code": "KFCC-3333-001", "name": "황산새마을금고 본점", "institution_type": "새마을금고", "region": "충남 논산시", "is_active": true}
 {"institution_code": "KFCC-3334-001", "name": "충청새마을금고 본점", "institution_type": "새마을금고", "region": "충남 논산시", "is_active": true}
 {"institution_code": "KFCC-3337-001", "name": "놀뫼새마을금고 본점", "institution_type": "새마을금고", "region": "충남 논산시", "is_active": true}

@@ -52,7 +52,7 @@ curl localhost:8000/api/v1/health/redis  # Redis 연결
 | 자동 수정 + 포맷 | `uv run ruff check . --fix && uv run ruff format .` |
 | 마이그레이션 적용 | `uv run alembic upgrade head` |
 | 마이그레이션 생성 | `uv run alembic revision --autogenerate -m "설명"` |
-| 한 단계 되돌리기 | `uv run alembic downgrade -1` |
+| 한 단계 되돌리기 (개발 DB 전용) | `uv run alembic downgrade -1` |
 | DB 접속 | `docker exec -it ktc4-postgres psql -U ktc4 -d ktc4` |
 | Redis 접속 | `docker exec -it ktc4-redis redis-cli` |
 | 컨테이너 로그 | `docker compose logs -f` |
@@ -114,6 +114,20 @@ uv run alembic upgrade head
 `db/schema.sql` 도 같이 고쳐야 합니다. **한쪽만 고치면 테스트가 실패합니다** —
 `tests/test_schema_sync.py` 가 둘을 대조해서 컬럼·타입·제약·인덱스·주석까지 전부 비교합니다.
 
+### 마이그레이션 되돌리기 (downgrade)
+
+**downgrade 는 테스트 전용입니다. 운영 DB 롤백 수단으로 쓰지 않습니다.**
+
+- 모든 마이그레이션에 downgrade 를 구현하고, CI 가 `downgrade base → upgrade head` 왕복으로
+  그 코드가 실제로 도는지 검증합니다.
+- 다만 왕복이 통과한다는 건 "구조가 되돌아간다" 는 뜻이지 "데이터가 안전하다" 는 뜻이 아닙니다.
+  어휘를 좁히거나 컬럼을 지우는 downgrade 는 새 구조에만 담기던 행을 지웁니다
+  (예: `b1c4e7a90f32` 의 downgrade 는 새마을금고 상품을 삭제합니다).
+- 운영에서 되돌려야 할 때는
+  1. 데이터까지 되돌려야 하면 → **배포 전에 떠 둔 백업을 복원**합니다.
+  2. 구조만 고치면 되면 → 원하는 상태로 가는 **새 forward 마이그레이션을 추가**합니다.
+- 로컬의 `make rollback`(`alembic downgrade -1`) 은 개발 DB 에서만 씁니다.
+
 ### 왜 두 군데를 유지하나
 
 `schema.sql` 은 전체 구조를 한 파일에서 읽기 위한 문서이고, 모델은 코드에서 쓰는 정의입니다.
@@ -150,6 +164,8 @@ uv run pytest
 
 `feature/* → develop` PR 에서 `backend/**` 가 바뀌면 자동으로 돕니다.
 린트 → 포맷 확인 → 마이그레이션 적용 → **롤백 왕복** → 테스트.
+롤백 왕복은 downgrade 코드가 깨지지 않았는지 보는 검사이고, 운영 롤백이 안전하다는 보장은 아닙니다
+([마이그레이션 되돌리기](#마이그레이션-되돌리기-downgrade) 참고).
 
 로컬에서 아래가 통과하면 CI 도 통과합니다.
 

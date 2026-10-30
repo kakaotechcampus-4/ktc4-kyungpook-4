@@ -56,9 +56,11 @@ REGIONS = {
     "울산": ["울주군","북구","중구","남구","동구"],
     "전북": ["군산시","익산시","부안군","김제시","완주군","전주시","고창군","정읍시","순창군","임실군",
             "진안군","무주군","남원시","장수군"],
-    "전남광주": ["목포시","여수시","순천시","나주시","광양시","동구","서구","남구","북구","광산구",
+    "광주": ["목포시","여수시","순천시","나주시","광양시","동구","서구","남구","북구","광산구",
               "담양군","곡성군","구례군","고흥군","보성군","화순군","장흥군","강진군","해남군","영암군",
               "무안군","함평군","영광군","장성군","완도군","진도군","신안군"],
+    "경남": ["함양군","거창군","산청군","합천군","하동군","진주시","의령군","함안군","창녕군","남해군",
+              "사천시","고성군","창원시","밀양시","통영시","거제시","김해시","양산시"],
     "제주": ["제주시","서귀포시"],
     "세종": [""],
 }
@@ -78,8 +80,15 @@ def parse_branches(html: str, r1: str, r2: str) -> list[dict]:
     return out
 
 
+_ERROR_BODY_SHOWN = False  # 오류 응답 본문은 한 번만 출력
+
+
 def fetch_region(session: requests.Session, r1: str, r2: str) -> list[dict]:
     resp = session.get(BASE_URL, params={"r1": r1, "r2": r2}, headers=HEADERS, timeout=20)
+    global _ERROR_BODY_SHOWN
+    if resp.status_code != 200 and not _ERROR_BODY_SHOWN:
+        _ERROR_BODY_SHOWN = True
+        print(f"  [응답 {resp.status_code} 본문 앞부분] {resp.text[:300]!r}")
     resp.raise_for_status()
     resp.encoding = "utf-8"
     return parse_branches(resp.text, r1, r2)
@@ -105,6 +114,9 @@ def main():
             print(f"  [{done}/{total_requests}] {r1} {r2}: {len(branches)}건 (누적 {len(all_branches)}건)")
             time.sleep(0.3)
 
+    if not all_branches:
+        print("지점 0건 수집 - 실패로 처리 (기존 파일 유지)")
+        sys.exit(1)
     OUT_PATH.write_text(json.dumps(all_branches, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n총 {len(all_branches)}개 지점 수집 완료 -> {OUT_PATH}")
 

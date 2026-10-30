@@ -10,6 +10,7 @@
   6. 판매 종료 감지          (fetch 성공 소스만 대상으로 missing_counts.json 갱신)
   7. AI 우대조건 추출        (extract_conditions_ai.py - 변경분만 자동 처리)
   8. ERD 산출물 빌드         (build_erd_tables.py)
+  9. 급감 검사              (check_erd_drop.py - 판단만 한다. 커밋 여부는 워크플로가 정한다)
 
 사용법 (ai/ 폴더에서 실행):
   python scripts/run_pipeline.py                  # 전체 실행
@@ -18,6 +19,7 @@
 """
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -25,12 +27,16 @@ import time
 from datetime import date
 from pathlib import Path
 
+from check_erd_drop import baseline_commit, compare_with_head, render_report
+
 AI_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = AI_ROOT / "scripts"
 FIXTURES = AI_ROOT / "tests" / "fixtures"
 CACHE_PATH = AI_ROOT / "output" / "ai_condition_cache.jsonl"
 MISSING_COUNTS_PATH = AI_ROOT / "output" / "missing_counts.json"
 LOG_DIR = AI_ROOT / "output" / "pipeline_logs"
+# 급감 검사 결과표. *.log 는 gitignore 라 커밋되지 않고, 워크플로가 실행 요약 화면에 붙인다.
+DROP_REPORT_PATH = LOG_DIR / "drop_check.log"
 
 MISSING_THRESHOLD = 3
 RETRY_COUNT = 3
@@ -74,6 +80,14 @@ def _run(label: str, cmd: list[str]) -> None:
     if result.returncode != 0:
         raise RuntimeError(f"[{label}] 실패 (returncode={result.returncode})")
     print(f"[{label}] 완료")
+
+
+def _set_github_output(name: str, value: str) -> None:
+    """GitHub Actions 에서 돌 때만, 다음 단계(워크플로)가 읽을 수 있게 결과값을 남긴다."""
+    path = os.environ.get("GITHUB_OUTPUT")
+    if path:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(f"{name}={value}\n")
 
 
 # ---------------------------------------------------------------------------
@@ -263,13 +277,24 @@ def main() -> None:
 
     _run("ERD 빌드", [py, str(SCRIPTS / "build_erd_tables.py")])
 
+    # 9. 급감 검사 - 판단만 하고 정상 종료한다. 급감이면 커밋하지 않는 건 워크플로가 한다.
+    print("\n[급감 검사] 시작")
+    rows, drop_items = compare_with_head()
+    report = render_report(rows, drop_items, baseline_commit())
+    print(report)
+    DROP_REPORT_PATH.write_text(report, encoding="utf-8")
+    _set_github_output("drop_detected", "true" if drop_items else "false")
+    if drop_items:
+        print("⚠️  급감 감지 - 이 결과는 커밋하지 말 것 (워크플로에서는 자동으로 막힘)")
+
     log_path = LOG_DIR / f"{date.today()}.log"
     log_path.write_text(
         f"SUCCESS\n"
         f"실행일: {date.today()}\n"
         f"수집 실패 소스: {failed_sources if failed_sources else '없음'}\n"
         f"신규: {new_count}건\n"
-        f"판매종료: {len(discontinued)}건\n",
+        f"판매종료: {len(discontinued)}건\n"
+        f"급감 검사: {'급감 - ' + ', '.join(drop_items) if drop_items else '통과'}\n",
         encoding="utf-8",
     )
     print(f"\n=== 완료 (로그: {log_path}) ===")
