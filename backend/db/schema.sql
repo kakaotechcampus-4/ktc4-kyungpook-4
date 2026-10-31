@@ -103,10 +103,14 @@ CREATE TABLE user_profile (
     monthly_card_usage   bigint,
     marketing_consent    boolean     NOT NULL DEFAULT false,
     app_install          boolean,
+    savings_auto_transfer boolean,
+    pension_transfer     boolean,
+    coop_insurance       boolean,
     accepts_membership   boolean,
     coop_tax_eligible    boolean,
     coop_exempt_used     bigint,
     tax_exempt_used      bigint      NOT NULL DEFAULT 0,
+    answers              jsonb,
     created_at           timestamptz NOT NULL DEFAULT now(),
 
     CONSTRAINT pk_user_profile PRIMARY KEY (profile_id),
@@ -132,6 +136,11 @@ COMMENT ON COLUMN user_profile.birth_date IS '만 나이 계산에 필요해 원
 COMMENT ON COLUMN user_profile.salary_transfer IS 'NULL = 아직 물어보지 않음 / 확인 불가';
 COMMENT ON COLUMN user_profile.marketing_consent IS
     '이 조회 건에서 받은 동의 기록. 계정 단위 최신 동의는 app_user.marketing_consent 를 본다';
+COMMENT ON COLUMN user_profile.savings_auto_transfer IS '적금 납입을 자동이체로 걸 수 있음. NULL = 모름';
+COMMENT ON COLUMN user_profile.pension_transfer IS
+    '연금 수령 계좌를 옮길 수 있음. 연금수령 우대조건 판정용. NULL = 모름';
+COMMENT ON COLUMN user_profile.coop_insurance IS
+    '공제(새마을금고·신협 등) 가입 실적이 있거나 가입 의사가 있음. 공제가입 우대조건 판정용. NULL = 모름';
 COMMENT ON COLUMN user_profile.accepts_membership IS
     '신협·새마을금고 조합원 가입(출자금 납입) 의향. 예탁금 가입 자격 판정에 쓴다. NULL = 미확인';
 COMMENT ON COLUMN user_profile.coop_tax_eligible IS
@@ -139,6 +148,8 @@ COMMENT ON COLUMN user_profile.coop_tax_eligible IS
 COMMENT ON COLUMN user_profile.coop_exempt_used IS
     '다른 조합에 이미 감면으로 넣어 둔 예탁금(원). 1인당 3천만원 한도에서 뺀다. NULL = 모름(0 으로 계산)';
 COMMENT ON COLUMN user_profile.tax_exempt_used IS '올해 이미 사용한 비과세 한도(원)';
+COMMENT ON COLUMN user_profile.answers IS
+    'STEP2·3 원문 답변(앱 선택지 문구 그대로). 해석 규칙이 바뀌어도 다시 계산할 수 있게 보관';
 
 CREATE INDEX ix_user_profile_user_id ON user_profile (user_id, created_at DESC);
 
@@ -167,6 +178,8 @@ CREATE TABLE user_profile_tax_exempt (
     CONSTRAINT pk_user_profile_tax_exempt PRIMARY KEY (id),
     CONSTRAINT fk_user_profile_tax_exempt_profile_id_user_profile
         FOREIGN KEY (profile_id) REFERENCES user_profile (profile_id) ON DELETE CASCADE,
+    CONSTRAINT ck_user_profile_tax_exempt_category
+        CHECK (category IN ('65세이상', '장애인', '유공자', '기초생활수급자')),
     CONSTRAINT uq_user_profile_tax_exempt_profile_id UNIQUE (profile_id, category)
 );
 

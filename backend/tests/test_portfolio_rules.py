@@ -19,7 +19,17 @@ SPEC = {s.name: s for s in TIER_SPECS}
 
 
 def _profile(**kw):
-    base = {"marketing_consent": False, "app_install": None, "auto_transfer": None, "accepts_membership": None}
+    base = {
+        "marketing_consent": False,
+        "app_install": None,
+        "auto_transfer": None,
+        "savings_auto_transfer": None,
+        "salary_transfer": None,
+        "pension_transfer": None,
+        "coop_insurance": None,
+        "monthly_card_usage": None,
+        "accepts_membership": None,
+    }
     return SimpleNamespace(**(base | kw))
 
 
@@ -60,8 +70,42 @@ def test_balanced_adds_light_actions_by_answers():
     assert {a.condition.condition_type for a in applied} == {"마케팅동의", "비대면가입", "자동이체"}
     assert not any(a.already_met for a in applied)
 
-    _, applied = _eval(conds, Scope.BALANCED, _profile(app_install=False, auto_transfer=False))
-    assert applied == []  # 마케팅 미동의 + 앱 설치 불가 + 자동이체 불가
+    _, applied = _eval(conds, Scope.BALANCED, _profile(app_install=False, savings_auto_transfer=False))
+    assert applied == []  # 마케팅 미동의 + 앱 설치 불가 + 적금 자동이체 불가
+
+
+def test_answered_yes_moves_condition_into_balanced():
+    conds = [_cond("급여이체"), _cond("공과금이체"), _cond("연금수령"), _cond("공제가입")]
+    _, applied = _eval(conds, Scope.BALANCED)
+    assert applied == []  # 모르면 최대형에서만 가정
+
+    yes = _profile(salary_transfer=True, auto_transfer=True, pension_transfer=True, coop_insurance=True)
+    _, applied = _eval(conds, Scope.BALANCED, yes)
+    assert {a.condition.condition_type for a in applied} == {"급여이체", "공과금이체", "연금수령", "공제가입"}
+    _, applied = _eval(conds, Scope.SIMPLE, yes)
+    assert applied == []  # 단순형은 이미 충족한 사실만
+
+
+def test_answered_no_is_never_assumed_even_in_max():
+    conds = [_cond("급여이체"), _cond("공과금이체"), _cond("자동이체"), _cond("비대면가입"), _cond("기타")]
+    no = _profile(salary_transfer=False, auto_transfer=False, savings_auto_transfer=False, app_install=False)
+    _, applied = _eval(conds, Scope.MAX, no)
+    assert {a.condition.condition_type for a in applied} == {"기타"}
+
+
+def test_card_condition_follows_monthly_spending():
+    over_30 = _cond("카드실적", value=300_000, unit="KRW")
+    no_threshold = _cond("카드실적", "0.20")
+    conds = [over_30, no_threshold]
+
+    _, applied = _eval(conds, Scope.BALANCED, _profile(monthly_card_usage=500_000))
+    assert [a.condition for a in applied] == [over_30]  # 기준 이상이면 균형형부터
+    _, applied = _eval(conds, Scope.MAX, _profile(monthly_card_usage=0))
+    assert applied == []  # 카드를 안 쓰면 최대형에서도 빼고
+    _, applied = _eval(conds, Scope.MAX, _profile(monthly_card_usage=100_000))
+    assert [a.condition for a in applied] == [no_threshold]  # 기준 미달인 조건만 빠진다
+    _, applied = _eval(conds, Scope.MAX)
+    assert len(applied) == 2  # 모르면 최대형에서 가정
 
 
 def test_max_assumes_everything_but_age_and_missing_bonus():
