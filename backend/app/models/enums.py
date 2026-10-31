@@ -55,7 +55,8 @@ CONDITION_TYPES = (
     "기타",
 )
 
-PORTFOLIO_TYPES = ("단순형", "균형형", "최대형")
+# 단일형은 비교 기준선이라 가입 대상이 아니다 (저장하지 않음)
+PORTFOLIO_TYPES = ("단순형", "균형형", "최대형", "안정형")
 PORTFOLIO_STATUSES = ("진행중", "완료")
 HOLDING_STATUSES = ("유지중", "만기")
 

@@ -326,6 +326,10 @@ def _build_kfcc_fallback_div_cd(records, branch_idx):
     return fallback_div_cd
 
 
+# 수집 실패 지점 목록은 이 수만큼만 출력한다 (사이트가 크게 막히면 수백 곳이 될 수 있어서)
+FAILED_PRINT_LIMIT = 30
+
+
 def process_kfcc(ai_cache):
     branch_idx = load_kfcc_branch_index()
     records = _load_kfcc_records()
@@ -334,6 +338,8 @@ def process_kfcc(ai_cache):
     n_records = 0
     n_conditions = 0
     missing_branch = []
+    failed_fetch = {}  # (금고 이름, 지역) -> 수집 실패한 구분(거치식/적립식) 목록
+    skipped_rows = 0  # 예상 밖 모양이라 건너뛴 금리 행 수
 
     for rec in records:
         n_records += 1
@@ -356,7 +362,13 @@ def process_kfcc(ai_cache):
         add_institution(inst_code, inst_name, "새마을금고", region)
 
         for category in ("거치식예탁금", "적립식예탁금"):
-            for entry in rec.get(category, []):
+            entries = rec.get(category)
+            if entries is None:
+                # None = 수집 실패 (fetch_kfcc_rates.py 가 오류 시 None 으로 적는다. [] 는 원래 상품이 없는 것)
+                # 이 지점은 건너뛰고 ERD 는 계속 만들되, 어느 지점이 빠졌는지 빌드 요약에 남긴다
+                failed_fetch.setdefault((inst_name, region), []).append(category)
+                continue
+            for entry in entries:
                 product_title = entry["product_title"]
                 headers = entry["headers"]
                 rate_headers = headers[2:]
@@ -399,7 +411,8 @@ def process_kfcc(ai_cache):
                             term_raw = row[0]
                             rates = row[1:]
                         else:
-                            continue  # 예상 밖 모양 - 스킵(로그로 남겨도 됨)
+                            skipped_rows += 1
+                            continue  # 예상 밖 모양 - 스킵 (건수는 빌드 요약에 출력)
 
                         if col_idx >= len(rates):
                             continue
@@ -422,7 +435,7 @@ def process_kfcc(ai_cache):
                     # 기준으로 붙인다 - 중앙 카탈로그(kfcc_central_conditions_raw.jsonl)엔
                     # 결제방식 구분이 없고 상품 하나당 조건 세트 하나뿐이라서.
                     n_conditions += attach_ai_conditions_kfcc(condition_index, product_title, product_id)
-    return n_records, n_conditions, missing_branch
+    return n_records, n_conditions, missing_branch, failed_fetch, skipped_rows
 
 
 # ---------------------------------------------------------------------------
@@ -656,7 +669,7 @@ def main():
         print()
 
     n_cu, n_cu_conditions = process_cu(ai_cache)
-    n_kfcc, n_kfcc_conditions, missing = process_kfcc(ai_cache)
+    n_kfcc, n_kfcc_conditions, missing, kfcc_failed_fetch, kfcc_skipped_rows = process_kfcc(ai_cache)
 
     finlife_summary = []
     for filename, itype, ptag, parse_cond in FINLIFE_SOURCES:
@@ -701,6 +714,14 @@ def main():
             print(f"  {oid}: 기존={old['base_rate']}/{old['max_rate']} -> 새값={new['base_rate']}/{new['max_rate']}")
     if missing:
         print(f"경고: kfcc branches.json에서 못 찾은 지점 {len(missing)}건 -> {missing}")
+    if kfcc_failed_fetch:
+        print(f"경고: 금리 수집 실패로 상품이 빠진 새마을금고 지점 {len(kfcc_failed_fetch)}곳")
+        for (name, region), categories in list(kfcc_failed_fetch.items())[:FAILED_PRINT_LIMIT]:
+            print(f"  - {name} ({region or '지역 정보 없음'}) - {', '.join(categories)}")
+        if len(kfcc_failed_fetch) > FAILED_PRINT_LIMIT:
+            print(f"  ... 외 {len(kfcc_failed_fetch) - FAILED_PRINT_LIMIT}곳")
+    if kfcc_skipped_rows:
+        print(f"경고: 예상 밖 모양이라 건너뛴 새마을금고 금리 행 {kfcc_skipped_rows}건")
     print()
     print("참고: 신협은 prefCondMemo가 빈 템플릿(0.0%p)인 경우가 대부분이라 실제 %p가")
     print("있는 상품만 조건이 채워집니다(위 gather_cu_targets 참고). 새마을금고는 중앙")

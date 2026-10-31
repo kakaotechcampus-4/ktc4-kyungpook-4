@@ -430,7 +430,7 @@ def main():
 
     if not OPENAI_API_KEY or not OPENAI_BASE_URL:
         print("[!] OPENAI_API_KEY / OPENAI_BASE_URL이 .env에 설정 안 돼 있음 - 진행 불가")
-        return
+        sys.exit(1)
 
     client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1")
     cache = {} if args.fresh else load_cache()

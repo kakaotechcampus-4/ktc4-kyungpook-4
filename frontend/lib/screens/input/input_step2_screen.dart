@@ -4,10 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/bank_options.dart';
-import '../../data/korea_regions.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../router/app_router.dart';
-import '../../theme/app_colors.dart';
 import '../../widgets/checkbox_option_list.dart';
 import '../../widgets/choice_chip_group.dart';
 import '../../widgets/next_step_button.dart';
@@ -39,7 +37,7 @@ class InputStep2Screen extends ConsumerStatefulWidget {
 }
 
 class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
-  static const _questionCount = 12;
+  static const _questionCount = 13;
 
   final _questionKeys = List.generate(_questionCount, (_) => GlobalKey());
   final _revealed = <int>{};
@@ -83,7 +81,6 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
   Widget build(BuildContext context) {
     final input = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
-    final sigunguOptions = koreaRegions[input.residenceSido] ?? const [];
 
     return Scaffold(
       body: SafeArea(
@@ -97,20 +94,6 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               _QuestionBlock(
                 key: _questionKeys[0],
                 index: 1,
-                title: '만기 전 인출 가능성이 있나요?',
-                child: ChoiceChipGroup(
-                  options: const ['있어요', '잘 모르겠어요', '없어요'],
-                  selected: input.earlyWithdrawalPossibility,
-                  onSelected: (v) {
-                    notifier.updateEarlyWithdrawalPossibility(v);
-                    _revealNext(0);
-                  },
-                ),
-              ),
-              const SizedBox(height: 28),
-              _QuestionBlock(
-                key: _questionKeys[1],
-                index: 2,
                 title: '현재 보유 중인 계좌의 은행이 어디인가요?',
                 description: '(복수 선택 가능)',
                 child: SearchableSelectField(
@@ -124,8 +107,8 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               ),
               const SizedBox(height: 28),
               _QuestionBlock(
-                key: _questionKeys[2],
-                index: 3,
+                key: _questionKeys[1],
+                index: 2,
                 title: '주 거래은행이 어디인가요?',
                 description: '(단일 선택)',
                 child: SearchableSelectField(
@@ -135,51 +118,14 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                       input.mainBank.isEmpty ? const [] : [input.mainBank],
                   onSelect: (bank) {
                     notifier.updateMainBank(bank);
-                    _revealNext(2);
+                    _revealNext(1);
                   },
                 ),
               ),
               const SizedBox(height: 28),
               _QuestionBlock(
-                key: _questionKeys[3],
-                index: 4,
-                title: '거주지가 어디신가요?',
-                description: '(주민등록등본상 거주지를 입력해 주세요.)',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('시/도', style: _fieldLabelStyle),
-                    const SizedBox(height: 8),
-                    SearchableSelectField(
-                      hintText: '시/도를 선택해주세요',
-                      options: koreaSidoOptions,
-                      selectedValues: input.residenceSido.isEmpty
-                          ? const []
-                          : [input.residenceSido],
-                      onSelect: notifier.updateResidenceSido,
-                    ),
-                    const SizedBox(height: 20),
-                    const Text('시/군/구', style: _fieldLabelStyle),
-                    const SizedBox(height: 8),
-                    SearchableSelectField(
-                      hintText: '시/군/구를 선택해주세요',
-                      options: sigunguOptions,
-                      enabled: input.residenceSido.isNotEmpty,
-                      selectedValues: input.residenceSigungu.isEmpty
-                          ? const []
-                          : [input.residenceSigungu],
-                      onSelect: (v) {
-                        notifier.updateResidenceSigungu(v);
-                        _revealNext(3);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              _QuestionBlock(
-                key: _questionKeys[4],
-                index: 5,
+                key: _questionKeys[2],
+                index: 3,
                 title: '생년월일을 알려주세요!',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,7 +178,7 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                                 // 실제 존재하지 않는 날짜(13월, 2월 30일 등)면
                                 // 다음 질문을 미리 펼치지 않는다.
                                 if (ref.read(onboardingProvider).isBirthDateValid) {
-                                  _revealNext(4);
+                                  _revealNext(2);
                                 }
                               }
                             },
@@ -261,14 +207,42 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               ),
               const SizedBox(height: 28),
               _QuestionBlock(
-                key: _questionKeys[5],
-                index: 6,
+                key: _questionKeys[3],
+                index: 4,
                 title: '급여 받는 계좌를 옮길 수 있나요?',
                 child: ChoiceChipGroup(
                   options: _yesNoUnknownOptions,
                   selected: input.salaryAccountTransferable,
                   onSelected: (v) {
                     notifier.updateSalaryAccountTransferable(v);
+                    _revealNext(3);
+                  },
+                ),
+              ),
+              const SizedBox(height: 28),
+              _QuestionBlock(
+                key: _questionKeys[4],
+                index: 5,
+                title: '통신비·공과금 자동이체를 옮기실 수 있나요?',
+                child: ChoiceChipGroup(
+                  options: _yesNoUnknownOptions,
+                  selected: input.autoTransferMovable,
+                  onSelected: (v) {
+                    notifier.updateAutoTransferMovable(v);
+                    _revealNext(4);
+                  },
+                ),
+              ),
+              const SizedBox(height: 28),
+              _QuestionBlock(
+                key: _questionKeys[5],
+                index: 6,
+                title: '적금상품 자동이체가 가능하신가요?',
+                child: ChoiceChipGroup(
+                  options: _yesNoUnknownOptions,
+                  selected: input.savingsAutoTransferPossible,
+                  onSelected: (v) {
+                    notifier.updateSavingsAutoTransferPossible(v);
                     _revealNext(5);
                   },
                 ),
@@ -277,12 +251,12 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               _QuestionBlock(
                 key: _questionKeys[6],
                 index: 7,
-                title: '통신비·공과금 자동이체를 옮기실 수 있나요?',
+                title: '연금수령(국민연금, 공무원연금 등) 계좌를 옮기실 수 있나요?',
                 child: ChoiceChipGroup(
                   options: _yesNoUnknownOptions,
-                  selected: input.autoTransferMovable,
+                  selected: input.pensionAccountTransferable,
                   onSelected: (v) {
-                    notifier.updateAutoTransferMovable(v);
+                    notifier.updatePensionAccountTransferable(v);
                     _revealNext(6);
                   },
                 ),
@@ -291,6 +265,20 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               _QuestionBlock(
                 key: _questionKeys[7],
                 index: 8,
+                title: '공제(새마을금고, 신협 등)가입 실적이 있으시거나, 가입 의사가 있으신가요?',
+                child: ChoiceChipGroup(
+                  options: _yesNoUnknownOptions,
+                  selected: input.cooperativeInsuranceJoinStatus,
+                  onSelected: (v) {
+                    notifier.updateCooperativeInsuranceJoinStatus(v);
+                    _revealNext(7);
+                  },
+                ),
+              ),
+              const SizedBox(height: 28),
+              _QuestionBlock(
+                key: _questionKeys[8],
+                index: 9,
                 title: '매 달 카드를 얼마나 쓰시나요?',
                 child: ChoiceChipGroup(
                   itemsPerRow: 2,
@@ -305,21 +293,6 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                   selected: input.monthlyCardSpending,
                   onSelected: (v) {
                     notifier.updateMonthlyCardSpending(v);
-                    _revealNext(7);
-                  },
-                ),
-              ),
-              const SizedBox(height: 28),
-              _QuestionBlock(
-                key: _questionKeys[8],
-                index: 9,
-                title: '마케팅 정보 수신에 동의하실 수 있나요?',
-                description: '(마케팅 정보 수신에 따라 받을 수 있는 우대금리를 확인합니다.)',
-                child: ChoiceChipGroup(
-                  options: _yesNoUnknownOptions,
-                  selected: input.marketingConsent,
-                  onSelected: (v) {
-                    notifier.updateMarketingConsent(v);
                     _revealNext(8);
                   },
                 ),
@@ -328,13 +301,13 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               _QuestionBlock(
                 key: _questionKeys[9],
                 index: 10,
-                title: '해당 은행 앱을 설치해서 쓰실 수 있나요?',
-                description: '(비대면 가입이나 앱 로그인으로 적용받는 우대금리를 확인합니다.)',
+                title: '마케팅 정보 수신에 동의하실 수 있나요?',
+                description: '(마케팅 정보 수신에 따라 받을 수 있는 우대금리를 확인합니다.)',
                 child: ChoiceChipGroup(
                   options: _yesNoUnknownOptions,
-                  selected: input.canInstallBankApp,
+                  selected: input.marketingConsent,
                   onSelected: (v) {
-                    notifier.updateCanInstallBankApp(v);
+                    notifier.updateMarketingConsent(v);
                     _revealNext(9);
                   },
                 ),
@@ -343,6 +316,21 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               _QuestionBlock(
                 key: _questionKeys[10],
                 index: 11,
+                title: '해당 은행 앱을 설치해서 쓰실 수 있나요?',
+                description: '(비대면 가입이나 앱 로그인으로 적용받는 우대금리를 확인합니다.)',
+                child: ChoiceChipGroup(
+                  options: _yesNoUnknownOptions,
+                  selected: input.canInstallBankApp,
+                  onSelected: (v) {
+                    notifier.updateCanInstallBankApp(v);
+                    _revealNext(10);
+                  },
+                ),
+              ),
+              const SizedBox(height: 28),
+              _QuestionBlock(
+                key: _questionKeys[11],
+                index: 12,
                 title: '비과세종합저축 관련, 해당하는 항목을 모두 선택해주세요.',
                 child: CheckboxOptionList(
                   options: _taxExemptOptions,
@@ -354,8 +342,8 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
               ),
               const SizedBox(height: 28),
               _QuestionBlock(
-                key: _questionKeys[11],
-                index: 12,
+                key: _questionKeys[12],
+                index: 13,
                 title: '다음 중 해당하는 항목이 있으신가요?',
                 description: '(항목별 우대금리 정보를 확인합니다.)',
                 child: CheckboxOptionList(
@@ -383,12 +371,6 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
     );
   }
 }
-
-const _fieldLabelStyle = TextStyle(
-  fontSize: 14,
-  fontWeight: FontWeight.w600,
-  color: AppColors.labelPurple,
-);
 
 class _QuestionBlock extends StatelessWidget {
   final int index;
