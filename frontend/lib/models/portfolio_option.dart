@@ -1,9 +1,10 @@
 import '../services/portfolio_field_mocks.dart';
 
-enum PortfolioTier { simple, balanced, max }
+enum PortfolioTier { stable, simple, balanced, max }
 
 extension PortfolioTierLabel on PortfolioTier {
   String get label => switch (this) {
+        PortfolioTier.stable => '안정형',
         PortfolioTier.simple => '단순형',
         PortfolioTier.balanced => '균형형',
         PortfolioTier.max => '최대형',
@@ -11,12 +12,14 @@ extension PortfolioTierLabel on PortfolioTier {
 
   /// 백엔드 API 가 쓰는 한글 tier 값. (POST /portfolios 의 tier 파라미터 등)
   String get apiValue => switch (this) {
+        PortfolioTier.stable => '안정형',
         PortfolioTier.simple => '단순형',
         PortfolioTier.balanced => '균형형',
         PortfolioTier.max => '최대형',
       };
 
   static PortfolioTier fromApiValue(String value) => switch (value) {
+        '안정형' => PortfolioTier.stable,
         '단순형' => PortfolioTier.simple,
         '균형형' => PortfolioTier.balanced,
         '최대형' => PortfolioTier.max,

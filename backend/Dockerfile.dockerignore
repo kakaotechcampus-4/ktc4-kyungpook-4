@@ -1,0 +1,11 @@
+# 컨텍스트가 레포 루트라, 필요한 것만 허용한다 (BuildKit 이 Dockerfile 옆의 이 파일을 쓴다).
+*
+!backend
+!ai/pyproject.toml
+!ai/src
+backend/.venv
+backend/.env
+backend/tests
+backend/.pytest_cache
+backend/.ruff_cache
+**/__pycache__

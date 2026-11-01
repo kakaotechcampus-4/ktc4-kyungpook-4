@@ -2,8 +2,9 @@ class OnboardingInput {
   // 실제 상품 데이터(ai/output/erd) 기준 상한. product_option.period_months는
   // 1~60개월 범위(최댓값 60)이고, product.amount_cap은 대부분 10억원 이하다.
   // 이 범위를 벗어나는 입력은 어떤 상품으로도 추천할 수 없으므로 미리 막는다.
-  static const maxLumpSum = 1000000; // 천원 단위 = 10억원
-  static const maxMonthlySaving = 10000; // 천원 단위 = 1천만원
+  // lumpSum/monthlySaving은 원 단위로 저장한다 (UI 표시 단위를 "원"으로 통일).
+  static const maxLumpSum = 1000000000; // 원 단위 = 10억원
+  static const maxMonthlySaving = 10000000; // 원 단위 = 1천만원
   static const maxPeriodMonths = 60; // 개월
 
   final int lumpSum;
@@ -11,16 +12,16 @@ class OnboardingInput {
   final int periodMonths;
 
   // Step 2
-  final String earlyWithdrawalPossibility;
   final List<String> currentBanks;
   final String mainBank;
-  final String residenceSido;
-  final String residenceSigungu;
   final String birthYear;
   final String birthMonth;
   final String birthDay;
   final String salaryAccountTransferable;
   final String autoTransferMovable;
+  final String savingsAutoTransferPossible;
+  final String pensionAccountTransferable;
+  final String cooperativeInsuranceJoinStatus;
   final String monthlyCardSpending;
   final String marketingConsent;
   final String canInstallBankApp;
@@ -39,16 +40,16 @@ class OnboardingInput {
     this.lumpSum = 0,
     this.monthlySaving = 0,
     this.periodMonths = 0,
-    this.earlyWithdrawalPossibility = '',
     this.currentBanks = const [],
     this.mainBank = '',
-    this.residenceSido = '',
-    this.residenceSigungu = '',
     this.birthYear = '',
     this.birthMonth = '',
     this.birthDay = '',
     this.salaryAccountTransferable = '',
     this.autoTransferMovable = '',
+    this.savingsAutoTransferPossible = '',
+    this.pensionAccountTransferable = '',
+    this.cooperativeInsuranceJoinStatus = '',
     this.monthlyCardSpending = '',
     this.marketingConsent = '',
     this.canInstallBankApp = '',
@@ -66,16 +67,16 @@ class OnboardingInput {
     int? lumpSum,
     int? monthlySaving,
     int? periodMonths,
-    String? earlyWithdrawalPossibility,
     List<String>? currentBanks,
     String? mainBank,
-    String? residenceSido,
-    String? residenceSigungu,
     String? birthYear,
     String? birthMonth,
     String? birthDay,
     String? salaryAccountTransferable,
     String? autoTransferMovable,
+    String? savingsAutoTransferPossible,
+    String? pensionAccountTransferable,
+    String? cooperativeInsuranceJoinStatus,
     String? monthlyCardSpending,
     String? marketingConsent,
     String? canInstallBankApp,
@@ -92,18 +93,20 @@ class OnboardingInput {
       lumpSum: lumpSum ?? this.lumpSum,
       monthlySaving: monthlySaving ?? this.monthlySaving,
       periodMonths: periodMonths ?? this.periodMonths,
-      earlyWithdrawalPossibility:
-          earlyWithdrawalPossibility ?? this.earlyWithdrawalPossibility,
       currentBanks: currentBanks ?? this.currentBanks,
       mainBank: mainBank ?? this.mainBank,
-      residenceSido: residenceSido ?? this.residenceSido,
-      residenceSigungu: residenceSigungu ?? this.residenceSigungu,
       birthYear: birthYear ?? this.birthYear,
       birthMonth: birthMonth ?? this.birthMonth,
       birthDay: birthDay ?? this.birthDay,
       salaryAccountTransferable:
           salaryAccountTransferable ?? this.salaryAccountTransferable,
       autoTransferMovable: autoTransferMovable ?? this.autoTransferMovable,
+      savingsAutoTransferPossible:
+          savingsAutoTransferPossible ?? this.savingsAutoTransferPossible,
+      pensionAccountTransferable:
+          pensionAccountTransferable ?? this.pensionAccountTransferable,
+      cooperativeInsuranceJoinStatus: cooperativeInsuranceJoinStatus ??
+          this.cooperativeInsuranceJoinStatus,
       monthlyCardSpending: monthlyCardSpending ?? this.monthlyCardSpending,
       marketingConsent: marketingConsent ?? this.marketingConsent,
       canInstallBankApp: canInstallBankApp ?? this.canInstallBankApp,
@@ -157,14 +160,14 @@ class OnboardingInput {
   }
 
   bool get isStep2Complete =>
-      earlyWithdrawalPossibility.isNotEmpty &&
       currentBanks.isNotEmpty &&
       mainBank.isNotEmpty &&
-      residenceSido.isNotEmpty &&
-      residenceSigungu.isNotEmpty &&
       isBirthDateValid &&
       salaryAccountTransferable.isNotEmpty &&
       autoTransferMovable.isNotEmpty &&
+      savingsAutoTransferPossible.isNotEmpty &&
+      pensionAccountTransferable.isNotEmpty &&
+      cooperativeInsuranceJoinStatus.isNotEmpty &&
       monthlyCardSpending.isNotEmpty &&
       marketingConsent.isNotEmpty &&
       canInstallBankApp.isNotEmpty &&

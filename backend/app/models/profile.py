@@ -60,6 +60,15 @@ class UserProfile(Base):
         Boolean,
         comment="신협·새마을금고 조합원 가입(출자금 납입) 의향. 예탁금 가입 자격 판정에 쓴다. NULL = 미확인",
     )
+    # 조합 예탁금 감면 세율 판정 (조세특례제한법 제89조의3). 계산은 services/tax.py.
+    coop_tax_eligible: Mapped[bool | None] = mapped_column(
+        Boolean,
+        comment="총급여 7천만원(종합소득 6천만원) 이하 여부. 조합 예탁금 감면 세율이 갈린다. NULL = 모름(초과로 계산)",
+    )
+    coop_exempt_used: Mapped[int | None] = mapped_column(
+        BigInteger,
+        comment="다른 조합에 이미 감면으로 넣어 둔 예탁금(원). 1인당 3천만원 한도에서 뺀다. NULL = 모름(0 으로 계산)",
+    )
     tax_exempt_used: Mapped[int] = mapped_column(
         BigInteger, server_default=text("0"), comment="올해 이미 사용한 비과세 한도(원)"
     )
@@ -83,7 +92,8 @@ class UserProfile(Base):
         CheckConstraint("period_months > 0", name="period_months"),
         CheckConstraint(
             "capital >= 0 AND monthly_saving >= 0 AND tax_exempt_used >= 0"
-            " AND (monthly_card_usage IS NULL OR monthly_card_usage >= 0)",
+            " AND (monthly_card_usage IS NULL OR monthly_card_usage >= 0)"
+            " AND (coop_exempt_used IS NULL OR coop_exempt_used >= 0)",
             name="amounts",
         ),
         # 목돈도 월 저축액도 0 이면 배분할 게 없다
