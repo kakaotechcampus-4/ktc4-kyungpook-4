@@ -10,6 +10,8 @@ PRODUCT_TYPES = ("예금", "적금", "예탁금")
 
 SOCIAL_PROVIDERS = ("GOOGLE", "KAKAO", "NAVER")
 SOCIAL_CARE_CATEGORIES = ("다자녀", "한부모", "다문화", "신혼부부", "탈북자")
+# 비과세종합저축 가입 대상 (조세특례제한법 제88조의2). 앱 STEP2 선택지와 1:1 이다.
+TAX_EXEMPT_CATEGORIES = ("65세이상", "장애인", "유공자", "기초생활수급자")
 
 # MATURITY = 만기일 지난 UserHolding 을 만기 처리하는 일배치.
 # 사용자가 앱에 안 들어와도 돌아야 하므로 배치가 필요하다.
