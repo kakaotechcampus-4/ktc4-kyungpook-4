@@ -45,6 +45,15 @@ cd "$BASE/current/deploy"
 log "docker compose up"
 docker compose up -d --build --remove-orphans
 
+# web(Caddy)은 이미지·마운트 경로 문자열이 매번 똑같아서 compose가 변경으로 인식하지 못해
+# 재생성하지 않는다. 그런데 마운트 소스인 $BASE/current는 심볼릭 링크라, bind mount는
+# 마운트 시점에 그 링크를 한 번만 풀어서 고정해버린다 - 위에서 링크를 새 릴리스로 다시 걸어도
+# 이미 떠 있는 Caddy는 여전히 "예전 릴리스 디렉토리"를 보고 있다는 뜻이다. 그 디렉토리가
+# 6번 정리 단계에서 지워지면 Caddy 입장에서 /srv가 통째로 사라져 정적 파일이 전부 404가 된다.
+# 그래서 web만 따로 강제 재생성해서 매번 최신 링크로 다시 마운트시킨다.
+log "web(Caddy) 재마운트"
+docker compose up -d --force-recreate web
+
 # 도메인을 붙이면 Caddy 는 그 이름으로 온 요청에만 응답하므로, 확인은 백엔드에 직접 한다.
 health() {
   docker compose exec -T backend python -c \
