@@ -52,7 +52,9 @@ class PortfolioTierCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '단일안 대비 + ${CurrencyFormatter.won(option.vsSingleDiff)}',
+                option.extraVsBaseline != null
+                    ? '단일안 대비 + ${CurrencyFormatter.won(option.extraVsBaseline!)}'
+                    : '단일안과 비교할 주거래은행 정보가 없어요',
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
