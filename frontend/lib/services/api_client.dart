@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/calendar_event.dart';
 import '../models/onboarding_input.dart';
 import '../models/portfolio_option.dart';
+import '../models/single_plan.dart';
 import 'api_config.dart';
 
 class ApiException implements Exception {
@@ -101,14 +102,19 @@ class ApiClient {
     return int.tryParse(input.mutualFinanceExistingAmountText);
   }
 
-  Future<List<PortfolioOption>> recommendPortfolios(int profileId) async {
+  Future<(List<PortfolioOption>, SinglePlan?)> recommendPortfolios(int profileId) async {
     final response = await http.post(
       _uri('/portfolios/recommend'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'profile_id': profileId}),
     );
-    final options = _decodeObject(response)['options'] as List<dynamic>;
-    return options.map((o) => PortfolioOption.fromJson(o as Map<String, dynamic>)).toList();
+    final body = _decodeObject(response);
+    final options = (body['options'] as List<dynamic>)
+        .map((o) => PortfolioOption.fromJson(o as Map<String, dynamic>))
+        .toList();
+    final baselineJson = body['baseline'] as Map<String, dynamic>?;
+    final baseline = baselineJson != null ? SinglePlan.fromJson(baselineJson) : null;
+    return (options, baseline);
   }
 
   /// 추천안 중 하나를 확정 가입한다. 반환값은 이후 캘린더 조회에 쓰는 portfolio_id.
