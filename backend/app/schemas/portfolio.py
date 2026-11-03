@@ -29,7 +29,9 @@ class PortfolioOptionOut(BaseModel):
     tier: str  # 단순형 | 균형형 | 최대형 | 안정형
     products: list[PortfolioProductOut]
     after_tax_total: int  # 세후 이자 합계(원). 원금은 포함하지 않는다
-    reason: str  # AI Summary 가 만든 추천 이유. AI 실패 시 계산값만으로 만든 기본 문구
+    # AI Summary 가 만든 추천 이유. AI 실패 시 계산값만으로 만든 기본 문구.
+    # with_reason=false 로 요청하면 null - 이유는 POST /portfolios/reasons 로 따로 받는다
+    reason: str | None
     extra_vs_baseline: int | None  # 단일형 대비 세후 이자 증가분(원). 단일형이 없으면 None
     extra_vs_simple: int | None  # 단순형 대비 세후 이자 증가분(원). 균형형·최대형만, 나머지는 None
     new_bank_count: int  # 이 안을 실행하려면 새로 가입해야 하는 기관 수
@@ -50,6 +52,16 @@ class BaselineOut(BaseModel):
 
 class PortfolioRecommendRequest(BaseModel):
     profile_id: int
+    # false 면 추천 이유(AI Summary, 약 26초)를 만들지 않고 숫자만 바로 돌려준다. reason 은 null
+    with_reason: bool = True
+
+
+class PortfolioReasonsRequest(BaseModel):
+    profile_id: int
+
+
+class PortfolioReasonsResponse(BaseModel):
+    reasons: dict[str, str]  # 티어 이름 -> 추천 이유. 추천 응답의 options[].tier 와 같은 키
 
 
 class PortfolioRecommendResponse(BaseModel):
