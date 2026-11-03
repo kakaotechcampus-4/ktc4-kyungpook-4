@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/calendar_event.dart';
+import '../models/onboarding_input.dart';
 import '../models/portfolio_option.dart';
 import 'api_config.dart';
 
@@ -37,23 +38,67 @@ class ApiClient {
     return jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
   }
 
-  /// STEP1 입력값으로 프로필을 만들고 profile_id 를 반환한다.
-  /// 금액은 원 단위로 넘겨야 한다 (화면 입력 단위도 "원"이라 변환 없이 그대로 전달됨).
-  Future<int> createProfile({
-    required int lumpSumWon,
-    required int monthlySavingWon,
-    required int periodMonths,
-  }) async {
+  /// STEP1~3 입력값으로 프로필을 만들고 profile_id 를 반환한다.
+  /// STEP2·3 답변은 화면 선택지 문구를 그대로 보낸다 (백엔드 app/services/onboarding.py 가 해석).
+  /// 안 물어본(비어 있는) 항목은 보내지 않는다 - 빈 문자열("")은 422 가 난다.
+  Future<int> createProfile(OnboardingInput input) async {
+    final body = <String, dynamic>{
+      'lump_sum': input.lumpSum,
+      'monthly_saving': input.monthlySaving,
+      'period_months': input.periodMonths,
+      if (input.currentBanks.isNotEmpty) 'current_banks': input.currentBanks,
+      if (input.mainBank.isNotEmpty) 'main_bank': input.mainBank,
+      'birth_date': ?_birthDate(input),
+      if (input.salaryAccountTransferable.isNotEmpty)
+        'salary_account_transferable': input.salaryAccountTransferable,
+      if (input.autoTransferMovable.isNotEmpty)
+        'auto_transfer_movable': input.autoTransferMovable,
+      if (input.savingsAutoTransferPossible.isNotEmpty)
+        'savings_auto_transfer_possible': input.savingsAutoTransferPossible,
+      if (input.pensionAccountTransferable.isNotEmpty)
+        'pension_account_transferable': input.pensionAccountTransferable,
+      if (input.cooperativeInsuranceJoinStatus.isNotEmpty)
+        'cooperative_insurance_join_status': input.cooperativeInsuranceJoinStatus,
+      if (input.monthlyCardSpending.isNotEmpty)
+        'monthly_card_spending': input.monthlyCardSpending,
+      if (input.marketingConsent.isNotEmpty)
+        'marketing_consent': input.marketingConsent,
+      if (input.canInstallBankApp.isNotEmpty)
+        'can_install_bank_app': input.canInstallBankApp,
+      if (input.taxExemptEligibility.isNotEmpty)
+        'tax_exempt_eligibility': input.taxExemptEligibility,
+      if (input.specialHouseholdTypes.isNotEmpty)
+        'special_household_types': input.specialHouseholdTypes,
+      if (input.cooperativeMembershipStatus.isNotEmpty)
+        'cooperative_membership_status': input.cooperativeMembershipStatus,
+      if (input.cooperativeJoinChoices.isNotEmpty)
+        'cooperative_join_choices': input.cooperativeJoinChoices,
+      if (input.mutualFinanceTaxExemptEligible.isNotEmpty)
+        'mutual_finance_tax_exempt_eligible': input.mutualFinanceTaxExemptEligible,
+      'mutual_finance_existing_amount': ?_mutualFinanceExistingAmount(input),
+      if (input.additionalNote.isNotEmpty) 'additional_note': input.additionalNote,
+    };
+
     final response = await http.post(
       _uri('/profiles'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'lump_sum': lumpSumWon,
-        'monthly_saving': monthlySavingWon,
-        'period_months': periodMonths,
-      }),
+      body: jsonEncode(body),
     );
     return _decodeObject(response)['profile_id'] as int;
+  }
+
+  /// "YYYY-MM-DD" 형식. 날짜가 유효하지 않으면(달력에 없는 날짜 등) 보내지 않는다.
+  String? _birthDate(OnboardingInput input) {
+    if (!input.isBirthDateValid) return null;
+    final month = input.birthMonth.padLeft(2, '0');
+    final day = input.birthDay.padLeft(2, '0');
+    return '${input.birthYear}-$month-$day';
+  }
+
+  /// "잘 모르겠어요"를 선택했으면 null. 숫자를 못 읽어도(미입력 등) null.
+  int? _mutualFinanceExistingAmount(OnboardingInput input) {
+    if (input.mutualFinanceExistingAmountUnknown) return null;
+    return int.tryParse(input.mutualFinanceExistingAmountText);
   }
 
   Future<List<PortfolioOption>> recommendPortfolios(int profileId) async {

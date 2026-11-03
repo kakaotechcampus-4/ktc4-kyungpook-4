@@ -8,14 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_session
 from app.models.institution import Institution
-from app.models.profile import UserProfile, UserProfileBank
+from app.models.profile import UserProfile, UserProfileBank, UserProfileSocial, UserProfileTaxExempt
 from app.models.user import AppUser
 from app.schemas.profile import ProfileCreate, ProfileOut
+from app.services.onboarding import interpret
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
 
-@router.post("", response_model=ProfileOut, status_code=201, summary="입력값 스냅샷 생성 (STEP1)")
+@router.post("", response_model=ProfileOut, status_code=201, summary="입력값 스냅샷 생성 (STEP1~3)")
 async def create_profile(
     body: ProfileCreate,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -23,10 +24,11 @@ async def create_profile(
     if body.lump_sum == 0 and body.monthly_saving == 0:
         raise HTTPException(status_code=422, detail="목돈 또는 월 저축액 중 하나는 0보다 커야 합니다")
 
-    held_bank_codes = list(dict.fromkeys(body.held_bank_codes))  # 순서 유지 중복 제거
-    requested_codes = set(held_bank_codes) | ({body.main_bank_code} if body.main_bank_code else set())
+    parsed = interpret(body)
+    # 은행 코드는 우리가 정한 매핑이라 요청 오류가 아니다. DB 에 없는 기관(시드만 넣은 개발 DB 등)은 빼고 저장한다
+    requested_codes = set(parsed.held_bank_codes) | ({parsed.main_bank_code} if parsed.main_bank_code else set())
+    found: set[str] = set()
     if requested_codes:
-        # FK 위반으로 500 이 나기 전에, 없는 코드는 422 로 돌려준다
         found = set(
             (
                 await session.execute(
@@ -34,8 +36,8 @@ async def create_profile(
                 )
             ).scalars()
         )
-        if unknown := sorted(requested_codes - found):
-            raise HTTPException(status_code=422, detail=f"존재하지 않는 institution_code: {unknown}")
+    held_bank_codes = [code for code in parsed.held_bank_codes if code in found]
+    main_bank_code = parsed.main_bank_code if parsed.main_bank_code in found else None
 
     user_id = body.user_id
     if user_id is None:
@@ -50,16 +52,23 @@ async def create_profile(
         capital=body.lump_sum,
         monthly_saving=body.monthly_saving,
         period_months=body.period_months,
-        main_bank_code=body.main_bank_code,
-        salary_transfer=body.salary_transfer,
-        auto_transfer=body.auto_transfer,
-        monthly_card_usage=body.monthly_card_usage,
-        marketing_consent=body.marketing_consent is True,  # 컬럼이 NOT NULL 이라 모름은 미동의로 저장
-        app_install=body.app_install,
-        accepts_membership=body.accepts_membership,
-        coop_tax_eligible=body.coop_tax_eligible,
-        coop_exempt_used=body.coop_exempt_used,
+        main_bank_code=main_bank_code,
+        birth_date=parsed.birth_date,
+        salary_transfer=parsed.salary_transfer,
+        auto_transfer=parsed.auto_transfer,
+        savings_auto_transfer=parsed.savings_auto_transfer,
+        pension_transfer=parsed.pension_transfer,
+        coop_insurance=parsed.coop_insurance,
+        monthly_card_usage=parsed.monthly_card_usage,
+        marketing_consent=parsed.marketing_consent is True,  # 컬럼이 NOT NULL 이라 모름은 미동의로 저장
+        app_install=parsed.app_install,
+        accepts_membership=parsed.accepts_membership,
+        coop_tax_eligible=parsed.coop_tax_eligible,
+        coop_exempt_used=parsed.coop_exempt_used,
+        answers=parsed.answers,
         banks=[UserProfileBank(institution_code=code) for code in held_bank_codes],
+        tax_exempts=[UserProfileTaxExempt(category=c) for c in parsed.tax_exempt_categories],
+        social_cares=[UserProfileSocial(category=c) for c in parsed.social_categories],
     )
     session.add(profile)
     await session.commit()
