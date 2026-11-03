@@ -33,7 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.institution import Institution
 from app.models.portfolio import UserHolding, UserHoldingCondition, UserPortfolio
 from app.models.product import Product, ProductCondition, ProductOption
-from app.models.profile import UserProfile, UserProfileBank
+from app.models.profile import UserProfile, UserProfileBank, UserProfileExtra
 from app.schemas.calendar import CalendarEventOut
 from app.schemas.portfolio import BaselineOut, PortfolioOptionOut, PortfolioProductOut
 from app.services.conditions import AppliedCondition, Scope, evaluate
@@ -47,6 +47,9 @@ STABLE_TIER = "안정형"
 DEPOSIT_PROTECTION_LIMIT = 100_000_000  # 예금자보호 한도. 기관별 원금 합계를 여기까지만 담는다
 COMPREHENSIVE_TAX_THRESHOLD = 20_000_000  # 금융소득종합과세 기준 (연간 이자·배당)
 FIRST_TIER_INSTITUTION_TYPE = "은행"  # 1금융권
+# 챗봇 '기타' 조건 답을 user_profile_extra.answer_value 에 저장하는 값
+ETC_ANSWER_MET = "true"
+ETC_ANSWER_NOT_MET = "false"
 
 
 @dataclass(frozen=True)
@@ -213,6 +216,7 @@ def _rank(
     profile: UserProfile,
     banks: _BankInfo,
     tax: TaxContext,
+    etc_answers: dict[str, bool] | None = None,
 ) -> list[_Ranked]:
     """이 티어에서 쓸 수 있는 후보를 세후 기준 금리 높은 순으로 정렬한다."""
     ranked = []
@@ -231,6 +235,7 @@ def _rank(
             profile,
             is_main_bank=banks.is_main(code),
             is_new_institution=banks.is_new(code),
+            etc_answers=etc_answers,
         )
         ranked.append(_Ranked(c, rate, applied))
     ranked.sort(
@@ -299,12 +304,17 @@ def _allocate_greedy(
 
 
 def _best_single(
-    total: int, candidates: list[Candidate], profile: UserProfile, banks: _BankInfo, tax: TaxContext
+    total: int,
+    candidates: list[Candidate],
+    profile: UserProfile,
+    banks: _BankInfo,
+    tax: TaxContext,
+    etc_answers: dict[str, bool] | None = None,
 ) -> list[Allocation]:
     """단일형: 주거래은행 상품 중 세후 기준 1위 하나에 전액. 한도·예금자보호는 보지 않는다."""
     spec = TierSpec("단일형", Scope.SIMPLE, max_new_institutions=None)
     main_only = [c for c in candidates if banks.is_main(c.product.institution_code)]
-    ranked = _rank(main_only, spec, profile, banks, tax)
+    ranked = _rank(main_only, spec, profile, banks, tax, etc_answers)
     if total <= 0 or not ranked:
         return []
     top = ranked[0]
@@ -326,6 +336,15 @@ async def get_held_bank_codes(session: AsyncSession, profile: UserProfile) -> li
     return list((await session.execute(stmt)).scalars().all())
 
 
+async def get_etc_answers(session: AsyncSession, profile: UserProfile) -> dict[str, bool]:
+    """챗봇에서 받은 '기타' 우대조건 답. {condition_id: 충족 여부}. 아직 답하지 않은 조건은 들어 있지 않다."""
+    stmt = select(UserProfileExtra.condition_id, UserProfileExtra.answer_value).where(
+        UserProfileExtra.profile_id == profile.profile_id,
+        UserProfileExtra.answer_value.is_not(None),
+    )
+    return {condition_id: value == ETC_ANSWER_MET for condition_id, value in (await session.execute(stmt)).all()}
+
+
 async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioPlan:
     deposit_period, deposits = await _matching_options(session, "예금", profile.period_months)
     installment_period, installments = await _matching_options(session, "적금", profile.period_months)
@@ -335,6 +354,7 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
     banks = _BankInfo(profile.main_bank_code, held | ({profile.main_bank_code} if profile.main_bank_code else set()))
     # 정렬에 쓰는 기대 세율만 본다. 실제 한도 차감은 세금 계산 단계에서 티어마다 새로 한다
     tax = _tax_context(profile, date.today())
+    etc_answers = await get_etc_answers(session, profile)
     use_deposit = profile.capital > 0 and deposit_period is not None
     use_installment = profile.monthly_saving > 0 and installment_period is not None
 
@@ -343,7 +363,12 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
         state = _TierState()
         deposit_allocs = (
             _allocate_greedy(
-                profile.capital, _rank(deposits, spec, profile, banks, tax), "amount_cap", spec, banks, state
+                profile.capital,
+                _rank(deposits, spec, profile, banks, tax, etc_answers),
+                "amount_cap",
+                spec,
+                banks,
+                state,
             )
             if use_deposit
             else []
@@ -351,7 +376,7 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
         installment_allocs = (
             _allocate_greedy(
                 profile.monthly_saving,
-                _rank(installments, spec, profile, banks, tax),
+                _rank(installments, spec, profile, banks, tax, etc_answers),
                 "monthly_cap",
                 spec,
                 banks,
@@ -364,9 +389,11 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
 
     baseline = None
     if profile.main_bank_code:
-        base_deposits = _best_single(profile.capital, deposits, profile, banks, tax) if use_deposit else []
+        base_deposits = _best_single(profile.capital, deposits, profile, banks, tax, etc_answers) if use_deposit else []
         base_installments = (
-            _best_single(profile.monthly_saving, installments, profile, banks, tax) if use_installment else []
+            _best_single(profile.monthly_saving, installments, profile, banks, tax, etc_answers)
+            if use_installment
+            else []
         )
         if base_deposits or base_installments:
             baseline = TierAllocations(period, base_deposits, base_installments)
