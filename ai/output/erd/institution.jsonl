@@ -31,7 +31,6 @@
 {"institution_code": "CU-03166", "name": "광명", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08171", "name": "광주문화", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08135", "name": "광주서부", "institution_type": "신협", "region": null, "is_active": true}
-{"institution_code": "CU-08117", "name": "광주약사", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08075", "name": "광주웨슬리", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-05119", "name": "광혜원", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-02003", "name": "구덕", "institution_type": "신협", "region": null, "is_active": true}
@@ -95,6 +94,7 @@
 {"institution_code": "CU-01062", "name": "동호", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-10143", "name": "마산남성", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-10203", "name": "마산상공회의소", "institution_type": "신협", "region": null, "is_active": true}
+{"institution_code": "CU-01201", "name": "마포", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-03240", "name": "만수중앙", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-05114", "name": "명성", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-07002", "name": "무궁화", "institution_type": "신협", "region": null, "is_active": true}
@@ -314,6 +314,7 @@
 {"institution_code": "CU-08179", "name": "광주미래", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08095", "name": "광주신안", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08092", "name": "광주신우", "institution_type": "신협", "region": null, "is_active": true}
+{"institution_code": "CU-08117", "name": "광주약사", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08172", "name": "광주어룡", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08008", "name": "광주와이", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08116", "name": "광주우리", "institution_type": "신협", "region": null, "is_active": true}
@@ -432,7 +433,6 @@
 {"institution_code": "CU-05079", "name": "마로", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-05093", "name": "마루", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-03015", "name": "마장", "institution_type": "신협", "region": null, "is_active": true}
-{"institution_code": "CU-01201", "name": "마포", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-05001", "name": "매괴", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-05038", "name": "매포", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-02081", "name": "맥켄지", "institution_type": "신협", "region": null, "is_active": true}
@@ -1838,6 +1838,191 @@
 {"institution_code": "KFCC-4923-001", "name": "장수새마을금고 본점", "institution_type": "새마을금고", "region": "전북 장수군", "is_active": true}
 {"institution_code": "KFCC-4924-001", "name": "장계새마을금고 본점", "institution_type": "새마을금고", "region": "전북 장수군", "is_active": true}
 {"institution_code": "KFCC-4925-001", "name": "산서새마을금고 본점", "institution_type": "새마을금고", "region": "전북 장수군", "is_active": true}
+{"institution_code": "KFCC-2803-001", "name": "목포동부새마을금고 본점", "institution_type": "새마을금고", "region": "광주 목포시", "is_active": true}
+{"institution_code": "KFCC-2804-001", "name": "산정새마을금고 본점", "institution_type": "새마을금고", "region": "광주 목포시", "is_active": true}
+{"institution_code": "KFCC-2808-001", "name": "목포중앙새마을금고 본점", "institution_type": "새마을금고", "region": "광주 목포시", "is_active": true}
+{"institution_code": "KFCC-2810-001", "name": "삼학새마을금고 본점", "institution_type": "새마을금고", "region": "광주 목포시", "is_active": true}
+{"institution_code": "KFCC-2820-001", "name": "영신학원새마을금고 본점", "institution_type": "새마을금고", "region": "광주 목포시", "is_active": true}
+{"institution_code": "KFCC-2601-001", "name": "동여수새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2602-001", "name": "여수엑스포새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2604-001", "name": "중앙새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2605-001", "name": "여수중부새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2606-001", "name": "충무새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2607-001", "name": "진남새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2610-001", "name": "좌수영새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2611-001", "name": "구봉새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2615-001", "name": "새여수새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2638-001", "name": "여천새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2646-001", "name": "여수서부새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2720-001", "name": "여수한려새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2721-001", "name": "돌산새마을금고 본점", "institution_type": "새마을금고", "region": "광주 여수시", "is_active": true}
+{"institution_code": "KFCC-2627-001", "name": "순천만새마을금고 본점", "institution_type": "새마을금고", "region": "광주 순천시", "is_active": true}
+{"institution_code": "KFCC-2647-001", "name": "순천북부새마을금고 본점", "institution_type": "새마을금고", "region": "광주 순천시", "is_active": true}
+{"institution_code": "KFCC-2648-001", "name": "순천중부새마을금고 본점", "institution_type": "새마을금고", "region": "광주 순천시", "is_active": true}
+{"institution_code": "KFCC-1119-001", "name": "한전새마을금고 본점", "institution_type": "새마을금고", "region": "광주 나주시", "is_active": true}
+{"institution_code": "KFCC-2902-001", "name": "나주새마을금고 본점", "institution_type": "새마을금고", "region": "광주 나주시", "is_active": true}
+{"institution_code": "KFCC-2903-001", "name": "영산포새마을금고 본점", "institution_type": "새마을금고", "region": "광주 나주시", "is_active": true}
+{"institution_code": "KFCC-2905-001", "name": "나주동부새마을금고 본점", "institution_type": "새마을금고", "region": "광주 나주시", "is_active": true}
+{"institution_code": "KFCC-2703-001", "name": "광양시새마을금고 본점", "institution_type": "새마을금고", "region": "광주 광양시", "is_active": true}
+{"institution_code": "KFCC-2706-001", "name": "광양새마을금고 본점", "institution_type": "새마을금고", "region": "광주 광양시", "is_active": true}
+{"institution_code": "KFCC-2405-001", "name": "계림새마을금고 본점", "institution_type": "새마을금고", "region": "광주 동구", "is_active": true}
+{"institution_code": "KFCC-2407-001", "name": "동광주새마을금고 본점", "institution_type": "새마을금고", "region": "광주 동구", "is_active": true}
+{"institution_code": "KFCC-2410-001", "name": "대광새마을금고 본점", "institution_type": "새마을금고", "region": "광주 동구", "is_active": true}
+{"institution_code": "KFCC-2411-001", "name": "서석새마을금고 본점", "institution_type": "새마을금고", "region": "광주 동구", "is_active": true}
+{"institution_code": "KFCC-2417-001", "name": "전남대학교병원새마을금고 본점", "institution_type": "새마을금고", "region": "광주 동구", "is_active": true}
+{"institution_code": "KFCC-2419-001", "name": "금남새마을금고 본점", "institution_type": "새마을금고", "region": "광주 동구", "is_active": true}
+{"institution_code": "KFCC-2420-001", "name": "동광새마을금고 본점", "institution_type": "새마을금고", "region": "광주 동구", "is_active": true}
+{"institution_code": "KFCC-2450-001", "name": "남광주새마을금고 본점", "institution_type": "새마을금고", "region": "광주 동구", "is_active": true}
+{"institution_code": "KFCC-2524-001", "name": "제일새마을금고 본점", "institution_type": "새마을금고", "region": "광주 동구", "is_active": true}
+{"institution_code": "KFCC-2415-001", "name": "광주광역시청새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2421-001", "name": "푸른새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2502-001", "name": "온누리새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2506-001", "name": "상무새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2507-001", "name": "화정새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2508-001", "name": "염주새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2510-001", "name": "기아광주새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2513-001", "name": "광주새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2545-001", "name": "양동새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2546-001", "name": "신흥새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2547-001", "name": "무등새마을금고 본점", "institution_type": "새마을금고", "region": "광주 서구", "is_active": true}
+{"institution_code": "KFCC-2440-001", "name": "무진새마을금고 본점", "institution_type": "새마을금고", "region": "광주 남구", "is_active": true}
+{"institution_code": "KFCC-2441-001", "name": "서양새마을금고 본점", "institution_type": "새마을금고", "region": "광주 남구", "is_active": true}
+{"institution_code": "KFCC-2442-001", "name": "광남새마을금고 본점", "institution_type": "새마을금고", "region": "광주 남구", "is_active": true}
+{"institution_code": "KFCC-2444-001", "name": "월산새마을금고 본점", "institution_type": "새마을금고", "region": "광주 남구", "is_active": true}
+{"institution_code": "KFCC-2445-001", "name": "주월새마을금고 본점", "institution_type": "새마을금고", "region": "광주 남구", "is_active": true}
+{"institution_code": "KFCC-2446-001", "name": "유은학원새마을금고 본점", "institution_type": "새마을금고", "region": "광주 남구", "is_active": true}
+{"institution_code": "KFCC-2509-001", "name": "송원새마을금고 본점", "institution_type": "새마을금고", "region": "광주 남구", "is_active": true}
+{"institution_code": "KFCC-2514-001", "name": "중흥새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2515-001", "name": "북광주새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2520-001", "name": "광주북부새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2521-001", "name": "태봉새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2522-001", "name": "동운새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2523-001", "name": "서방새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2526-001", "name": "정다운새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2527-001", "name": "예향새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2529-001", "name": "빛고을새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2531-001", "name": "동신새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2540-001", "name": "동부새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2544-001", "name": "광주중앙새마을금고 본점", "institution_type": "새마을금고", "region": "광주 북구", "is_active": true}
+{"institution_code": "KFCC-2424-001", "name": "한마음새마을금고 본점", "institution_type": "새마을금고", "region": "광주 광산구", "is_active": true}
+{"institution_code": "KFCC-2434-001", "name": "금호타이어새마을금고 본점", "institution_type": "새마을금고", "region": "광주 광산구", "is_active": true}
+{"institution_code": "KFCC-2448-001", "name": "서광주새마을금고 본점", "institution_type": "새마을금고", "region": "광주 광산구", "is_active": true}
+{"institution_code": "KFCC-2907-001", "name": "담양새마을금고 본점", "institution_type": "새마을금고", "region": "광주 담양군", "is_active": true}
+{"institution_code": "KFCC-2709-001", "name": "봉성새마을금고 본점", "institution_type": "새마을금고", "region": "광주 구례군", "is_active": true}
+{"institution_code": "KFCC-2716-001", "name": "구례새마을금고 본점", "institution_type": "새마을금고", "region": "광주 구례군", "is_active": true}
+{"institution_code": "KFCC-2722-001", "name": "고흥새마을금고 본점", "institution_type": "새마을금고", "region": "광주 고흥군", "is_active": true}
+{"institution_code": "KFCC-2723-001", "name": "녹동새마을금고 본점", "institution_type": "새마을금고", "region": "광주 고흥군", "is_active": true}
+{"institution_code": "KFCC-2724-001", "name": "우주새마을금고 본점", "institution_type": "새마을금고", "region": "광주 고흥군", "is_active": true}
+{"institution_code": "KFCC-2736-001", "name": "벌교새마을금고 본점", "institution_type": "새마을금고", "region": "광주 보성군", "is_active": true}
+{"institution_code": "KFCC-2737-001", "name": "보성새마을금고 본점", "institution_type": "새마을금고", "region": "광주 보성군", "is_active": true}
+{"institution_code": "KFCC-2911-001", "name": "화순새마을금고 본점", "institution_type": "새마을금고", "region": "광주 화순군", "is_active": true}
+{"institution_code": "KFCC-2948-001", "name": "정남진새마을금고 본점", "institution_type": "새마을금고", "region": "광주 장흥군", "is_active": true}
+{"institution_code": "KFCC-2823-001", "name": "강진완도새마을금고 본점", "institution_type": "새마을금고", "region": "광주 강진군", "is_active": true}
+{"institution_code": "KFCC-2827-001", "name": "문내새마을금고 본점", "institution_type": "새마을금고", "region": "광주 해남군", "is_active": true}
+{"institution_code": "KFCC-2829-001", "name": "해남새마을금고 본점", "institution_type": "새마을금고", "region": "광주 해남군", "is_active": true}
+{"institution_code": "KFCC-2926-001", "name": "영암성실새마을금고 본점", "institution_type": "새마을금고", "region": "광주 영암군", "is_active": true}
+{"institution_code": "KFCC-2927-001", "name": "영암우리새마을금고 본점", "institution_type": "새마을금고", "region": "광주 영암군", "is_active": true}
+{"institution_code": "KFCC-2932-001", "name": "삼호새마을금고 본점", "institution_type": "새마을금고", "region": "광주 영암군", "is_active": true}
+{"institution_code": "KFCC-2933-001", "name": "HD현대삼호(주)새마을금고 본점", "institution_type": "새마을금고", "region": "광주 영암군", "is_active": true}
+{"institution_code": "KFCC-2830-001", "name": "무안새마을금고 본점", "institution_type": "새마을금고", "region": "광주 무안군", "is_active": true}
+{"institution_code": "KFCC-2831-001", "name": "해제새마을금고 본점", "institution_type": "새마을금고", "region": "광주 무안군", "is_active": true}
+{"institution_code": "KFCC-2833-001", "name": "남악새마을금고 본점", "institution_type": "새마을금고", "region": "광주 무안군", "is_active": true}
+{"institution_code": "KFCC-2937-001", "name": "영광새마을금고 본점", "institution_type": "새마을금고", "region": "광주 영광군", "is_active": true}
+{"institution_code": "KFCC-2939-001", "name": "법성새마을금고 본점", "institution_type": "새마을금고", "region": "광주 영광군", "is_active": true}
+{"institution_code": "KFCC-2941-001", "name": "염산새마을금고 본점", "institution_type": "새마을금고", "region": "광주 영광군", "is_active": true}
+{"institution_code": "KFCC-2942-001", "name": "백수새마을금고 본점", "institution_type": "새마을금고", "region": "광주 영광군", "is_active": true}
+{"institution_code": "KFCC-2841-001", "name": "진도군새마을금고 본점", "institution_type": "새마을금고", "region": "광주 진도군", "is_active": true}
+{"institution_code": "KFCC-2843-001", "name": "신안새마을금고 본점", "institution_type": "새마을금고", "region": "광주 신안군", "is_active": true}
+{"institution_code": "KFCC-6457-001", "name": "함양군새마을금고 본점", "institution_type": "새마을금고", "region": "경남 함양군", "is_active": true}
+{"institution_code": "KFCC-6458-001", "name": "거창새마을금고 본점", "institution_type": "새마을금고", "region": "경남 거창군", "is_active": true}
+{"institution_code": "KFCC-6455-001", "name": "산청새마을금고 본점", "institution_type": "새마을금고", "region": "경남 산청군", "is_active": true}
+{"institution_code": "KFCC-6468-001", "name": "강양새마을금고 본점", "institution_type": "새마을금고", "region": "경남 합천군", "is_active": true}
+{"institution_code": "KFCC-6454-001", "name": "하동새마을금고 본점", "institution_type": "새마을금고", "region": "경남 하동군", "is_active": true}
+{"institution_code": "KFCC-3568-001", "name": "LH새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6401-001", "name": "망경새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6402-001", "name": "진주남부새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6404-001", "name": "제일새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6407-001", "name": "참진주새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6408-001", "name": "서부새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6411-001", "name": "중앙새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6415-001", "name": "신평새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6416-001", "name": "서진주새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6417-001", "name": "진주동부새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6418-001", "name": "새진주새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6419-001", "name": "봉곡새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6426-001", "name": "진주중앙새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6466-001", "name": "시민새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6469-001", "name": "참좋은새마을금고 본점", "institution_type": "새마을금고", "region": "경남 진주시", "is_active": true}
+{"institution_code": "KFCC-6055-001", "name": "의령정암새마을금고 본점", "institution_type": "새마을금고", "region": "경남 의령군", "is_active": true}
+{"institution_code": "KFCC-6046-001", "name": "함안새마을금고 본점", "institution_type": "새마을금고", "region": "경남 함안군", "is_active": true}
+{"institution_code": "KFCC-6112-003", "name": "동창원새마을금고 창녕경화", "institution_type": "새마을금고", "region": "경남 창녕군", "is_active": true}
+{"institution_code": "KFCC-6442-001", "name": "새남해새마을금고 본점", "institution_type": "새마을금고", "region": "경남 남해군", "is_active": true}
+{"institution_code": "KFCC-6444-001", "name": "미송새마을금고 본점", "institution_type": "새마을금고", "region": "경남 남해군", "is_active": true}
+{"institution_code": "KFCC-6467-001", "name": "창선새마을금고 본점", "institution_type": "새마을금고", "region": "경남 남해군", "is_active": true}
+{"institution_code": "KFCC-6427-001", "name": "사천새마을금고 본점", "institution_type": "새마을금고", "region": "경남 사천시", "is_active": true}
+{"institution_code": "KFCC-6432-001", "name": "사남새마을금고 본점", "institution_type": "새마을금고", "region": "경남 사천시", "is_active": true}
+{"institution_code": "KFCC-6433-001", "name": "삼천포새마을금고 본점", "institution_type": "새마을금고", "region": "경남 사천시", "is_active": true}
+{"institution_code": "KFCC-6434-001", "name": "노산새마을금고 본점", "institution_type": "새마을금고", "region": "경남 사천시", "is_active": true}
+{"institution_code": "KFCC-6438-001", "name": "한국항공우주산업㈜새마을금고 본점", "institution_type": "새마을금고", "region": "경남 사천시", "is_active": true}
+{"institution_code": "KFCC-6528-001", "name": "고성새마을금고 본점", "institution_type": "새마을금고", "region": "경남 고성군", "is_active": true}
+{"institution_code": "KFCC-6537-001", "name": "새고성새마을금고 본점", "institution_type": "새마을금고", "region": "경남 고성군", "is_active": true}
+{"institution_code": "KFCC-6002-001", "name": "반월중앙새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6009-001", "name": "동부새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6010-001", "name": "마산새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6015-001", "name": "석전새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6017-001", "name": "마산남부새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6022-001", "name": "삼성창원병원새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6028-001", "name": "진해새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6029-001", "name": "새진해새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6052-001", "name": "중부새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6057-001", "name": "동마산새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6058-001", "name": "마창진새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6101-001", "name": "북창원새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6102-001", "name": "반송새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6103-001", "name": "남창원새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6106-001", "name": "창원한마음새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6109-001", "name": "창원새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6114-001", "name": "현대로템새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6115-001", "name": "셰플러코리아(유)새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6116-001", "name": "SNT다이내믹스(주)새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6118-001", "name": "한화에어로스페이스새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6119-001", "name": "해성디에스새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6123-001", "name": "중우새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6124-001", "name": "두산에너빌리티새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6125-001", "name": "볼보건설기계코리아㈜새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6126-001", "name": "효성중공업새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6132-001", "name": "한국지엠새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6133-001", "name": "벧엘새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6152-001", "name": "의창새마을금고 본점", "institution_type": "새마을금고", "region": "경남 창원시", "is_active": true}
+{"institution_code": "KFCC-6053-001", "name": "밀양새마을금고 본점", "institution_type": "새마을금고", "region": "경남 밀양시", "is_active": true}
+{"institution_code": "KFCC-6056-001", "name": "밀양중앙새마을금고 본점", "institution_type": "새마을금고", "region": "경남 밀양시", "is_active": true}
+{"institution_code": "KFCC-6501-001", "name": "도천새마을금고 본점", "institution_type": "새마을금고", "region": "경남 통영시", "is_active": true}
+{"institution_code": "KFCC-6509-001", "name": "동통영새마을금고 본점", "institution_type": "새마을금고", "region": "경남 통영시", "is_active": true}
+{"institution_code": "KFCC-6510-001", "name": "새통영새마을금고 본점", "institution_type": "새마을금고", "region": "경남 통영시", "is_active": true}
+{"institution_code": "KFCC-6515-001", "name": "도봉새마을금고 본점", "institution_type": "새마을금고", "region": "경남 통영시", "is_active": true}
+{"institution_code": "KFCC-6520-001", "name": "성심새마을금고 본점", "institution_type": "새마을금고", "region": "경남 통영시", "is_active": true}
+{"institution_code": "KFCC-6543-001", "name": "통제영새마을금고 본점", "institution_type": "새마을금고", "region": "경남 통영시", "is_active": true}
+{"institution_code": "KFCC-6544-001", "name": "통영중앙새마을금고 본점", "institution_type": "새마을금고", "region": "경남 통영시", "is_active": true}
+{"institution_code": "KFCC-6521-001", "name": "능포새마을금고 본점", "institution_type": "새마을금고", "region": "경남 거제시", "is_active": true}
+{"institution_code": "KFCC-6522-001", "name": "옥포새마을금고 본점", "institution_type": "새마을금고", "region": "경남 거제시", "is_active": true}
+{"institution_code": "KFCC-6524-001", "name": "거제새마을금고 본점", "institution_type": "새마을금고", "region": "경남 거제시", "is_active": true}
+{"institution_code": "KFCC-6526-001", "name": "한화오션(주)새마을금고 본점", "institution_type": "새마을금고", "region": "경남 거제시", "is_active": true}
+{"institution_code": "KFCC-6527-001", "name": "삼성중공업㈜새마을금고 본점", "institution_type": "새마을금고", "region": "경남 거제시", "is_active": true}
+{"institution_code": "KFCC-6135-001", "name": "김해중앙새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6136-001", "name": "남김해새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6137-001", "name": "김해시민새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6138-001", "name": "서김해새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6139-001", "name": "김해서부새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6140-001", "name": "동김해새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6141-001", "name": "새김해새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6142-001", "name": "북김해새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6143-001", "name": "활천새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6144-001", "name": "칠산새마을금고 본점", "institution_type": "새마을금고", "region": "경남 김해시", "is_active": true}
+{"institution_code": "KFCC-6264-001", "name": "양산새마을금고 본점", "institution_type": "새마을금고", "region": "경남 양산시", "is_active": true}
+{"institution_code": "KFCC-6267-001", "name": "남양산새마을금고 본점", "institution_type": "새마을금고", "region": "경남 양산시", "is_active": true}
+{"institution_code": "KFCC-6268-001", "name": "상북새마을금고 본점", "institution_type": "새마을금고", "region": "경남 양산시", "is_active": true}
+{"institution_code": "KFCC-6269-001", "name": "양산중앙새마을금고 본점", "institution_type": "새마을금고", "region": "경남 양산시", "is_active": true}
+{"institution_code": "KFCC-6270-001", "name": "웅상새마을금고 본점", "institution_type": "새마을금고", "region": "경남 양산시", "is_active": true}
 {"institution_code": "KFCC-6601-001", "name": "제주새마을금고 본점", "institution_type": "새마을금고", "region": "제주 제주시", "is_active": true}
 {"institution_code": "KFCC-6602-001", "name": "중앙새마을금고 본점", "institution_type": "새마을금고", "region": "제주 제주시", "is_active": true}
 {"institution_code": "KFCC-6603-001", "name": "용담새마을금고 본점", "institution_type": "새마을금고", "region": "제주 제주시", "is_active": true}

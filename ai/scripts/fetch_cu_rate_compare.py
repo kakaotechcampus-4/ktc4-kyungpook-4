@@ -22,8 +22,23 @@
 - listMaxCnt에 사실상 상한이 없음(10000을 줘도 전부 한 번에 반환됨,
   화면상 select는 10/20/50뿐이지만 서버는 더 큰 값도 받아줌)
   -> product_type(2종) x monTy(6종) = 총 12번 요청이면 전체 수집 끝남.
+
+[저장 방식 - 매번 전체 새로 받기 + 원자적 저장]
+예전에는 이미 파일에 있는 조합을 건너뛰는 "재개 모드"였다. GitHub Actions 는 매번 빈 상태로
+시작해서 문제가 없었지만, 디스크가 남는 서버(EC2)에서는 둘째 주부터 12개 조합을 전부 건너뛰어
+신협 데이터가 첫 수집본으로 멈춘다(그래도 성공으로 끝나 아무도 모름). 그래서 재개 모드를 없앴다.
+12번 요청이라 매번 전부 받아도 오래 걸리지 않는다.
+  1단계: 12개 조합을 전부 메모리에 받는다. 하나라도 실패하면 파일을 건드리지 않고 종료 코드 1.
+  2단계: 임시 파일(*.tmp)에 쓴다. 쓰다가 실패하면 임시 파일만 지우고 종료 코드 1.
+  3단계: 원래 이름으로 바꾼다(os.replace). 이 단계는 순식간에 끝난다.
+실패로 보는 경우: 요청 오류(네트워크·HTTP 오류), 응답이 목록(JSON 배열)이 아닐 때, 0건 수집,
+서버가 알려준 전체 건수와 실제로 받은 건수가 다를 때.
+전체 건수(listTotalCount)는 일부 행에만 들어 있고 나머지 행은 0이라 조합 안의 가장 큰 값을 쓴다.
+(2026-09-22 수집본 확인: 12개 조합 모두 0건 없음, 가장 큰 listTotalCount = 행 수)
 """
 import json
+import os
+import sys
 import time
 from pathlib import Path
 
@@ -32,6 +47,7 @@ import requests
 OUT_DIR = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_PATH = OUT_DIR / "cu_rate_compare.jsonl"
+TMP_PATH = OUT_DIR / "cu_rate_compare.jsonl.tmp"
 
 BASE = "https://www.cu.co.kr"
 LIST_PAGE = {
@@ -54,21 +70,14 @@ HEADERS = {
 }
 
 
-def load_seen_keys() -> set[str]:
-    """이미 저장된 (product_type, monTy) 조합은 재수집하지 않기 위한 재개용 체크."""
-    seen = set()
-    if OUT_PATH.exists():
-        with OUT_PATH.open("r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    rec = json.loads(line)
-                    seen.add(f"{rec['_product_type']}|{rec['_req_monTy']}")
-                except Exception:
-                    pass
-    return seen
+class FetchError(Exception):
+    """응답이 목록이 아니거나 받은 데이터가 온전하지 않을 때."""
+
+
+def _fail(label, reason):
+    """하나라도 실패하면 파일을 바꾸지 않고 끝낸다(지난 수집본 그대로 유지)."""
+    print(f"[{label}] {reason} - 실패로 처리. 기존 수집본을 유지합니다.")
+    sys.exit(1)
 
 
 def fetch_one(session: requests.Session, product_type: str, mon_ty: str) -> list[dict]:
@@ -93,40 +102,62 @@ def fetch_one(session: requests.Session, product_type: str, mon_ty: str) -> list
     resp.encoding = "utf-8"
     data = resp.json()
     if not isinstance(data, list):
-        return []
+        # 예전에는 0건으로 넘어갔다. 사이트가 오류 응답을 줘도 그 조합이 통째로 비는 걸 막는다
+        raise FetchError(f"응답이 목록이 아님 (type={type(data).__name__})")
     return data
+
+
+def reported_total(rows: list[dict]) -> int:
+    """서버가 알려준 전체 건수. 일부 행에만 들어 있고 나머지는 0이라 가장 큰 값을 쓴다."""
+    return max(int(row.get("listTotalCount") or 0) for row in rows)
 
 
 def main():
     session = requests.Session()
     # 목록 페이지를 먼저 한 번 방문해 세션 쿠키를 확보(브라우저 흐름 그대로 재현)
-    for url in set(LIST_PAGE.values()):
-        session.get(url, headers=HEADERS, timeout=20)
+    try:
+        for url in set(LIST_PAGE.values()):
+            session.get(url, headers=HEADERS, timeout=20)
+    except requests.RequestException as e:
+        _fail("목록 페이지", f"접속 오류: {e}")
 
-    done = load_seen_keys()
-    print(f"이미 완료된 조합: {len(done)}개 (재개 모드)")
-
-    total_saved = 0
-    with OUT_PATH.open("a", encoding="utf-8") as out_f:
-        for product_type in ("deposit", "savings"):
-            for mon_ty in MONTY_LIST:
-                key = f"{product_type}|{mon_ty}"
-                if key in done:
-                    print(f"[{product_type} / {mon_ty}개월] 이미 완료 - 건너뜀")
-                    continue
-
+    # 1단계: 12개 조합 전부 받기 - 이 단계에서는 파일을 건드리지 않는다
+    collected = []
+    for product_type in ("deposit", "savings"):
+        for mon_ty in MONTY_LIST:
+            label = f"{product_type} / {mon_ty}개월"
+            try:
                 rows = fetch_one(session, product_type, mon_ty)
-                for row in rows:
-                    row["_product_type"] = product_type
-                    row["_req_monTy"] = mon_ty
-                    out_f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            except (requests.RequestException, ValueError, FetchError) as e:  # 네트워크·HTTP 오류, JSON 아님, 목록 아님
+                _fail(label, f"수집 중 오류: {e}")
+            if not rows:
+                _fail(label, "0건 수집")
+            try:
+                total = reported_total(rows)
+            except (TypeError, ValueError) as e:
+                _fail(label, f"listTotalCount 를 읽을 수 없음: {e}")
+            print(f"[{label}] {len(rows)}건 수집 (listTotalCount={total})")
+            if total != len(rows):
+                _fail(label, f"건수 불일치 (서버 보고 {total}건, 실제 {len(rows)}건)")
+            for row in rows:
+                row["_product_type"] = product_type
+                row["_req_monTy"] = mon_ty
+            collected.extend(rows)
+            time.sleep(0.5)
 
-                total_now = rows[0]["listTotalCount"] if rows else 0
-                print(f"[{product_type} / {mon_ty}개월] {len(rows)}건 수집 (listTotalCount={total_now})")
-                total_saved += len(rows)
-                time.sleep(0.5)
+    # 2단계: 임시 파일에 쓰기 - 실패하면 임시 파일만 지우고 원본은 그대로 둔다
+    try:
+        with TMP_PATH.open("w", encoding="utf-8") as f:
+            for row in collected:
+                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    except OSError as e:
+        TMP_PATH.unlink(missing_ok=True)
+        print(f"임시 파일 저장 실패: {e} - 기존 수집본을 유지합니다.")
+        sys.exit(1)
 
-    print(f"\n이번 실행에서 새로 저장한 행 수: {total_saved} -> {OUT_PATH}")
+    # 3단계: 한 번에 원래 이름으로 교체
+    os.replace(TMP_PATH, OUT_PATH)
+    print(f"\n12개 조합 모두 수집 성공 - 총 {len(collected)}행 저장 완료 -> {OUT_PATH}")
 
 
 if __name__ == "__main__":
