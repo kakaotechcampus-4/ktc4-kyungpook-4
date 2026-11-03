@@ -86,3 +86,39 @@ class ProfileOut(BaseModel):
     coop_tax_eligible: bool | None
     coop_exempt_used: int | None
     created_at: datetime
+
+
+# --- 챗봇: 추천 결과 상품의 '기타' 우대조건 질문/답 (처리는 services/chatbot.py) ------------------------
+# 흐름: POST /portfolios/recommend -> POST /profiles/{id}/etc-questions -> 사용자 답
+#       -> POST /profiles/{id}/etc-answers -> POST /portfolios/recommend (저장된 답이 반영된 최종 결과)
+
+
+class EtcQuestionOut(BaseModel):
+    question: str = Field(description="챗봇이 보여줄 질문 (AI 생성. 실패하면 원문을 그대로 보여주는 문장)")
+    evidence_text: str = Field(description="우대조건 원문")
+    condition_ids: list[str] = Field(description="이 질문의 답을 저장할 조건 ID 묶음. 답 보낼 때 그대로 돌려준다")
+
+
+class EtcQuestionsOut(BaseModel):
+    questions: list[EtcQuestionOut] = Field(description="비어 있으면 물어볼 것이 없다 - 챗봇을 건너뛰고 최종 추천으로")
+
+
+class EtcAnswerIn(BaseModel):
+    model_config = {"str_strip_whitespace": True}
+
+    condition_ids: list[str] = Field(min_length=1, description="질문 받기에서 받은 condition_ids 그대로")
+    question: str = Field(min_length=1, max_length=1000, description="사용자에게 보여준 질문")
+    answer: str = Field(min_length=1, max_length=1000, description="사용자가 입력한 답 원문")
+
+
+class EtcAnswersIn(BaseModel):
+    answers: list[EtcAnswerIn] = Field(min_length=1, description="한 개씩 보내도 되고 모아서 보내도 된다")
+
+
+class EtcAnswerResultOut(BaseModel):
+    condition_ids: list[str]
+    met: bool = Field(description="해석 결과. 애매하거나 해석에 실패하면 false(미충족)")
+
+
+class EtcAnswersOut(BaseModel):
+    results: list[EtcAnswerResultOut]
