@@ -464,9 +464,13 @@ def _baseline_out(baseline: TierAllocations, profile: UserProfile, today: date) 
 
 
 async def recommend_options(
-    session: AsyncSession, profile: UserProfile, plan: PortfolioPlan
+    session: AsyncSession, profile: UserProfile, plan: PortfolioPlan, *, with_reason: bool = True
 ) -> tuple[list[PortfolioOptionOut], BaselineOut | None]:
-    """티어들을 응답 형태로 만들고 AI Summary 로 reason 을 채운다."""
+    """티어들을 응답 형태로 만들고 AI Summary 로 reason 을 채운다.
+
+    with_reason=False 면 Summary 를 부르지 않고 reason 을 None 으로 둔다. Summary 가 한 번에 약 26초라
+    결과 화면은 숫자를 먼저 그리고, 이유는 POST /portfolios/reasons 로 따로 받는다.
+    """
     today = date.today()
     raw_options = []
     for tier_name, allocations in plan.tiers.items():
@@ -503,10 +507,12 @@ async def recommend_options(
 
     # generate_summary 는 동기 함수이고 실패 시 sleep 하며 재시도한다. 이벤트 루프를 막지 않게 스레드로 돌린다.
     # 키가 없으면 어차피 실패하므로 재시도 대기 없이 바로 기본 문구로 넘어가게 한다.
-    retries = 3 if ai_config.OPENAI_API_KEY and ai_config.OPENAI_BASE_URL else 1
-    reasons = await asyncio.to_thread(
-        generate_summary, raw_options, user_context, baseline=baseline_ctx, retries=retries
-    )
+    reasons: dict[str, str] = {}
+    if with_reason:
+        retries = 3 if ai_config.OPENAI_API_KEY and ai_config.OPENAI_BASE_URL else 1
+        reasons = await asyncio.to_thread(
+            generate_summary, raw_options, user_context, baseline=baseline_ctx, retries=retries
+        )
     enriched = {o["tier"]: o for o in _enrich_options(raw_options, user_context, baseline_ctx)}
 
     options = []
@@ -515,7 +521,7 @@ async def recommend_options(
         options.append(
             PortfolioOptionOut(
                 **raw,
-                reason=reasons[raw["tier"]],
+                reason=reasons.get(raw["tier"]),
                 extra_vs_baseline=e["extra_vs_baseline"],
                 extra_vs_simple=e["extra_vs_simple"],
                 new_bank_count=len(e["new_banks"]),

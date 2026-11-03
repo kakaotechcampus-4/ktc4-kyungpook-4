@@ -10,6 +10,8 @@ from app.models.profile import UserProfile
 from app.schemas.calendar import CalendarEventOut
 from app.schemas.portfolio import (
     PortfolioOut,
+    PortfolioReasonsRequest,
+    PortfolioReasonsResponse,
     PortfolioRecommendRequest,
     PortfolioRecommendResponse,
     PortfolioSelectRequest,
@@ -35,8 +37,24 @@ async def recommend_portfolios(
 ) -> PortfolioRecommendResponse:
     profile = await _get_profile(session, body.profile_id)
     plan = await portfolio_service.build_tiers(session, profile)
-    options, baseline = await portfolio_service.recommend_options(session, profile, plan)
+    options, baseline = await portfolio_service.recommend_options(session, profile, plan, with_reason=body.with_reason)
     return PortfolioRecommendResponse(options=options, baseline=baseline)
+
+
+@router.post(
+    "/reasons", response_model=PortfolioReasonsResponse, summary="4안의 추천 이유만 따로 (AI Summary, 약 26초)"
+)
+async def recommend_reasons(
+    body: PortfolioReasonsRequest,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> PortfolioReasonsResponse:
+    """결과 화면이 /recommend 를 with_reason=false 로 받아 숫자를 먼저 그린 뒤 부른다.
+    같은 프로필이면 계산 결과가 같으므로 앞에서 보여준 숫자와 이유 문장 속 숫자가 어긋나지 않는다.
+    AI 가 실패하면 계산값만으로 만든 기본 문구가 온다."""
+    profile = await _get_profile(session, body.profile_id)
+    plan = await portfolio_service.build_tiers(session, profile)
+    options, _ = await portfolio_service.recommend_options(session, profile, plan, with_reason=True)
+    return PortfolioReasonsResponse(reasons={o.tier: o.reason for o in options if o.reason is not None})
 
 
 @router.post("", response_model=PortfolioOut, status_code=201, summary="추천안 확정 가입 (STEP4)")
