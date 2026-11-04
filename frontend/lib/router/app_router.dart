@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../screens/calendar/calendar_screen.dart';
+import '../screens/chatbot/chatbot_etc_screen.dart';
 import '../screens/input/input_step1_screen.dart';
 import '../screens/input/input_step2_screen.dart';
 import '../screens/input/input_step3_screen.dart';
@@ -23,6 +24,7 @@ class AppRoutes {
   static const inputStep1 = '/input/1';
   static const inputStep2 = '/input/2';
   static const inputStep3 = '/input/3';
+  static const chatbotEtc = '/chatbot-etc';
   static const result = '/result';
   static const roadmap = '/roadmap';
   static const resultDetail = '/result/detail';
@@ -64,6 +66,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.inputStep3,
       builder: (context, state) => const InputStep3Screen(),
+    ),
+    GoRoute(
+      path: AppRoutes.chatbotEtc,
+      builder: (context, state) => const ChatbotEtcScreen(),
     ),
     GoRoute(
       path: AppRoutes.result,
