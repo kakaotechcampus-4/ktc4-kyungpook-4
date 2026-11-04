@@ -29,5 +29,17 @@ final recommendationProvider = FutureProvider.autoDispose<RecommendationResult>(
   },
 );
 
+/// 4안의 AI 추천 이유. recommendationProvider는 숫자만 빠르게 받아오고, 이유는
+/// 이 provider가 따로(느리게) 채운다 - 화면이 숫자 먼저 그리고 이유는 나중에 채워 넣게 하기 위함.
+final portfolioReasonsProvider = FutureProvider.autoDispose<Map<String, String>>(
+  (ref) async {
+    final profileId = ref.watch(currentProfileIdProvider);
+    if (profileId == null) {
+      throw StateError('프로필이 아직 생성되지 않았습니다');
+    }
+    return ApiClient.instance.fetchPortfolioReasons(profileId);
+  },
+);
+
 /// 사용자가 확정 가입한 포트폴리오. 캘린더 화면이 이 값으로 일정을 조회한다.
 final selectedPortfolioIdProvider = StateProvider<int?>((ref) => null);

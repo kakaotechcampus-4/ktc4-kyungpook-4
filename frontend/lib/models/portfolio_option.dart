@@ -88,7 +88,10 @@ class PortfolioOption {
   final PortfolioTier tier;
   final List<PortfolioProduct> products;
   final int afterTaxTotal;
-  final String reason;
+
+  /// AI가 쓴 추천 이유. recommend 를 with_reason=false 로 부르면 null로 오고,
+  /// /portfolios/reasons 로 따로 받아와야 한다 (숫자 먼저 보여주기 위함).
+  final String? reason;
 
   /// 단일안(주거래은행 단일 상품) 대비 세후 이자 차액. 주거래은행을 몰라 단일안을
   /// 계산할 수 없으면(baseline 이 null) 이것도 null.
@@ -116,7 +119,7 @@ class PortfolioOption {
       tier: PortfolioTierLabel.fromApiValue(json['tier'] as String),
       products: products,
       afterTaxTotal: json['after_tax_total'] as int,
-      reason: json['reason'] as String,
+      reason: json['reason'] as String?,
       extraVsBaseline: (json['extra_vs_baseline'] as num?)?.toInt(),
       newAccountCount: PortfolioFieldMocks.optionNewAccountCount(products.length),
       branchVisitCount: PortfolioFieldMocks.optionBranchVisitCount(),

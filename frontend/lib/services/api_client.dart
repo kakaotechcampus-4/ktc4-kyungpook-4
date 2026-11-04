@@ -102,11 +102,13 @@ class ApiClient {
     return int.tryParse(input.mutualFinanceExistingAmountText);
   }
 
+  /// with_reason: false 로 불러서 AI 추천 이유(26초 가량) 없이 숫자만 빠르게 받는다.
+  /// 이유는 fetchPortfolioReasons 로 따로 받아서 화면에 나중에 채워 넣는다.
   Future<(List<PortfolioOption>, SinglePlan?)> recommendPortfolios(int profileId) async {
     final response = await http.post(
       _uri('/portfolios/recommend'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'profile_id': profileId}),
+      body: jsonEncode({'profile_id': profileId, 'with_reason': false}),
     );
     final body = _decodeObject(response);
     final options = (body['options'] as List<dynamic>)
@@ -115,6 +117,18 @@ class ApiClient {
     final baselineJson = body['baseline'] as Map<String, dynamic>?;
     final baseline = baselineJson != null ? SinglePlan.fromJson(baselineJson) : null;
     return (options, baseline);
+  }
+
+  /// 4안의 AI 추천 이유만 따로 받는다 (느림, ~26초). 티어 이름(PortfolioTier.apiValue) ->
+  /// 이유 문장.
+  Future<Map<String, String>> fetchPortfolioReasons(int profileId) async {
+    final response = await http.post(
+      _uri('/portfolios/reasons'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'profile_id': profileId}),
+    );
+    final body = _decodeObject(response);
+    return (body['reasons'] as Map<String, dynamic>).cast<String, String>();
   }
 
   /// 추천안 중 하나를 확정 가입한다. 반환값은 이후 캘린더 조회에 쓰는 portfolio_id.
