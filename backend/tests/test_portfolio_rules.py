@@ -6,12 +6,16 @@ from types import SimpleNamespace
 from app.services.conditions import Scope, evaluate
 from app.services.portfolio import (
     DEPOSIT_PROTECTION_LIMIT,
+    ETC_ANSWER_MET,
+    ETC_ANSWER_NOT_MET,
+    ETC_ANSWER_UNSURE,
     TIER_SPECS,
     Candidate,
     _allocate_greedy,
     _BankInfo,
     _rank,
     _TierState,
+    etc_answer_map,
 )
 from app.services.tax import TaxContext
 
@@ -66,7 +70,7 @@ def _eval(conds, scope, profile=None, *, main=False, new=False, option=None, etc
 
 
 def test_etc_condition_follows_chatbot_answer():
-    # A: 충족 / B: 미충족(모름 포함) / C: 챗봇이 묻지 않음
+    # A: 충족 / B: 미충족 / C: 챗봇이 묻지 않음 ('모름'은 etc_answers 에 안 들어가 C 와 같다 - etc_answer_map)
     conds = [_cond("기타", cid="A"), _cond("기타", cid="B"), _cond("기타", cid="C")]
     answers = {"A": True, "B": False}
 
@@ -243,3 +247,8 @@ def test_coop_excluded_when_membership_refused():
     unknown = _alloc(10_000_000, cands, "최대형", BANKS)
     assert [a.product.institution_code for a in refused] == ["BANK-N1"]
     assert [a.product.institution_code for a in unknown] == ["CU-1"]
+
+
+def test_etc_answer_map_treats_unsure_as_not_asked():
+    rows = [("A", ETC_ANSWER_MET), ("B", ETC_ANSWER_NOT_MET), ("C", ETC_ANSWER_UNSURE)]
+    assert etc_answer_map(rows) == {"A": True, "B": False}  # C(모름)는 빠져서 최대형에서만 가정된다

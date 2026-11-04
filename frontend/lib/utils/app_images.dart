@@ -9,4 +9,7 @@ class AppImages {
   static const loadingMascot = '$_base/loading_mascot.png';
   static const cashMascot = '$_base/cash_mascot.png';
   static const safeMascot = '$_base/safe_mascot.png';
+  static const kakaoLogo = '$_base/kakao.png';
+  static const googleLogo = '$_base/google.png';
+  static const naverLogo = '$_base/naver.png';
 }

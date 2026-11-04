@@ -35,7 +35,7 @@ ai/
 | `schemas/product.py` | finlife API 원본 응답 스키마 (정기예금/적금 공통정보 + 옵션) |
 | `schemas/extraction.py` | LLM(Claude Sonnet 5)이 우대조건 원문을 구조화한 결과 스키마 |
 | `summary.py` | Summary(호출 B) 본체 - 포트폴리오 3개 티어의 reason 생성(`generate_summary`). 기존/신규 은행 구분, 단순형 대비 차액 등 파생값은 `_enrich_options()`에서 코드로 계산, 신협(`CU-`)·새마을금고(`KFCC-`)는 항상 신규 가입 처리. BE가 `ktc4_ai.summary`로 호출 |
-| `condition_qa.py` | 챗봇(호출 A) 본체 - 추천 결과 상품의 '기타' 우대조건만 질문(원문이 같으면 한 번만 묻고 `condition_ids`로 묶어서 반환, `build_etc_questions`) + 자유텍스트 답변 해석(`parse_answer`). 짧은 정답형 답변(네/아니요 등)과 정확히 일치할 때만 AI 없이 판정, 나머지는 AI가 confidence high일 때만 인정, 애매하거나 실패하면 `conservative_fallback()`(조건 미충족). BE가 `ktc4_ai.condition_qa`로 호출 |
+| `condition_qa.py` | 챗봇(호출 A) 본체 - 추천 결과 상품의 '기타' 우대조건만 질문(원문이 같으면 한 번만 묻고 `condition_ids`로 묶어서 반환, `build_etc_questions`) + 자유텍스트 답변 해석(`parse_answer`). 짧은 정답형 답변(네/아니요 등)과 정확히 일치할 때만 AI 없이 판정, 나머지는 AI가 confidence high일 때만 인정. 결과는 충족/미충족/모름이고, 모르겠다는 답·애매한 답·실패는 모름(BE가 최대형에서만 가정). BE가 `ktc4_ai.condition_qa`로 호출 |
 | `schemas/summary.py` | Summary(호출 B) 결과 스키마 - 포트폴리오 3개 티어(단순형/균형형/최대형)별 추천 설명(reason) |
 | `discovery/__init__.py` | 공시 API 호출 + 커뮤니티 크롤링 (Discovery 단계) — 아직 스텁 |
 | `extraction/__init__.py` | 약관 원문 → 우대조건 구조화, LLM 호출 지점 A — 아직 스텁 |

@@ -52,6 +52,7 @@ FIRST_TIER_INSTITUTION_TYPE = "은행"  # 1금융권
 # 챗봇 '기타' 조건 답을 user_profile_extra.answer_value 에 저장하는 값
 ETC_ANSWER_MET = "true"
 ETC_ANSWER_NOT_MET = "false"
+ETC_ANSWER_UNSURE = "unsure"  # 모르겠다·애매함·해석 실패. 답하지 않은 것처럼 최대형에서만 가정한다
 
 
 @dataclass(frozen=True)
@@ -394,13 +395,19 @@ async def get_held_bank_codes(session: AsyncSession, profile: UserProfile) -> li
     return list((await session.execute(stmt)).scalars().all())
 
 
+def etc_answer_map(rows) -> dict[str, bool]:
+    """(condition_id, answer_value) 목록 -> {condition_id: 충족 여부}.
+    '모름'은 넣지 않는다 - 챗봇이 묻지 않은 조건처럼 최대형에서만 가정한다(conditions._answer_scope)."""
+    return {cid: value == ETC_ANSWER_MET for cid, value in rows if value in (ETC_ANSWER_MET, ETC_ANSWER_NOT_MET)}
+
+
 async def get_etc_answers(session: AsyncSession, profile: UserProfile) -> dict[str, bool]:
-    """챗봇에서 받은 '기타' 우대조건 답. {condition_id: 충족 여부}. 아직 답하지 않은 조건은 들어 있지 않다."""
+    """챗봇에서 받은 '기타' 우대조건 답. {condition_id: 충족 여부}. 답하지 않았거나 '모름'인 조건은 들어 있지 않다."""
     stmt = select(UserProfileExtra.condition_id, UserProfileExtra.answer_value).where(
         UserProfileExtra.profile_id == profile.profile_id,
         UserProfileExtra.answer_value.is_not(None),
     )
-    return {condition_id: value == ETC_ANSWER_MET for condition_id, value in (await session.execute(stmt)).all()}
+    return etc_answer_map((await session.execute(stmt)).all())
 
 
 async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioPlan:
