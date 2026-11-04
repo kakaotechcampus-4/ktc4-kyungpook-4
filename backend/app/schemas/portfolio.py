@@ -17,6 +17,7 @@ class PortfolioProductOut(BaseModel):
     institution_code: str  # 기존/신규 은행 판정은 이름이 아니라 코드로 한다
     institution_name: str
     product_name: str
+    product_type: str  # 예금 | 적금. allocated_amount 가 원금인지 월 납입액인지 이걸로 구분한다
     term_months: int
     base_rate: float  # 기본금리
     interest_rate: float  # 실효금리 = 기본금리 + 이 안에서 인정한 우대폭 (최고금리 상한)
@@ -41,11 +42,15 @@ class PortfolioOptionOut(BaseModel):
 
 
 class BaselineOut(BaseModel):
-    """단일형: 주거래은행 상품 하나에 전액을 넣었을 때. 추천안이 아니라 비교 기준선이다."""
+    """단일형: 주거래은행의 예금 1위 또는 적금 1위 하나. 추천안이 아니라 비교 기준선이다.
+
+    목돈과 월 저축을 둘 다 입력하면 세후 이자가 큰 쪽 하나만 쓰고, 나머지 돈은 계산에서 빠진다.
+    그래서 각 티어의 extra_vs_baseline 은 티어 안의 같은 종류(product_type) 상품끼리만 비교한 값이다."""
 
     institution_name: str
-    product_name: str  # 예금·적금을 모두 넣으면 두 상품명을 ' + ' 로 잇는다
-    products: list[PortfolioProductOut]
+    product_name: str
+    product_type: str  # 예금 | 적금
+    products: list[PortfolioProductOut]  # 항상 1개
     after_tax_total: int
     exceeds_protection: bool  # 한 은행에 원금 1억원 초과 -> 초과분은 예금자보호를 받지 못함
     period_note: str | None = None  # 사용자 기간과 실제 매칭 기간이 다를 때 안내 문구
