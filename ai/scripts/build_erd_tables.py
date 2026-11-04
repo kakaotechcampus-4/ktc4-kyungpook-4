@@ -326,6 +326,41 @@ def _build_kfcc_fallback_div_cd(records, branch_idx):
     return fallback_div_cd
 
 
+# 수집 실패 지점 목록은 이 수만큼만 출력한다 (사이트가 크게 막히면 수백 곳이 될 수 있어서)
+FAILED_PRINT_LIMIT = 30
+
+
+def kfcc_max_bonus(condition_index, product_title, period_months):
+    """새마을금고 상품이 이 기간에 받을 수 있는 우대폭 합(%p). 최고금리 = 기본금리 + 이 값.
+
+    지점별 금리표에는 최고금리 칸이 없어 예전에는 최고금리 = 기본금리로 넣었다. 그러면 BE 가
+    우대금리를 최고금리까지만 더하므로 새마을금고는 우대조건(중앙 카탈로그, AI 추출)이 하나도 반영되지 않았다.
+    그래서 중앙 카탈로그 조건의 우대폭을 더해 최고금리를 만든다. 같은 묶음(group_id)은 가장 큰 것 하나만,
+    이 기간에 적용되지 않는 조건은 뺀다. 원문에 '최고 연 X%' 가 적힌 상품은 12개월 기준 이 합이
+    원문 상한과 같거나 더 낮았다 (2026-10-30 확인. 낮은 쪽은 우대금리를 부풀리지 않는 방향).
+    카탈로그에 없는 상품(개별 금고 전용)은 0 - 최고금리 = 기본금리 그대로."""
+    row = condition_index.get(product_title)
+    if not row:
+        return 0.0
+    ungrouped = 0.0
+    grouped = {}
+    for cond in row["conditions"]:
+        bonus = cond.get("bonus_rate")
+        if bonus is None:
+            continue
+        low, high = _period_bounds(cond)
+        if period_months is not None and (
+            (low is not None and period_months < low) or (high is not None and period_months > high)
+        ):
+            continue
+        group = cond.get("group_id")
+        if group is None:
+            ungrouped += bonus
+        else:
+            grouped[group] = max(grouped.get(group, 0.0), bonus)
+    return ungrouped + sum(grouped.values())
+
+
 def process_kfcc(ai_cache):
     branch_idx = load_kfcc_branch_index()
     records = _load_kfcc_records()
@@ -334,6 +369,8 @@ def process_kfcc(ai_cache):
     n_records = 0
     n_conditions = 0
     missing_branch = []
+    failed_fetch = {}  # (금고 이름, 지역) -> 수집 실패한 구분(거치식/적립식) 목록
+    skipped_rows = 0  # 예상 밖 모양이라 건너뛴 금리 행 수
 
     for rec in records:
         n_records += 1
@@ -356,7 +393,13 @@ def process_kfcc(ai_cache):
         add_institution(inst_code, inst_name, "새마을금고", region)
 
         for category in ("거치식예탁금", "적립식예탁금"):
-            for entry in rec.get(category) or []:
+            entries = rec.get(category)
+            if entries is None:
+                # None = 수집 실패 (fetch_kfcc_rates.py 가 오류 시 None 으로 적는다. [] 는 원래 상품이 없는 것)
+                # 이 지점은 건너뛰고 ERD 는 계속 만들되, 어느 지점이 빠졌는지 빌드 요약에 남긴다
+                failed_fetch.setdefault((inst_name, region), []).append(category)
+                continue
+            for entry in entries:
                 product_title = entry["product_title"]
                 headers = entry["headers"]
                 rate_headers = headers[2:]
@@ -399,12 +442,20 @@ def process_kfcc(ai_cache):
                             term_raw = row[0]
                             rates = row[1:]
                         else:
-                            continue  # 예상 밖 모양 - 스킵(로그로 남겨도 됨)
+                            skipped_rows += 1
+                            continue  # 예상 밖 모양 - 스킵 (건수는 빌드 요약에 출력)
 
                         if col_idx >= len(rates):
                             continue
                         period_months = parse_term_months(term_raw)
                         base_rate = parse_pct(rates[col_idx])
+                        # 우대폭이 없으면 기본금리 그대로(예전과 같은 값), 있으면 더하고 소수 넷째 자리까지만 정리한다.
+                        # 둘째 자리로 반올림하면 기본금리가 3.441 처럼 셋째 자리까지 있을 때 최고금리가 기본금리보다
+                        # 작아진다 (DB 는 max_rate >= base_rate 를 검사하고, 저장할 때 둘 다 같은 규칙으로 둘째 자리 반올림)
+                        bonus = 0.0
+                        if base_rate is not None:
+                            bonus = kfcc_max_bonus(condition_index, product_title, period_months)
+                        max_rate = base_rate if not bonus else round(base_rate + bonus, 4)
                         add_product_option(
                             product_id,
                             period_months=period_months,
@@ -415,14 +466,14 @@ def process_kfcc(ai_cache):
                                 )
                             ),
                             base_rate=base_rate,
-                            max_rate=base_rate,  # 새마을금고 데이터엔 우대 포함 최고금리 구분이 없음
+                            max_rate=max_rate,  # 기본금리 + 중앙 카탈로그 우대폭 합 (kfcc_max_bonus 참고)
                         )
 
                     # 조건은 결제방식(월지급식 등) 접미사가 붙기 전 원래 상품명(product_title)
                     # 기준으로 붙인다 - 중앙 카탈로그(kfcc_central_conditions_raw.jsonl)엔
                     # 결제방식 구분이 없고 상품 하나당 조건 세트 하나뿐이라서.
                     n_conditions += attach_ai_conditions_kfcc(condition_index, product_title, product_id)
-    return n_records, n_conditions, missing_branch
+    return n_records, n_conditions, missing_branch, failed_fetch, skipped_rows
 
 
 # ---------------------------------------------------------------------------
@@ -656,7 +707,7 @@ def main():
         print()
 
     n_cu, n_cu_conditions = process_cu(ai_cache)
-    n_kfcc, n_kfcc_conditions, missing = process_kfcc(ai_cache)
+    n_kfcc, n_kfcc_conditions, missing, kfcc_failed_fetch, kfcc_skipped_rows = process_kfcc(ai_cache)
 
     finlife_summary = []
     for filename, itype, ptag, parse_cond in FINLIFE_SOURCES:
@@ -701,6 +752,14 @@ def main():
             print(f"  {oid}: 기존={old['base_rate']}/{old['max_rate']} -> 새값={new['base_rate']}/{new['max_rate']}")
     if missing:
         print(f"경고: kfcc branches.json에서 못 찾은 지점 {len(missing)}건 -> {missing}")
+    if kfcc_failed_fetch:
+        print(f"경고: 금리 수집 실패로 상품이 빠진 새마을금고 지점 {len(kfcc_failed_fetch)}곳")
+        for (name, region), categories in list(kfcc_failed_fetch.items())[:FAILED_PRINT_LIMIT]:
+            print(f"  - {name} ({region or '지역 정보 없음'}) - {', '.join(categories)}")
+        if len(kfcc_failed_fetch) > FAILED_PRINT_LIMIT:
+            print(f"  ... 외 {len(kfcc_failed_fetch) - FAILED_PRINT_LIMIT}곳")
+    if kfcc_skipped_rows:
+        print(f"경고: 예상 밖 모양이라 건너뛴 새마을금고 금리 행 {kfcc_skipped_rows}건")
     print()
     print("참고: 신협은 prefCondMemo가 빈 템플릿(0.0%p)인 경우가 대부분이라 실제 %p가")
     print("있는 상품만 조건이 채워집니다(위 gather_cu_targets 참고). 새마을금고는 중앙")

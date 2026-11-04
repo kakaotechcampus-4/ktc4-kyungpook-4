@@ -11,10 +11,21 @@ tests/fixtures/kfcc_central_conditions_raw.jsonl 로 저장한다.
 
 나중에 새 상품이 추가되면 이 스크립트를 다시 실행하면 됨 -
 목록(depositproduct.do)을 매번 새로 긁어오기 때문에 새 상품도 자동으로 포함됨.
+
+[저장 방식 - 원자적 저장]
+예전에는 상세를 못 받은 상품을 건너뛰고 저장했다. 그러면 빠진 상품이 run_pipeline 의 판매 종료
+카운트에 +1 되고(이 소스는 "성공"이라서), 3주 연속이면 판매 종료로 처리될 수 있었다. 목록이 0건이어도
+빈 파일로 덮어썼다. 이제는
+  1단계: 목록과 상품별 상세를 전부 메모리에 받는다. 상세를 못 받은 상품은 끝에 한 번 더 시도한다.
+  2단계: 목록 오류, 목록 0건, 재시도 후에도 상세를 못 받은 상품이 하나라도 있으면 실패 - 파일을 안 바꾼다.
+  3단계: 임시 파일에 쓰고 원래 이름으로 바꾼다(os.replace).
+(10/28 수집본: 상품 40개, 본문 빈 것 0개)
 """
 
 import json
+import os
 import re
+import sys
 import time
 from pathlib import Path
 
@@ -33,7 +44,9 @@ HEADERS = {
     )
 }
 
-OUT_PATH = Path("tests/fixtures/kfcc_central_conditions_raw.jsonl")
+# 실행 위치와 상관없이 ai/tests/fixtures 에 저장한다 (예전엔 ai/ 에서 실행해야만 맞는 상대 경로였다)
+OUT_PATH = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "kfcc_central_conditions_raw.jsonl"
+TMP_PATH = OUT_PATH.with_name(OUT_PATH.name + ".tmp")
 
 
 def fetch_catalog(section="1", max_pages=20):
@@ -101,39 +114,66 @@ def fetch_detail_text(session, goods_file):
     return text, url
 
 
+def _fail(reason):
+    """파일을 바꾸지 않고 끝낸다(지난 수집본 유지)."""
+    TMP_PATH.unlink(missing_ok=True)
+    print(f"{reason} - 실패로 처리. 기존 수집본을 유지합니다.")
+    sys.exit(1)
+
+
+def _fetch_details(session, items, rows):
+    """items 의 상세를 받아 rows[goods_file] 에 채운다. 실패한 (goods_file, 상품명) 목록을 돌려준다."""
+    failed = []
+    for goods_file, product_name in items:
+        try:
+            text, url = fetch_detail_text(session, goods_file)
+        except requests.RequestException as e:
+            print(f"  [실패] {product_name} ({goods_file}): {e}")
+            failed.append((goods_file, product_name))
+            continue
+        rows[goods_file] = {
+            "product_name": product_name,
+            "goods_file": goods_file,
+            "source_url": url,
+            "spcl_cnd_raw": text,
+            "fetched_date": time.strftime("%Y-%m-%d"),
+        }
+        print(f"  [완료] {product_name} ({goods_file}) - {len(text)}자")
+        time.sleep(0.5)
+    return failed
+
+
 def main():
     print("=== 1) 상품 목록(카탈로그) 수집 ===")
-    catalog = fetch_catalog()
+    try:
+        catalog = fetch_catalog()
+    except requests.RequestException as e:
+        _fail(f"상품 목록 수집 오류: {e}")
     print(f"총 {len(catalog)}개 상품 발견\n")
+    if not catalog:
+        _fail("상품 목록 0건")
 
     print("=== 2) 상품별 상세설명(우대이율 포함) 수집 ===")
     session = requests.Session()
     session.headers.update(HEADERS)
 
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    rows = []
-    for goods_file, product_name in catalog.items():
-        try:
-            text, url = fetch_detail_text(session, goods_file)
-        except Exception as e:
-            print(f"  [실패] {product_name} ({goods_file}): {e}")
-            continue
+    rows = {}  # goods_file -> 저장할 행. 목록 순서를 지키려고 마지막에 목록 순서로 꺼낸다
+    failed = _fetch_details(session, list(catalog.items()), rows)
+    if failed:
+        # 실패한 상품은 끝에 한 번 더 시도한다 (일시적인 오류일 수 있어서)
+        print(f"\n상세 실패 {len(failed)}개 재시도")
+        failed = _fetch_details(session, failed, rows)
+    if failed:
+        _fail(f"재시도 후에도 상세를 못 받은 상품 {len(failed)}개: {[name for _, name in failed]}")
 
-        rows.append(
-            {
-                "product_name": product_name,
-                "goods_file": goods_file,
-                "source_url": url,
-                "spcl_cnd_raw": text,
-                "fetched_date": time.strftime("%Y-%m-%d"),
-            }
-        )
-        print(f"  [완료] {product_name} ({goods_file}) - {len(text)}자")
-        time.sleep(0.5)
-
-    with OUT_PATH.open("w", encoding="utf-8") as f:
-        for row in rows:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    try:
+        OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with TMP_PATH.open("w", encoding="utf-8") as f:
+            for goods_file in catalog:
+                f.write(json.dumps(rows[goods_file], ensure_ascii=False) + "\n")
+    except OSError as e:
+        _fail(f"임시 파일 저장 실패: {e}")
+    os.replace(TMP_PATH, OUT_PATH)
 
     print(f"\n총 {len(rows)}개 상품 저장 완료 -> {OUT_PATH}")
 

@@ -1,9 +1,10 @@
 import '../services/portfolio_field_mocks.dart';
 
-enum PortfolioTier { simple, balanced, max }
+enum PortfolioTier { stable, simple, balanced, max }
 
 extension PortfolioTierLabel on PortfolioTier {
   String get label => switch (this) {
+        PortfolioTier.stable => '안정형',
         PortfolioTier.simple => '단순형',
         PortfolioTier.balanced => '균형형',
         PortfolioTier.max => '최대형',
@@ -11,12 +12,14 @@ extension PortfolioTierLabel on PortfolioTier {
 
   /// 백엔드 API 가 쓰는 한글 tier 값. (POST /portfolios 의 tier 파라미터 등)
   String get apiValue => switch (this) {
+        PortfolioTier.stable => '안정형',
         PortfolioTier.simple => '단순형',
         PortfolioTier.balanced => '균형형',
         PortfolioTier.max => '최대형',
       };
 
   static PortfolioTier fromApiValue(String value) => switch (value) {
+        '안정형' => PortfolioTier.stable,
         '단순형' => PortfolioTier.simple,
         '균형형' => PortfolioTier.balanced,
         '최대형' => PortfolioTier.max,
@@ -87,8 +90,9 @@ class PortfolioOption {
   final int afterTaxTotal;
   final String reason;
 
-  /// 단일안(주거래은행 단일 상품) 대비 세후 이자 차액.
-  final int vsSingleDiff;
+  /// 단일안(주거래은행 단일 상품) 대비 세후 이자 차액. 주거래은행을 몰라 단일안을
+  /// 계산할 수 없으면(baseline 이 null) 이것도 null.
+  final int? extraVsBaseline;
   final int newAccountCount;
   final int branchVisitCount;
 
@@ -97,13 +101,13 @@ class PortfolioOption {
     required this.products,
     required this.afterTaxTotal,
     required this.reason,
-    required this.vsSingleDiff,
+    required this.extraVsBaseline,
     required this.newAccountCount,
     required this.branchVisitCount,
   });
 
-  // 백엔드 응답에 vsSingleDiff/newAccountCount/branchVisitCount 가 아직 없어
-  // PortfolioFieldMocks 로 채운다 (위 fromJson과 동일한 이유).
+  // 백엔드 응답에 newAccountCount/branchVisitCount 가 아직 없어 PortfolioFieldMocks 로
+  // 채운다 (위 fromJson과 동일한 이유).
   factory PortfolioOption.fromJson(Map<String, dynamic> json) {
     final products = (json['products'] as List<dynamic>)
         .map((p) => PortfolioProduct.fromJson(p as Map<String, dynamic>))
@@ -113,7 +117,7 @@ class PortfolioOption {
       products: products,
       afterTaxTotal: json['after_tax_total'] as int,
       reason: json['reason'] as String,
-      vsSingleDiff: PortfolioFieldMocks.optionVsSingleDiff(),
+      extraVsBaseline: (json['extra_vs_baseline'] as num?)?.toInt(),
       newAccountCount: PortfolioFieldMocks.optionNewAccountCount(products.length),
       branchVisitCount: PortfolioFieldMocks.optionBranchVisitCount(),
     );

@@ -5,11 +5,12 @@
   1. 금감원 데이터 수집      (fetch_all_products.py)          ┐
   2. 신협 데이터 수집        (fetch_cu_rate_compare.py)       ├ 소스별 독립 실행 + 재시도
   3. 새마을금고 지점 목록    (fetch_kfcc_branches.py)         │ 실패해도 다음 소스 계속 진행
-  4. 새마을금고 금리         (fetch_kfcc_rates.py --refresh)  │
+  4. 새마을금고 금리         (fetch_kfcc_rates.py)            │ (1시간 넘게 걸려 재시도 없이 1번만)
   5. 새마을금고 중앙 조건    (fetch_kfcc_central_conditions.py)┘
   6. 판매 종료 감지          (fetch 성공 소스만 대상으로 missing_counts.json 갱신)
   7. AI 우대조건 추출        (extract_conditions_ai.py - 변경분만 자동 처리)
   8. ERD 산출물 빌드         (build_erd_tables.py)
+  9. 급감 검사              (check_erd_drop.py - 판단만 한다. 커밋 여부는 워크플로가 정한다)
 
 사용법 (ai/ 폴더에서 실행):
   python scripts/run_pipeline.py                  # 전체 실행
@@ -18,6 +19,7 @@
 """
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -25,12 +27,16 @@ import time
 from datetime import date
 from pathlib import Path
 
+from check_erd_drop import baseline_commit, compare_with_head, render_report
+
 AI_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = AI_ROOT / "scripts"
 FIXTURES = AI_ROOT / "tests" / "fixtures"
 CACHE_PATH = AI_ROOT / "output" / "ai_condition_cache.jsonl"
 MISSING_COUNTS_PATH = AI_ROOT / "output" / "missing_counts.json"
 LOG_DIR = AI_ROOT / "output" / "pipeline_logs"
+# 급감 검사 결과표. *.log 는 gitignore 라 커밋되지 않고, 워크플로가 실행 요약 화면에 붙인다.
+DROP_REPORT_PATH = LOG_DIR / "drop_check.log"
 
 MISSING_THRESHOLD = 3
 RETRY_COUNT = 3
@@ -51,19 +57,19 @@ _NONZERO_RATE_RE = re.compile(r"[1-9]\d*\.?\d*%p|0\.[1-9]\d*%p")
 # 실행 유틸
 # ---------------------------------------------------------------------------
 
-def _run_with_retry(label: str, cmd: list[str]) -> bool:
+def _run_with_retry(label: str, cmd: list[str], attempts: int = RETRY_COUNT) -> bool:
     """소스 fetch 전용 실행기. 실패 시 재시도하고 최종 성공/실패를 bool로 반환.
     예외를 던지지 않으므로 한 소스 실패가 파이프라인 전체를 중단시키지 않는다."""
-    for attempt in range(1, RETRY_COUNT + 1):
-        print(f"\n[{label}] 시작 (시도 {attempt}/{RETRY_COUNT})")
+    for attempt in range(1, attempts + 1):
+        print(f"\n[{label}] 시작 (시도 {attempt}/{attempts})")
         result = subprocess.run(cmd, cwd=str(AI_ROOT))
         if result.returncode == 0:
             print(f"[{label}] 완료")
             return True
-        if attempt < RETRY_COUNT:
+        if attempt < attempts:
             print(f"[{label}] 실패 - {RETRY_WAIT}초 후 재시도...")
             time.sleep(RETRY_WAIT)
-    print(f"[{label}] {RETRY_COUNT}회 재시도 후 최종 실패")
+    print(f"[{label}] {attempts}회 시도 후 최종 실패")
     return False
 
 
@@ -74,6 +80,14 @@ def _run(label: str, cmd: list[str]) -> None:
     if result.returncode != 0:
         raise RuntimeError(f"[{label}] 실패 (returncode={result.returncode})")
     print(f"[{label}] 완료")
+
+
+def _set_github_output(name: str, value: str) -> None:
+    """GitHub Actions 에서 돌 때만, 다음 단계(워크플로)가 읽을 수 있게 결과값을 남긴다."""
+    path = os.environ.get("GITHUB_OUTPUT")
+    if path:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(f"{name}={value}\n")
 
 
 # ---------------------------------------------------------------------------
@@ -212,6 +226,8 @@ def main() -> None:
     print("=== 파이프라인 시작 ===")
 
     fetch_results: dict[str, bool] = {"금감원": True, "신협": True, "새마을금고": True}
+    # 새마을금고 금리(+지점 목록) 성공 여부. 판매 종료 판단은 중앙조건 기준이라 fetch_results 와 따로 둔다
+    kfcc_rates_ok = True
 
     if not args.skip_fetch:
         fetch_results["금감원"] = _run_with_retry(
@@ -225,9 +241,12 @@ def main() -> None:
             "3/5 새마을금고 지점", [py, str(SCRIPTS / "fetch_kfcc_branches.py")]
         )
         if branches_ok:
-            _run_with_retry(
+            # 지점 1천여 곳이라 1시간 넘게 걸린다. 실패 지점 재시도는 스크립트 안에서 하므로 전체 재실행은 하지 않는다
+            # (사이트가 막힌 주에 3번 돌면 몇 시간을 헛쓴다). 실패하면 지점 목록·금리 모두 지난 수집본 유지
+            kfcc_rates_ok = _run_with_retry(
                 "4/5 새마을금고 금리",
-                [py, str(SCRIPTS / "fetch_kfcc_rates.py"), "--refresh"],
+                [py, str(SCRIPTS / "fetch_kfcc_rates.py")],
+                attempts=1,
             )
             central_ok = _run_with_retry(
                 "5/5 새마을금고 중앙조건",
@@ -238,9 +257,13 @@ def main() -> None:
         else:
             print("[새마을금고] 지점 목록 수집 실패 - 금리/중앙조건 fetch 스킵")
             fetch_results["새마을금고"] = False
+            kfcc_rates_ok = False
 
     failed_sources = [s for s, ok in fetch_results.items() if not ok]
     successful_sources = {s for s, ok in fetch_results.items() if ok}
+    if not kfcc_rates_ok and "새마을금고" not in failed_sources:
+        # 로그에만 남긴다 (중앙조건이 성공했으면 판매 종료 판단은 그대로 한다)
+        failed_sources.append("새마을금고 금리")
     if failed_sources:
         print(f"\n⚠️  수집 실패 소스: {failed_sources} (이전 데이터 유지, missing count 판단 보류)")
 
@@ -263,13 +286,24 @@ def main() -> None:
 
     _run("ERD 빌드", [py, str(SCRIPTS / "build_erd_tables.py")])
 
+    # 9. 급감 검사 - 판단만 하고 정상 종료한다. 급감이면 커밋하지 않는 건 워크플로가 한다.
+    print("\n[급감 검사] 시작")
+    rows, drop_items = compare_with_head()
+    report = render_report(rows, drop_items, baseline_commit())
+    print(report)
+    DROP_REPORT_PATH.write_text(report, encoding="utf-8")
+    _set_github_output("drop_detected", "true" if drop_items else "false")
+    if drop_items:
+        print("⚠️  급감 감지 - 이 결과는 커밋하지 말 것 (워크플로에서는 자동으로 막힘)")
+
     log_path = LOG_DIR / f"{date.today()}.log"
     log_path.write_text(
         f"SUCCESS\n"
         f"실행일: {date.today()}\n"
         f"수집 실패 소스: {failed_sources if failed_sources else '없음'}\n"
         f"신규: {new_count}건\n"
-        f"판매종료: {len(discontinued)}건\n",
+        f"판매종료: {len(discontinued)}건\n"
+        f"급감 검사: {'급감 - ' + ', '.join(drop_items) if drop_items else '통과'}\n",
         encoding="utf-8",
     )
     print(f"\n=== 완료 (로그: {log_path}) ===")

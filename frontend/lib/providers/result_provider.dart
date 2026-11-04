@@ -2,17 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/portfolio_option.dart';
 import '../models/single_plan.dart';
+import 'portfolio_provider.dart';
 
-/// 주거래은행 단일 상품 비교 기준. 아직 백엔드 계산 API가 없어 임시 데이터를 쓴다.
-final singlePlanProvider = Provider<SinglePlan>((ref) {
-  return const SinglePlan(
-    institutionName: 'KB국민은행',
-    productName: 'KB내맘대로적금',
-    monthlyAmount: 100000,
-    termMonths: 12,
-    annualRatePercent: 15.4,
-    afterTaxInterest: 240565,
-  );
+/// 주거래은행 단일 상품 비교 기준. 백엔드 추천 응답의 baseline 필드에서 가져온다.
+/// 주거래은행을 입력하지 않았거나 해당 은행 상품이 없으면 null.
+final singlePlanProvider = Provider<SinglePlan?>((ref) {
+  return ref.watch(recommendationProvider).whenOrNull(data: (r) => r.baseline);
 });
 
 /// 지금 펼쳐서 보고 있는 포트폴리오 카드. 기본값은 균형형이고,

@@ -5,7 +5,7 @@ import '../theme/app_colors.dart';
 import '../utils/currency_formatter.dart';
 import 'product_detail_tile.dart';
 
-/// "단순형/균형형/최대형" 포트폴리오 카드. 선택된 카드만 펼쳐져서
+/// "안정형/단순형/균형형/최대형" 포트폴리오 카드. 선택된 카드만 펼쳐져서
 /// 상품 상세와 "왜 이 조합인가요?" 분석을 보여준다.
 class PortfolioTierCard extends StatelessWidget {
   final PortfolioOption option;
@@ -52,7 +52,9 @@ class PortfolioTierCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '단일안 대비 + ${CurrencyFormatter.won(option.vsSingleDiff)}',
+                option.extraVsBaseline != null
+                    ? '단일안 대비 + ${CurrencyFormatter.won(option.extraVsBaseline!)}'
+                    : '단일안과 비교할 주거래은행 정보가 없어요',
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,

@@ -35,6 +35,7 @@ ai/
 | `schemas/product.py` | finlife API 원본 응답 스키마 (정기예금/적금 공통정보 + 옵션) |
 | `schemas/extraction.py` | LLM(Claude Sonnet 5)이 우대조건 원문을 구조화한 결과 스키마 |
 | `summary.py` | Summary(호출 B) 본체 - 포트폴리오 3개 티어의 reason 생성(`generate_summary`). 기존/신규 은행 구분, 단순형 대비 차액 등 파생값은 `_enrich_options()`에서 코드로 계산, 신협(`CU-`)·새마을금고(`KFCC-`)는 항상 신규 가입 처리. BE가 `ktc4_ai.summary`로 호출 |
+| `condition_qa.py` | 챗봇(호출 A) 본체 - 추천 결과 상품의 '기타' 우대조건만 질문(원문이 같으면 한 번만 묻고 `condition_ids`로 묶어서 반환, `build_etc_questions`) + 자유텍스트 답변 해석(`parse_answer`). 짧은 정답형 답변(네/아니요 등)과 정확히 일치할 때만 AI 없이 판정, 나머지는 AI가 confidence high일 때만 인정, 애매하거나 실패하면 `conservative_fallback()`(조건 미충족). BE가 `ktc4_ai.condition_qa`로 호출 |
 | `schemas/summary.py` | Summary(호출 B) 결과 스키마 - 포트폴리오 3개 티어(단순형/균형형/최대형)별 추천 설명(reason) |
 | `discovery/__init__.py` | 공시 API 호출 + 커뮤니티 크롤링 (Discovery 단계) — 아직 스텁 |
 | `extraction/__init__.py` | 약관 원문 → 우대조건 구조화, LLM 호출 지점 A — 아직 스텁 |
@@ -122,14 +123,13 @@ API를 처음 뚫을 때 구조를 확인하던 일회성 스크립트. 발견 �
 | `list_kfcc_products.py` | `kfcc_rates.jsonl`의 고유 상품명별 지점 수 집계 |
 | `search_kfcc_conditions.py` | `tests/fixtures` 안에서 "우대/조건/가산" 등 키워드가 포함된 텍스트 검색 |
 
-### 11) Step3 챗봇 로직 / Summary 프롬프트 ★핵심
+### 11) Summary 프롬프트 확인 ★핵심
 
 | 파일 | 역할 |
 | --- | --- |
-| `condition_qa.py` ★ | FR-04 미니플로우① - '기타' 조건 AI 질문 생성(호출 A-1) + 자유텍스트 답변 파싱(호출 A-2). 고정 10개 카테고리는 템플릿 질문(AI 미사용), 모든 불확실/실패 케이스는 `conservative_fallback()`로 "조건 미충족" 단일 처리 |
 | `summary_prompt.py` ★ | Summary(호출 B) 로컬 품질 확인용 실행 스크립트. 본체는 `src/summary.py`로 이동. 손으로 만든 예시 포트폴리오로 AI 응답(3문단, 4~6문장)을 눈으로 확인. 숫자는 재계산하지 않고 인용만 함, AI 실패 시 `_fallback_reason()`으로 대체 |
 
-NFR-04("LLM 호출 지점이 정확히 3곳") 대응: (A) `condition_qa.py`의 질문 생성, (B) `condition_qa.py`의 답변 파싱, (C) `src/summary.py`의 Summary - 3곳으로 고정. Summary는 티어마다 따로 호출하지 않고 3개 티어를 한 번에 묶어서 호출함(4번째 호출 지점이 생기는 걸 방지).
+NFR-04("LLM 호출 지점이 정확히 3곳") 대응: (A) `src/condition_qa.py`의 질문 생성, (B) `src/condition_qa.py`의 답변 해석, (C) `src/summary.py`의 Summary - 3곳으로 고정. Summary는 티어마다 따로 호출하지 않고 3개 티어를 한 번에 묶어서 호출함(4번째 호출 지점이 생기는 걸 방지).
 
 ## tests/fixtures/ — 원본 데이터 스냅샷
 

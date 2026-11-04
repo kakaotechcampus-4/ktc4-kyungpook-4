@@ -97,7 +97,7 @@ confidence_badge 필드)을 완전히 제거함. 이 파이프라인은 커뮤�
 쓰기 때문에, 원문 자체의 신뢰도를 AI가 재검증할 필요가 낮다고 판단(2026-09-28 팀
 결정). BE ERD에서도 product_condition의 verification_status/confidence_badge
 컬럼을 이미 제거함(관련 커밋 aab0efc). AI 개입 범위(질문 생성/자유텍스트 답변
-해석)의 신뢰 경계는 별도로 ai/scripts/condition_qa.py에 정리함.
+해석)의 신뢰 경계는 별도로 ai/src/condition_qa.py에 정리함.
 실행:
   python scripts\\extract_conditions_ai.py --limit 20 --fresh   (테스트로 20건만 새로)
   python scripts\\extract_conditions_ai.py --fresh              (전체를 새 스키마로 재실행)
