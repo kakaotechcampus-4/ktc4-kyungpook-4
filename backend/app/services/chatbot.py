@@ -5,7 +5,7 @@
   2) build_questions()                 1차 결과 상품의 '기타' 조건으로 질문을 만든다 (AI 호출 A)
   3) save_answers()                    사용자 답을 해석해 저장한다 (AI 호출 B)
   4) POST /portfolios/recommend        다시 추천 = 최종. 저장된 답이 conditions.py 에서 반영된다
-     (충족 -> 균형형부터 / 미충족(모름 포함) -> 어디서도 제외 / 답 없음 -> 최대형만)
+     (충족 -> 균형형부터 / 미충족 -> 어디서도 제외 / 모름·답 없음 -> 최대형만)
 
 [범위 - 2026-10-30 결정]
   - 묻는 상품: 단순·균형·최대·안정 4개 티어 결과에 들어간 상품. 단일형은 비교 기준선이라 뺀다.
@@ -16,7 +16,8 @@
     '기타' 조건은 묻지 않고 최대형에서만 가정한다 (계속 물으면 끝나지 않으므로).
   - 원문이 같은 조건은 질문 하나로 묶고(condition_ids), 답은 묶인 조건 전부에 저장한다.
 
-질문 문장 생성과 답 해석은 AI 파트 모듈(ktc4_ai.condition_qa)이 한다. 애매하거나 실패하면 항상 '미충족'.
+질문 문장 생성과 답 해석은 AI 파트 모듈(ktc4_ai.condition_qa)이 한다. 모르겠다·애매함·해석 실패는 '모름'
+(2026-11-04 변경. 예전엔 미충족) - STEP2 의 '모름'처럼 최대형에서만 가정한다.
 """
 
 import asyncio
@@ -31,11 +32,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.product import ProductCondition, ProductOption
 from app.models.profile import UserProfile, UserProfileExtra
 from app.services.conditions import _applies_to_period
-from app.services.portfolio import ETC_ANSWER_MET, ETC_ANSWER_NOT_MET, PortfolioPlan, build_tiers
+from app.services.portfolio import (
+    ETC_ANSWER_MET,
+    ETC_ANSWER_NOT_MET,
+    ETC_ANSWER_UNSURE,
+    PortfolioPlan,
+    build_tiers,
+)
 
 ETC_TYPE = "기타"
 # 답 해석에서 AI 를 동시에 부르는 수. 너무 많이 보내면 API 프록시가 거부할 수 있다
 MAX_PARALLEL_PARSE = 5
+# 해석 결과(True 충족 / False 미충족 / None 모름) -> DB 저장값, API 응답 status
+_STORED_VALUE = {True: ETC_ANSWER_MET, False: ETC_ANSWER_NOT_MET, None: ETC_ANSWER_UNSURE}
+_STATUS = {True: "met", False: "not_met", None: "unsure"}
 
 
 @dataclass(frozen=True)
@@ -55,7 +65,11 @@ class EtcAnswer:
 @dataclass(frozen=True)
 class EtcAnswerResult:
     condition_ids: list[str]
-    met: bool  # 해석 결과. 애매하거나 실패하면 False
+    status: str  # "met" 충족 / "not_met" 미충족 / "unsure" 모름(모르겠다·애매함·해석 실패)
+
+    @property
+    def met(self) -> bool:
+        return self.status == "met"
 
 
 class UnknownConditionError(ValueError):
@@ -126,11 +140,11 @@ async def build_questions(session: AsyncSession, profile: UserProfile) -> list[E
     return [EtcQuestion(g["question"], g["evidence_text"], g["condition_ids"]) for g in groups]
 
 
-async def _parse_all(raw_answers: list[str]) -> list[bool]:
+async def _parse_all(raw_answers: list[str]) -> list[bool | None]:
     """답 해석(짧은 답은 AI 없이, 문장은 AI)을 동시에 MAX_PARALLEL_PARSE 개까지 돌린다."""
     semaphore = asyncio.Semaphore(MAX_PARALLEL_PARSE)
 
-    async def one(raw: str) -> bool:
+    async def one(raw: str) -> bool | None:
         async with semaphore:
             return await asyncio.to_thread(parse_answer, raw)
 
@@ -159,7 +173,7 @@ async def save_answers(session: AsyncSession, profile: UserProfile, answers: lis
                 "condition_id": cid,
                 "condition_type": ETC_TYPE,
                 "question_text": answer.question,
-                "answer_value": ETC_ANSWER_MET if met else ETC_ANSWER_NOT_MET,
+                "answer_value": _STORED_VALUE[met],
                 "raw_answer": answer.answer,
                 "answered_at": answered_at,
             }
@@ -176,4 +190,4 @@ async def save_answers(session: AsyncSession, profile: UserProfile, answers: lis
     )
     await session.execute(stmt)
     await session.commit()
-    return [EtcAnswerResult(a.condition_ids, met) for a, met in zip(answers, mets, strict=True)]
+    return [EtcAnswerResult(a.condition_ids, _STATUS[met]) for a, met in zip(answers, mets, strict=True)]
