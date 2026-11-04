@@ -48,6 +48,7 @@ class BaselineOut(BaseModel):
     products: list[PortfolioProductOut]
     after_tax_total: int
     exceeds_protection: bool  # 한 은행에 원금 1억원 초과 -> 초과분은 예금자보호를 받지 못함
+    period_note: str | None = None  # 사용자 기간과 실제 매칭 기간이 다를 때 안내 문구
 
 
 class PortfolioRecommendRequest(BaseModel):

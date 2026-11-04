@@ -6,6 +6,7 @@ class SinglePlan {
   final int termMonths;
   final double annualRatePercent;
   final int afterTaxInterest;
+  final String? periodNote;
 
   const SinglePlan({
     required this.institutionName,
@@ -14,6 +15,7 @@ class SinglePlan {
     required this.termMonths,
     required this.annualRatePercent,
     required this.afterTaxInterest,
+    this.periodNote,
   });
 
   factory SinglePlan.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,7 @@ class SinglePlan {
       termMonths: (first?['term_months'] as num?)?.toInt() ?? 0,
       annualRatePercent: (first?['interest_rate'] as num?)?.toDouble() ?? 0.0,
       afterTaxInterest: (json['after_tax_total'] as num?)?.toInt() ?? 0,
+      periodNote: json['period_note'] as String?,
     );
   }
 }
