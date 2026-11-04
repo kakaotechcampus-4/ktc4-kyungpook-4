@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/calendar_event.dart';
 import '../../models/manual_product_entry.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/calendar_provider.dart';
 import '../../providers/manual_entry_provider.dart';
 import '../../router/app_router.dart';
+import '../../services/auth_client.dart';
 import '../../widgets/manual_entry_tile.dart';
 import '../../widgets/month_calendar_grid.dart';
 import '../../widgets/month_year_picker.dart';
@@ -77,33 +79,55 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
+  Future<void> _logout() async {
+    await AuthClient.instance.logout();
+    ref.invalidate(currentUserProvider);
+    if (mounted) context.go(AppRoutes.login);
+  }
+
   @override
   Widget build(BuildContext context) {
     final eventsAsync = ref.watch(upcomingEventsProvider);
     final manualEntries = ref.watch(manualEntryProvider);
+    final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () => context.push(AppRoutes.roadmap),
-                      icon: const Icon(Icons.route_outlined),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: userAsync.when(
+                      data: (user) => user == null
+                          ? const SizedBox.shrink()
+                          : Text(
+                              '${user.nickname}님 안녕하세요',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
                     ),
+                  ),
+                  IconButton(
+                    onPressed: () => context.push(AppRoutes.roadmap),
+                    icon: const Icon(Icons.route_outlined),
+                  ),
+                  IconButton(
+                    onPressed: _openMonthYearPicker,
+                    icon: const Icon(Icons.calendar_month_outlined),
+                  ),
+                  if (userAsync.value != null)
                     IconButton(
-                      onPressed: _openMonthYearPicker,
-                      icon: const Icon(Icons.calendar_month_outlined),
+                      onPressed: _logout,
+                      icon: const Icon(Icons.logout),
+                      tooltip: '로그아웃',
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
             Row(

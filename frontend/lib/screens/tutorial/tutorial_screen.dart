@@ -32,8 +32,9 @@ class TutorialScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(32, 24, 32, 40),
           child: Column(
             children: [
-              Image.asset(AppImages.cashMascot, width: 140),
-              const SizedBox(height: 20),
+              const SizedBox(height: 50),
+              Image.asset(AppImages.cashMascot, width: 150),
+              const SizedBox(height: 30),
               Text.rich(
                 const TextSpan(
                   style: _messageStyle,
@@ -45,8 +46,8 @@ class TutorialScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 56),
-              Image.asset(AppImages.mainpageMascot, width: 100),
+              const SizedBox(height: 150),
+              Image.asset(AppImages.mainpageMascot, width: 160),
               const SizedBox(height: 12),
               Image.asset(AppImages.titleIcon, width: 140),
               const SizedBox(height: 20),
@@ -67,13 +68,13 @@ class TutorialScreen extends StatelessWidget {
                 style: _messageStyle,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 60),
               const Text(
                 '안정형은 소중한 원금과 이윤을 계산해주고\n기록을 도와드려요.\nOO님이 하신 투자 결정을,\n모아가 알뜰하게 관리할게요.',
                 style: _messageStyle,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 64),
+              const SizedBox(height: 160),
               const Text(
                 '캘린더에서는 지금까지 가입한 상품들의\n납입일정, 만기일을 쉽게 확인하실 수 있어요.',
                 style: _messageStyle,
@@ -87,7 +88,7 @@ class TutorialScreen extends StatelessWidget {
                 style: _messageStyle,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 82),
               PrimaryButton(
                 label: '조건 응답하러 가기',
                 onPressed: () => context.push(AppRoutes.inputStep1),
