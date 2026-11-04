@@ -63,7 +63,7 @@ async def callback(
         return _login_failed("cancelled")
 
     try:
-        social = await oauth.fetch_user(provider, code, state)
+        social = await oauth.fetch_user(provider, code)
     except oauth.OAuthError:
         logger.exception("소셜 로그인 실패 (provider=%s)", provider)
         return _login_failed("provider_error")

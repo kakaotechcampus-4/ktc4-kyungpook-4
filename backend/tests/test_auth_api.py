@@ -43,7 +43,7 @@ def auth_settings(monkeypatch):
     monkeypatch.setattr(settings, "ENV", "local")
     monkeypatch.setattr(settings, "BACKEND_PUBLIC_URL", "http://testserver")
     monkeypatch.setattr(settings, "FRONTEND_URL", FRONT)
-    for name in ("GOOGLE", "KAKAO", "NAVER"):
+    for name in ("GOOGLE", "KAKAO"):
         monkeypatch.setattr(settings, f"{name}_CLIENT_ID", f"{name.lower()}-id")
         monkeypatch.setattr(settings, f"{name}_CLIENT_SECRET", f"{name.lower()}-secret")
 
@@ -67,7 +67,7 @@ async def client(async_db_url):
 
 
 def fake_provider(monkeypatch, result: SocialUser | Exception) -> None:
-    async def _fetch_user(provider, code, state):
+    async def _fetch_user(provider, code):
         if isinstance(result, Exception):
             raise result
         return result
@@ -133,13 +133,13 @@ async def test_cookies_are_httponly_and_lax(client, monkeypatch):
 
 
 async def test_relogin_with_same_account_is_same_user(client, monkeypatch):
-    account = social("NAVER")
+    account = social("GOOGLE")
     fake_provider(monkeypatch, account)
-    await login(client, "naver")
+    await login(client, "google")
     first = (await me(client)).json()["user_id"]
 
     client.cookies.clear()
-    await login(client, "naver")
+    await login(client, "google")
     assert (await me(client)).json()["user_id"] == first
 
 
@@ -149,8 +149,8 @@ async def test_same_email_on_other_provider_is_not_merged(client, monkeypatch):
     google_user = (await me(client)).json()["user_id"]
 
     client.cookies.clear()
-    fake_provider(monkeypatch, social("NAVER", email="same@example.com"))
-    await login(client, "naver")
+    fake_provider(monkeypatch, social("KAKAO", email="same@example.com"))
+    await login(client, "kakao")
     assert (await me(client)).json()["user_id"] != google_user
 
 
@@ -191,7 +191,7 @@ async def test_state_cannot_be_reused(client, monkeypatch):
 async def test_state_is_bound_to_provider(client, monkeypatch):
     fake_provider(monkeypatch, social())
     state = await start_login(client, "kakao")
-    res = await client.get("/api/v1/auth/naver/callback", params={"code": "c", "state": state})
+    res = await client.get("/api/v1/auth/google/callback", params={"code": "c", "state": state})
     assert res.headers["location"] == f"{FRONT}/#/login?error=invalid_state"
 
 
@@ -210,13 +210,14 @@ async def test_provider_failure(client, monkeypatch):
 
 
 async def test_unconfigured_provider_returns_503(client, monkeypatch):
-    monkeypatch.setattr(settings, "NAVER_CLIENT_SECRET", "")
-    res = await client.get("/api/v1/auth/naver/login")
+    monkeypatch.setattr(settings, "GOOGLE_CLIENT_SECRET", "")
+    res = await client.get("/api/v1/auth/google/login")
     assert res.status_code == 503
 
 
-async def test_unknown_provider_returns_422(client):
-    res = await client.get("/api/v1/auth/facebook/login")
+@pytest.mark.parametrize("provider", ["naver", "facebook"])
+async def test_unknown_provider_returns_422(client, provider):
+    res = await client.get(f"/api/v1/auth/{provider}/login")
     assert res.status_code == 422
 
 

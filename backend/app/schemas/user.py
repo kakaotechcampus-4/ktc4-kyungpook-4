@@ -8,4 +8,4 @@ class UserMeOut(BaseModel):
     nickname: str
     email: str | None
     is_guest: bool  # 소셜 계정이 하나도 연결되지 않은 익명 사용자
-    providers: list[str]  # 연결된 소셜사 (GOOGLE | KAKAO | NAVER)
+    providers: list[str]  # 연결된 소셜사 (GOOGLE | KAKAO)

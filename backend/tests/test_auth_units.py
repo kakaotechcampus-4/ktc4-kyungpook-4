@@ -8,7 +8,7 @@ import pytest
 from app.core.config import settings
 from app.core.security import create_access_token, decode_access_token
 from app.services.auth import safe_next
-from app.services.oauth import OAuthError, _parse_google, _parse_kakao, _parse_naver
+from app.services.oauth import _parse_google, _parse_kakao
 
 SECRET = "unit-test-secret-" + "x" * 32
 
@@ -76,13 +76,3 @@ def test_parse_kakao_without_email():
     # 비즈 앱이 아니면 이메일이 안 온다
     user = _parse_kakao({"id": 987654321, "kakao_account": {"profile": {"nickname": "덕환"}}})
     assert _fields(user) == ("KAKAO", "987654321", None, "덕환")
-
-
-def test_parse_naver():
-    user = _parse_naver({"resultcode": "00", "response": {"id": "abc", "email": "a@naver.com", "nickname": "덕환"}})
-    assert _fields(user) == ("NAVER", "abc", "a@naver.com", "덕환")
-
-
-def test_parse_naver_failure_code():
-    with pytest.raises(OAuthError):
-        _parse_naver({"resultcode": "024", "message": "Authentication failed"})

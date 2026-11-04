@@ -47,8 +47,6 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     KAKAO_CLIENT_ID: str = ""  # 카카오 REST API 키
     KAKAO_CLIENT_SECRET: str = ""
-    NAVER_CLIENT_ID: str = ""
-    NAVER_CLIENT_SECRET: str = ""
 
     @property
     def cookie_secure(self) -> bool:

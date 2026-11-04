@@ -1,4 +1,4 @@
-"""소셜사(구글·카카오·네이버) OAuth 차이를 여기서 흡수한다.
+"""소셜사(구글·카카오) OAuth 차이를 여기서 흡수한다.
 
 밖에서는 is_configured / authorize_url / fetch_user 만 쓴다.
 소셜사별 주소·파라미터·응답 모양은 이 파일 밖으로 새지 않게 한다.
@@ -13,7 +13,7 @@ import httpx
 
 from app.core.config import settings
 
-ProviderName = Literal["google", "kakao", "naver"]  # URL 경로에 쓰는 이름
+ProviderName = Literal["google", "kakao"]  # URL 경로에 쓰는 이름
 
 _TIMEOUT = httpx.Timeout(5.0)
 
@@ -41,14 +41,6 @@ def _parse_kakao(data: dict[str, Any]) -> SocialUser:
     return SocialUser("KAKAO", str(data["id"]), account.get("email"), profile.get("nickname"))
 
 
-def _parse_naver(data: dict[str, Any]) -> SocialUser:
-    # 네이버는 실패도 200 으로 주고 resultcode 로 구분한다
-    if data.get("resultcode") != "00":
-        raise OAuthError(f"naver userinfo resultcode={data.get('resultcode')}")
-    body = data["response"]
-    return SocialUser("NAVER", str(body["id"]), body.get("email"), body.get("nickname"))
-
-
 @dataclass(frozen=True)
 class _Provider:
     authorize_endpoint: str
@@ -57,9 +49,7 @@ class _Provider:
     client_id_key: str  # settings 속성 이름. 테스트에서 값을 바꿔 끼울 수 있게 매번 읽는다
     client_secret_key: str
     parse: Callable[[dict[str, Any]], SocialUser]
-    scope: str | None = None  # 카카오·네이버는 받을 항목을 콘솔의 동의항목으로 정한다
-    token_needs_state: bool = False  # 네이버는 토큰 교환에도 state 를 요구한다
-    token_needs_redirect_uri: bool = True
+    scope: str | None = None  # 카카오는 받을 항목을 콘솔의 동의항목으로 정한다
 
 
 _PROVIDERS: dict[str, _Provider] = {
@@ -79,16 +69,6 @@ _PROVIDERS: dict[str, _Provider] = {
         client_id_key="KAKAO_CLIENT_ID",
         client_secret_key="KAKAO_CLIENT_SECRET",
         parse=_parse_kakao,
-    ),
-    "naver": _Provider(
-        authorize_endpoint="https://nid.naver.com/oauth2.0/authorize",
-        token_endpoint="https://nid.naver.com/oauth2.0/token",
-        userinfo_endpoint="https://openapi.naver.com/v1/nid/me",
-        client_id_key="NAVER_CLIENT_ID",
-        client_secret_key="NAVER_CLIENT_SECRET",
-        parse=_parse_naver,
-        token_needs_state=True,
-        token_needs_redirect_uri=False,
     ),
 }
 
@@ -116,20 +96,21 @@ def authorize_url(provider: str, state: str) -> str:
     return f"{p.authorize_endpoint}?{urlencode(params)}"
 
 
-async def fetch_user(provider: str, code: str, state: str) -> SocialUser:
+async def fetch_user(provider: str, code: str) -> SocialUser:
     """인가 코드를 소셜사 토큰으로 바꾸고, 그 토큰으로 사용자 정보를 받아온다."""
     p = _PROVIDERS[provider]
     client_id, client_secret = _credentials(provider)
-    form = {"grant_type": "authorization_code", "client_id": client_id, "client_secret": client_secret, "code": code}
-    if p.token_needs_redirect_uri:
-        form["redirect_uri"] = redirect_uri(provider)
-    if p.token_needs_state:
-        form["state"] = state
+    form = {
+        "grant_type": "authorization_code",
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "redirect_uri": redirect_uri(provider),
+    }
 
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             token_res = await client.post(p.token_endpoint, data=form)
-            # 네이버는 실패해도 200 을 주므로 상태 코드만으로는 판단하지 않는다
             access_token = token_res.json().get("access_token")
             if token_res.status_code != 200 or not access_token:
                 raise OAuthError(f"{provider} token exchange failed: {token_res.status_code} {token_res.text[:200]}")
