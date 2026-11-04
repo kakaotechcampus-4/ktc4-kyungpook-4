@@ -5,6 +5,7 @@ alembic autogenerate 와 테스트용 create_all 이 이 목록을 보고 동작
 
 from app.models.batch import BatchRun
 from app.models.institution import Institution
+from app.models.manual_entry import UserManualEntry
 from app.models.portfolio import UserHolding, UserHoldingCondition, UserPortfolio
 from app.models.product import Product, ProductCondition, ProductOption
 from app.models.profile import (
@@ -26,6 +27,7 @@ __all__ = [
     "SocialAccount",
     "UserHolding",
     "UserHoldingCondition",
+    "UserManualEntry",
     "UserPortfolio",
     "UserProfile",
     "UserProfileBank",
