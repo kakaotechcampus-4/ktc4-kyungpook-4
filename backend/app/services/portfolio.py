@@ -100,6 +100,7 @@ class TierAllocations:
 class PortfolioPlan:
     tiers: dict[str, TierAllocations]
     baseline: TierAllocations | None  # 단일형. 주거래은행을 모르거나 그 은행 상품이 없으면 None
+    baseline_note: str | None = None  # 기간 대체 시 안내 문구
 
 
 @dataclass
@@ -159,6 +160,61 @@ async def _closest_period(session: AsyncSession, product_type: str, period_month
         return None
     not_exceeding = [p for p in available if p <= period_months]
     return max(not_exceeding) if not_exceeding else min(available)
+
+
+async def _baseline_candidates_for_bank(
+    session: AsyncSession,
+    product_type: str,
+    period_months: int,
+    institution_code: str,
+) -> tuple[list[Candidate], str | None]:
+    """주거래은행 상품 중 기간이 가장 가까운 옵션을 반환한다.
+    사용자 기간 이하 상품이 없으면 가장 짧은 상품을 쓰고 period_note를 반환한다."""
+    stmt = (
+        select(ProductOption.period_months)
+        .join(Product, Product.product_id == ProductOption.product_id)
+        .where(
+            Product.product_type == product_type,
+            Product.is_active.is_(True),
+            Product.parse_status == "PARSED",
+            Product.institution_code == institution_code,
+        )
+        .distinct()
+    )
+    available = sorted((await session.execute(stmt)).scalars().all())
+    if not available:
+        return [], None
+
+    not_exceeding = [p for p in available if p <= period_months]
+    if not_exceeding:
+        matched = max(not_exceeding)
+        note = None
+    else:
+        matched = min(available)
+        note = f"입력하신 {period_months}개월보다 기간이 긴 {matched}개월 상품만 있어 가장 짧은 상품을 표시합니다."
+
+    stmt = (
+        select(Product, ProductOption, Institution.name, Institution.institution_type)
+        .join(ProductOption, ProductOption.product_id == Product.product_id)
+        .join(Institution, Institution.institution_code == Product.institution_code)
+        .where(
+            Product.product_type == product_type,
+            Product.is_active.is_(True),
+            Product.parse_status == "PARSED",
+            Product.institution_code == institution_code,
+            ProductOption.period_months == matched,
+        )
+    )
+    rows = (await session.execute(stmt)).all()
+
+    conditions: dict[str, list[ProductCondition]] = defaultdict(list)
+    if rows:
+        product_ids = {p.product_id for p, *_ in rows}
+        cond_stmt = select(ProductCondition).where(ProductCondition.product_id.in_(product_ids))
+        for cond in (await session.execute(cond_stmt)).scalars():
+            conditions[cond.product_id].append(cond)
+
+    return [Candidate(p, o, name, itype, conditions[p.product_id]) for p, o, name, itype in rows], note
 
 
 async def _matching_options(
@@ -388,16 +444,27 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
         tiers[spec.name] = TierAllocations(period, deposit_allocs, installment_allocs)
 
     baseline = None
+    baseline_note = None
     if profile.main_bank_code:
-        base_deposits = _best_single(profile.capital, deposits, profile, banks, tax, etc_answers) if use_deposit else []
-        base_installments = (
-            _best_single(profile.monthly_saving, installments, profile, banks, tax, etc_answers)
-            if use_installment
-            else []
+        dep_cands, dep_note = (
+            await _baseline_candidates_for_bank(session, "예금", profile.period_months, profile.main_bank_code)
+            if use_deposit
+            else ([], None)
         )
+        inst_cands, inst_note = (
+            await _baseline_candidates_for_bank(session, "적금", profile.period_months, profile.main_bank_code)
+            if use_installment
+            else ([], None)
+        )
+        base_deposits = _best_single(profile.capital, dep_cands, profile, banks, tax, etc_answers)
+        base_installments = _best_single(profile.monthly_saving, inst_cands, profile, banks, tax, etc_answers)
         if base_deposits or base_installments:
-            baseline = TierAllocations(period, base_deposits, base_installments)
-    return PortfolioPlan(tiers, baseline)
+            dep_period = dep_cands[0].option.period_months if dep_cands else None
+            inst_period = inst_cands[0].option.period_months if inst_cands else None
+            baseline_period = dep_period or inst_period or period
+            baseline = TierAllocations(baseline_period, base_deposits, base_installments)
+            baseline_note = dep_note or inst_note
+    return PortfolioPlan(tiers, baseline, baseline_note)
 
 
 @dataclass
@@ -449,7 +516,7 @@ def _calc(allocations: TierAllocations, tax: TaxContext) -> _TierNumbers:
     )
 
 
-def _baseline_out(baseline: TierAllocations, profile: UserProfile, today: date) -> BaselineOut:
+def _baseline_out(baseline: TierAllocations, profile: UserProfile, today: date, *, note: str | None = None) -> BaselineOut:
     numbers = _calc(baseline, _tax_context(profile, today))
     principal = sum(a.amount for a in baseline.deposit_allocs) + sum(
         a.amount * a.option.period_months for a in baseline.installment_allocs
@@ -460,6 +527,7 @@ def _baseline_out(baseline: TierAllocations, profile: UserProfile, today: date) 
         products=numbers.products,
         after_tax_total=numbers.after_tax_total,
         exceeds_protection=principal > DEPOSIT_PROTECTION_LIMIT,
+        period_note=note,
     )
 
 
@@ -485,7 +553,7 @@ async def recommend_options(
                 "over_comprehensive_tax": numbers.over_comprehensive_tax,
             }
         )
-    baseline = _baseline_out(plan.baseline, profile, today) if plan.baseline else None
+    baseline = _baseline_out(plan.baseline, profile, today, note=plan.baseline_note) if plan.baseline else None
     baseline_ctx = (
         {
             "institution_name": baseline.institution_name,
