@@ -15,15 +15,17 @@ dependencies = [
     "asyncpg>=0.29",
     "redis>=5.0",
     "ktc4-ai",  # AI 파트 모듈(../ai). Summary(추천 이유 문구) 생성에 쓴다
+    "pyjwt>=2.15",  # 로그인 access 토큰(JWT)
+    "httpx>=0.28",  # 소셜사(구글·카카오·네이버) OAuth 호출. 테스트 클라이언트도 이걸 쓴다
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
-    "httpx>=0.27",          # FastAPI 테스트 클라이언트가 쓴다
     "psycopg2-binary>=2.9", # 동기 드라이버. alembic 과 스키마 대조 테스트에서만 쓴다
     "ruff>=0.6",
+    "fakeredis>=2.40",      # 로그인 테스트에서 Redis 대신 쓴다
 ]
 
 [tool.uv]

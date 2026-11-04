@@ -33,8 +33,19 @@ DB_ECHO=false
 # 추천 이유 문구(Summary) AI 호출용. 비워두면 계산된 숫자로 만든 기본 문구가 나간다.
 OPENAI_API_KEY=
 OPENAI_BASE_URL=
+# 소셜 로그인. 키가 빈 소셜사는 로그인 버튼을 눌러도 503 이 난다.
+# 도메인을 붙이면 BACKEND_PUBLIC_URL·FRONTEND_URL 을 https://<도메인> 으로 추가한다.
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+KAKAO_CLIENT_ID=
+KAKAO_CLIENT_SECRET=
 EOF
   chmod 600 "$SHARED/.env"
+fi
+# 로그인 토큰 서명 키. 이 줄이 생기기 전에 만든 .env 에도 한 번만 채워 넣는다 (바꾸면 전원 로그아웃된다).
+if ! grep -q '^JWT_SECRET=.\+' "$SHARED/.env"; then
+  log "JWT_SECRET 생성"
+  echo "JWT_SECRET=$(openssl rand -hex 32)" >> "$SHARED/.env"
 fi
 cp "$SHARED/.env" "$RELEASE_DIR/deploy/.env"
 chmod 600 "$RELEASE_DIR/deploy/.env"

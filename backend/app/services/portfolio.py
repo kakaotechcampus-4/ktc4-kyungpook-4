@@ -5,7 +5,8 @@
   균형형 : 약간의 행동 변화(새 기관 1곳 가입, 마케팅동의·비대면가입·자동이체)로 받는 최대 실수령액.
   최대형 : 모든 우대조건 달성을 가정한 최대 실수령액.
   안정형 : 1금융(은행)만으로 구성. 우대조건 범위는 균형형과 같다.
-  단일형 : 주거래은행 상품 중 실효금리 1위 하나에 전액. 추천안이 아니라 비교 기준선(baseline)이다.
+  단일형 : 주거래은행의 예금 1위 또는 적금 1위 하나(둘 다 입력하면 세후 이자가 큰 쪽). 추천안이 아니라
+           비교 기준선(baseline)이다. 티어와는 같은 종류 상품끼리 비교한다.
 어떤 우대조건을 인정하는지는 services/conditions.py, 세금은 services/tax.py 가 정한다.
 
 후보는 세후 기준 금리(실효금리 x (1 - 기대 세율)) 높은 순으로 고른다. 단일형을 뺀 안은
@@ -19,6 +20,7 @@ product 테이블만 조회하므로 미검증 특판(product 에 행이 없는 
 import asyncio
 import calendar as calendar_module
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
@@ -465,13 +467,27 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
         )
         base_deposits = _best_single(profile.capital, dep_cands, profile, banks, tax, etc_answers)
         base_installments = _best_single(profile.monthly_saving, inst_cands, profile, banks, tax, etc_answers)
-        if base_deposits or base_installments:
-            dep_period = dep_cands[0].option.period_months if dep_cands else None
-            inst_period = inst_cands[0].option.period_months if inst_cands else None
-            baseline_period = dep_period or inst_period or period
-            baseline = TierAllocations(baseline_period, base_deposits, base_installments)
-            baseline_note = dep_note or inst_note
+        choices = []
+        if base_deposits:
+            choices.append((TierAllocations(base_deposits[0].option.period_months, base_deposits, []), dep_note))
+        if base_installments:
+            choices.append(
+                (TierAllocations(base_installments[0].option.period_months, [], base_installments), inst_note)
+            )
+        picked = _pick_single_kind(choices, lambda: _tax_context(profile, date.today()))
+        if picked:
+            baseline, baseline_note = picked
     return PortfolioPlan(tiers, baseline, baseline_note)
+
+
+def _pick_single_kind(
+    choices: list[tuple[TierAllocations, str | None]], new_tax: Callable[[], TaxContext]
+) -> tuple[TierAllocations, str | None] | None:
+    """단일형은 예금·적금 중 하나만 쓴다. 목돈과 월 저축을 둘 다 입력했으면 세후 이자가 큰 쪽을 고른다.
+
+    고르지 않은 쪽 돈은 단일형 계산에서 빠진다. 그래서 티어와 비교할 때도 같은 종류 상품끼리만
+    비교한다 (ktc4_ai.summary._enrich_options 의 extra_vs_baseline). 같으면 예금을 고른다."""
+    return max(choices, key=lambda c: _calc(c[0], new_tax()).after_tax_total, default=None)
 
 
 @dataclass
@@ -504,6 +520,7 @@ def _calc(allocations: TierAllocations, tax: TaxContext) -> _TierNumbers:
             institution_code=alloc.product.institution_code,
             institution_name=alloc.institution_name,
             product_name=alloc.product.product_name,
+            product_type=alloc.product.product_type,
             term_months=alloc.option.period_months,
             base_rate=float(alloc.option.base_rate),
             interest_rate=float(alloc.effective_rate),
@@ -532,7 +549,8 @@ def _baseline_out(
     )
     return BaselineOut(
         institution_name=numbers.products[0].institution_name,
-        product_name=" + ".join(p.product_name for p in numbers.products),
+        product_name=numbers.products[0].product_name,
+        product_type=numbers.products[0].product_type,
         products=numbers.products,
         after_tax_total=numbers.after_tax_total,
         exceeds_protection=principal > DEPOSIT_PROTECTION_LIMIT,
@@ -567,6 +585,7 @@ async def recommend_options(
         {
             "institution_name": baseline.institution_name,
             "product_name": baseline.product_name,
+            "product_type": baseline.product_type,
             "after_tax_total": baseline.after_tax_total,
             "exceeds_protection": baseline.exceeds_protection,
         }
