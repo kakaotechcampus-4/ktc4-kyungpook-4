@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/calendar_event.dart';
+import '../models/etc_question.dart';
 import '../models/onboarding_input.dart';
 import '../models/portfolio_option.dart';
 import '../models/single_plan.dart';
@@ -129,6 +130,30 @@ class ApiClient {
     );
     final body = _decodeObject(response);
     return (body['reasons'] as Map<String, dynamic>).cast<String, String>();
+  }
+
+  /// 지금 추천 결과 상품의 '기타' 우대조건 중 아직 안 물은 것을 질문으로 받는다.
+  /// 빈 리스트면 더 물을 게 없다는 뜻 - 챗봇을 건너뛰고 바로 결과로 가면 된다.
+  Future<List<EtcQuestion>> fetchEtcQuestions(int profileId) async {
+    final response = await http.post(
+      _uri('/profiles/$profileId/etc-questions'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    final body = _decodeObject(response);
+    return (body['questions'] as List<dynamic>)
+        .map((q) => EtcQuestion.fromJson(q as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// '기타' 우대조건 질문의 답을 저장한다. 저장 후 recommendPortfolios 를 다시 부르면
+  /// 반영된 결과가 나온다.
+  Future<void> sendEtcAnswers(int profileId, List<EtcAnswerSubmission> answers) async {
+    final response = await http.post(
+      _uri('/profiles/$profileId/etc-answers'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'answers': answers.map((a) => a.toJson()).toList()}),
+    );
+    _decodeObject(response);
   }
 
   /// 추천안 중 하나를 확정 가입한다. 반환값은 이후 캘린더 조회에 쓰는 portfolio_id.
