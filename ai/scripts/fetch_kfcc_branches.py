@@ -9,8 +9,18 @@ kfcc.co.kr/map/list.do?r1=<시도>&r2=<시군구> 를 지역별로 GET 하면
 gmgoCd(지점코드), name, gmgoNm, divCd(지점구분코드), divNm(구분명: 본점/지점 등),
 gmgoType(지역/직장), telephone, fax, addr, r1, r2, code1, code2 가 들어있음.
 이 gmgoCd 값이 다음 단계(fetch_kfcc_rates.py)에서 금리 조회에 그대로 쓰임.
+
+[저장 방식 - 금리와 한 묶음으로 교체]
+지점 목록과 지점별 금리(kfcc_rates.jsonl)는 ERD 빌드에서 서로 이어 붙여 쓰므로 같은 실행의 것이어야 한다.
+그래서 이 스크립트는 kfcc_branches.json 을 바로 바꾸지 않고 kfcc_branches.json.next 에만 저장한다.
+fetch_kfcc_rates.py 가 이 .next 로 금리를 받고, 금리까지 성공하면 두 파일을 함께 교체한다.
+(금리가 실패하면 .next 를 지우고 두 파일 모두 지난 수집본을 유지한다)
+실패로 보는 경우: 목록 페이지 접속 오류, 실패한 지역을 끝에 한 번 더 시도해도 남은 실패가 있을 때, 전체 0건.
+지역 하나가 실패하면 그 지역 지점이 통째로 빠지므로 한 곳이라도 남으면 실패로 본다.
+(오류 없이 0건인 지역은 정상 - 지점이 없는 지역일 수 있다)
 """
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -21,6 +31,9 @@ from bs4 import BeautifulSoup
 OUT_DIR = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_PATH = OUT_DIR / "kfcc_branches.json"
+# 다음 수집본. fetch_kfcc_rates.py 가 금리까지 성공하면 OUT_PATH 로 옮긴다
+NEXT_PATH = OUT_DIR / "kfcc_branches.json.next"
+TMP_PATH = OUT_DIR / "kfcc_branches.json.next.tmp"
 
 BASE_URL = "https://www.kfcc.co.kr/map/list.do"
 
@@ -94,31 +107,61 @@ def fetch_region(session: requests.Session, r1: str, r2: str) -> list[dict]:
     return parse_branches(resp.text, r1, r2)
 
 
+def _fail(reason):
+    """파일을 바꾸지 않고 끝낸다(지난 수집본 유지). 지난 실행이 남긴 .next 도 지워 금리 단계가 쓰지 않게 한다."""
+    NEXT_PATH.unlink(missing_ok=True)
+    TMP_PATH.unlink(missing_ok=True)
+    print(f"{reason} - 실패로 처리. 기존 지점 목록을 유지합니다.")
+    sys.exit(1)
+
+
 def main():
     session = requests.Session()
-    session.get("https://www.kfcc.co.kr/map/main.do", headers=HEADERS, timeout=20)
+    try:
+        session.get("https://www.kfcc.co.kr/map/main.do", headers=HEADERS, timeout=20)
+    except requests.RequestException as e:
+        _fail(f"메인 페이지 접속 오류: {e}")
 
-    all_branches: list[dict] = []
-    total_requests = sum(len(v) for v in REGIONS.values())
-    done = 0
+    by_region: dict[tuple[str, str], list[dict]] = {}
+    regions = [(r1, r2) for r1, districts in REGIONS.items() for r2 in districts]
 
-    for r1, districts in REGIONS.items():
-        for r2 in districts:
-            done += 1
-            try:
-                branches = fetch_region(session, r1, r2)
-            except Exception as e:
-                print(f"  [{done}/{total_requests}] {r1} {r2} 실패: {e}")
-                continue
-            all_branches.extend(branches)
-            print(f"  [{done}/{total_requests}] {r1} {r2}: {len(branches)}건 (누적 {len(all_branches)}건)")
-            time.sleep(0.3)
+    failed = []
+    for done, (r1, r2) in enumerate(regions, 1):
+        try:
+            by_region[(r1, r2)] = fetch_region(session, r1, r2)
+        except requests.RequestException as e:
+            print(f"  [{done}/{len(regions)}] {r1} {r2} 실패: {e}")
+            failed.append((r1, r2))
+            continue
+        print(f"  [{done}/{len(regions)}] {r1} {r2}: {len(by_region[(r1, r2)])}건")
+        time.sleep(0.3)
 
+    # 실패한 지역은 끝에 한 번 더 시도한다 (일시적인 오류일 수 있어서)
+    still_failed = []
+    if failed:
+        print(f"\n실패한 지역 {len(failed)}곳 재시도")
+    for r1, r2 in failed:
+        try:
+            by_region[(r1, r2)] = fetch_region(session, r1, r2)
+            print(f"  [재시도] {r1} {r2}: {len(by_region[(r1, r2)])}건")
+        except requests.RequestException as e:
+            print(f"  [재시도] {r1} {r2} 또 실패: {e}")
+            still_failed.append((r1, r2))
+        time.sleep(0.3)
+    if still_failed:
+        _fail(f"재시도 후에도 실패한 지역 {len(still_failed)}곳: {still_failed[:10]}")
+
+    # 지역 순서대로 합친다 (재시도한 지역도 원래 자리에)
+    all_branches = [b for region in regions for b in by_region[region]]
     if not all_branches:
-        print("지점 0건 수집 - 실패로 처리 (기존 파일 유지)")
-        sys.exit(1)
-    OUT_PATH.write_text(json.dumps(all_branches, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\n총 {len(all_branches)}개 지점 수집 완료 -> {OUT_PATH}")
+        _fail("지점 0건 수집")
+
+    try:
+        TMP_PATH.write_text(json.dumps(all_branches, ensure_ascii=False, indent=2), encoding="utf-8")
+        os.replace(TMP_PATH, NEXT_PATH)
+    except OSError as e:
+        _fail(f"임시 파일 저장 실패: {e}")
+    print(f"\n총 {len(all_branches)}개 지점 수집 완료 -> {NEXT_PATH} (금리 수집까지 성공하면 {OUT_PATH.name} 로 교체)")
 
     unique_codes = {b["gmgoCd"] for b in all_branches}
     print(f"고유 gmgoCd 수: {len(unique_codes)}개 (다음 단계 금리조회 대상)")

@@ -42,7 +42,7 @@ class ResultScreen extends ConsumerWidget {
 
 class _ResultList extends ConsumerWidget {
   final List<PortfolioOption> options;
-  final SinglePlan singlePlan;
+  final SinglePlan? singlePlan;
   final PortfolioTier? selectedTier;
 
   const _ResultList({
@@ -66,7 +66,7 @@ class _ResultList extends ConsumerWidget {
           style: TextStyle(fontSize: 15, height: 1.5, color: Colors.black87),
         ),
         const SizedBox(height: 50),
-        SinglePlanCard(plan: singlePlan),
+        if (singlePlan != null) SinglePlanCard(plan: singlePlan!),
         const SizedBox(height: 100),
         const _PortfolioIntroText(),
         const SizedBox(height: 50),

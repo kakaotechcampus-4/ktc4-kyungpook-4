@@ -5,7 +5,7 @@
   1. 금감원 데이터 수집      (fetch_all_products.py)          ┐
   2. 신협 데이터 수집        (fetch_cu_rate_compare.py)       ├ 소스별 독립 실행 + 재시도
   3. 새마을금고 지점 목록    (fetch_kfcc_branches.py)         │ 실패해도 다음 소스 계속 진행
-  4. 새마을금고 금리         (fetch_kfcc_rates.py --refresh)  │
+  4. 새마을금고 금리         (fetch_kfcc_rates.py)            │ (1시간 넘게 걸려 재시도 없이 1번만)
   5. 새마을금고 중앙 조건    (fetch_kfcc_central_conditions.py)┘
   6. 판매 종료 감지          (fetch 성공 소스만 대상으로 missing_counts.json 갱신)
   7. AI 우대조건 추출        (extract_conditions_ai.py - 변경분만 자동 처리)
@@ -57,19 +57,19 @@ _NONZERO_RATE_RE = re.compile(r"[1-9]\d*\.?\d*%p|0\.[1-9]\d*%p")
 # 실행 유틸
 # ---------------------------------------------------------------------------
 
-def _run_with_retry(label: str, cmd: list[str]) -> bool:
+def _run_with_retry(label: str, cmd: list[str], attempts: int = RETRY_COUNT) -> bool:
     """소스 fetch 전용 실행기. 실패 시 재시도하고 최종 성공/실패를 bool로 반환.
     예외를 던지지 않으므로 한 소스 실패가 파이프라인 전체를 중단시키지 않는다."""
-    for attempt in range(1, RETRY_COUNT + 1):
-        print(f"\n[{label}] 시작 (시도 {attempt}/{RETRY_COUNT})")
+    for attempt in range(1, attempts + 1):
+        print(f"\n[{label}] 시작 (시도 {attempt}/{attempts})")
         result = subprocess.run(cmd, cwd=str(AI_ROOT))
         if result.returncode == 0:
             print(f"[{label}] 완료")
             return True
-        if attempt < RETRY_COUNT:
+        if attempt < attempts:
             print(f"[{label}] 실패 - {RETRY_WAIT}초 후 재시도...")
             time.sleep(RETRY_WAIT)
-    print(f"[{label}] {RETRY_COUNT}회 재시도 후 최종 실패")
+    print(f"[{label}] {attempts}회 시도 후 최종 실패")
     return False
 
 
@@ -226,6 +226,8 @@ def main() -> None:
     print("=== 파이프라인 시작 ===")
 
     fetch_results: dict[str, bool] = {"금감원": True, "신협": True, "새마을금고": True}
+    # 새마을금고 금리(+지점 목록) 성공 여부. 판매 종료 판단은 중앙조건 기준이라 fetch_results 와 따로 둔다
+    kfcc_rates_ok = True
 
     if not args.skip_fetch:
         fetch_results["금감원"] = _run_with_retry(
@@ -239,9 +241,12 @@ def main() -> None:
             "3/5 새마을금고 지점", [py, str(SCRIPTS / "fetch_kfcc_branches.py")]
         )
         if branches_ok:
-            _run_with_retry(
+            # 지점 1천여 곳이라 1시간 넘게 걸린다. 실패 지점 재시도는 스크립트 안에서 하므로 전체 재실행은 하지 않는다
+            # (사이트가 막힌 주에 3번 돌면 몇 시간을 헛쓴다). 실패하면 지점 목록·금리 모두 지난 수집본 유지
+            kfcc_rates_ok = _run_with_retry(
                 "4/5 새마을금고 금리",
-                [py, str(SCRIPTS / "fetch_kfcc_rates.py"), "--refresh"],
+                [py, str(SCRIPTS / "fetch_kfcc_rates.py")],
+                attempts=1,
             )
             central_ok = _run_with_retry(
                 "5/5 새마을금고 중앙조건",
@@ -252,9 +257,13 @@ def main() -> None:
         else:
             print("[새마을금고] 지점 목록 수집 실패 - 금리/중앙조건 fetch 스킵")
             fetch_results["새마을금고"] = False
+            kfcc_rates_ok = False
 
     failed_sources = [s for s, ok in fetch_results.items() if not ok]
     successful_sources = {s for s, ok in fetch_results.items() if ok}
+    if not kfcc_rates_ok and "새마을금고" not in failed_sources:
+        # 로그에만 남긴다 (중앙조건이 성공했으면 판매 종료 판단은 그대로 한다)
+        failed_sources.append("새마을금고 금리")
     if failed_sources:
         print(f"\n⚠️  수집 실패 소스: {failed_sources} (이전 데이터 유지, missing count 판단 보류)")
 
