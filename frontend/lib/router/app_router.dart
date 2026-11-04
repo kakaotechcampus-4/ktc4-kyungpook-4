@@ -5,6 +5,7 @@ import '../screens/input/input_step1_screen.dart';
 import '../screens/input/input_step2_screen.dart';
 import '../screens/input/input_step3_screen.dart';
 import '../screens/loading/loading_screen.dart';
+import '../screens/login/login_screen.dart';
 import '../screens/result/portfolio_detail_screen.dart';
 import '../screens/result/result_screen.dart';
 import '../screens/roadmap/roadmap_screen.dart';
@@ -15,6 +16,7 @@ class AppRoutes {
   AppRoutes._();
 
   static const splash = '/';
+  static const login = '/login';
   static const loading = '/loading';
   static const calendar = '/calendar';
   static const tutorial = '/tutorial';
@@ -34,6 +36,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.splash,
       builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.login,
+      builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
       path: AppRoutes.loading,
