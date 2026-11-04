@@ -135,7 +135,7 @@ async def save_etc_answers(
     body: EtcAnswersIn,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> EtcAnswersOut:
-    """답을 충족/미충족으로 해석해 저장한다 (애매하면 미충족). 같은 조건에 다시 답하면 덮어쓴다.
+    """답을 충족/미충족/모름으로 해석해 저장한다 (모르겠다·애매함은 모름). 같은 조건에 다시 답하면 덮어쓴다.
     저장 후 POST /portfolios/recommend 를 다시 부르면 답이 반영된 결과가 나온다."""
     profile = await _get_profile(session, profile_id)
     answers = [chatbot.EtcAnswer(a.condition_ids, a.question, a.answer) for a in body.answers]
@@ -143,4 +143,6 @@ async def save_etc_answers(
         results = await chatbot.save_answers(session, profile, answers)
     except chatbot.UnknownConditionError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    return EtcAnswersOut(results=[EtcAnswerResultOut(condition_ids=r.condition_ids, met=r.met) for r in results])
+    return EtcAnswersOut(
+        results=[EtcAnswerResultOut(condition_ids=r.condition_ids, met=r.met, status=r.status) for r in results]
+    )

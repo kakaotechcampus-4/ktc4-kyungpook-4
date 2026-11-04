@@ -11,7 +11,7 @@
            + 기타: 챗봇에서 충족한다고 답한 조건
   최대형 : 모든 우대조건 달성을 가정. 급여이체·카드실적·공과금이체·공제가입·연금수령·기타 포함.
            단 '불가능해요'라고 답한 조건, 카드 사용액이 실적 기준에 못 미치는 카드실적,
-           챗봇에서 미충족(모름 포함)으로 답한 기타 조건은 뺀다. 챗봇이 묻지 않은 기타 조건은 계속 가정한다.
+           챗봇에서 미충족으로 답한 기타 조건은 뺀다. 챗봇이 묻지 않았거나 '모름'으로 답한 기타 조건은 계속 가정한다.
   안정형 : 균형형과 같은 범위 (1금융만 쓰는 다른 축의 안이라 조건 범위는 균형형을 따른다).
   단일형 : 단순형과 같은 범위 (주거래은행 상품 하나에 그대로 넣는 기준선).
 
@@ -116,8 +116,8 @@ def _answer_scope(cond: ProductCondition, profile: UserProfile, etc_answers: Map
         if answer is True:
             return Scope.BALANCED
         if answer is False:
-            return None  # 미충족(모름 포함)으로 답했다 - 최대형이라도 가정하지 않는다
-        return Scope.MAX  # 챗봇이 묻지 않았다 - 지금처럼 최대형에서만 가정한다
+            return None  # 아니라고 답했다 - 최대형이라도 가정하지 않는다
+        return Scope.MAX  # 챗봇이 묻지 않았거나 '모름'으로 답했다 - 최대형에서만 가정한다 (STEP2 의 '모름'과 같음)
     if ctype == "카드실적":
         return _card_scope(cond, profile.monthly_card_usage)
     if ctype == "마케팅동의":

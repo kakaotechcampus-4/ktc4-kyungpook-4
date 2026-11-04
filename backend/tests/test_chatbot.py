@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
+from ktc4_ai import condition_qa
 
 from app.db.session import get_session
 from app.main import app
@@ -118,19 +119,25 @@ def test_answers_api(client, monkeypatch):
 
     async def fake_save(session, profile, answers):
         received["answers"] = answers
-        return [EtcAnswerResult(a.condition_ids, a.answer == "네") for a in answers]
+        status = {"네": "met", "아니요": "not_met"}
+        return [EtcAnswerResult(a.condition_ids, status.get(a.answer, "unsure")) for a in answers]
 
     monkeypatch.setattr(chatbot, "save_answers", fake_save)
     body = {
         "answers": [
             {"condition_ids": ["C1", "C2"], "question": "q1", "answer": "  네  "},
             {"condition_ids": ["C3"], "question": "q2", "answer": "아니요"},
+            {"condition_ids": ["C4"], "question": "q3", "answer": "모르겠어요"},
         ]
     }
     r = client.post("/api/v1/profiles/1/etc-answers", json=body)
     assert r.status_code == 200
     assert r.json() == {
-        "results": [{"condition_ids": ["C1", "C2"], "met": True}, {"condition_ids": ["C3"], "met": False}]
+        "results": [
+            {"condition_ids": ["C1", "C2"], "met": True, "status": "met"},
+            {"condition_ids": ["C3"], "met": False, "status": "not_met"},
+            {"condition_ids": ["C4"], "met": False, "status": "unsure"},
+        ]
     }
     assert received["answers"][0].answer == "네"  # 앞뒤 공백은 지우고 넘긴다
 
@@ -156,3 +163,20 @@ def test_answers_api_rejects_non_etc_condition(client, monkeypatch):
     r = client.post("/api/v1/profiles/1/etc-answers", json=body)
     assert r.status_code == 422
     assert "X" in r.json()["detail"]
+
+
+# --- 답 해석 (ktc4_ai.condition_qa.parse_answer) -------------------------------
+
+
+def test_parse_answer_keywords_without_ai(monkeypatch):
+    calls = []
+    monkeypatch.setattr(condition_qa, "_parse_answer_ai", lambda raw: calls.append(raw))
+    assert condition_qa.parse_answer("네.") is True
+    assert condition_qa.parse_answer("아니요") is False
+    assert condition_qa.parse_answer("잘 모르겠어요?") is None  # 모름 - 미충족이 아니다
+    assert calls == []  # 키워드로 끝나면 AI 를 부르지 않는다
+
+
+def test_parse_answer_ambiguous_or_failed_ai_is_unsure(monkeypatch):
+    monkeypatch.setattr(condition_qa, "_parse_answer_ai", lambda raw: None)  # 애매함(low) 또는 호출 실패
+    assert condition_qa.parse_answer("가입은 했던 것 같은데 기억이 잘 안 나요") is None
