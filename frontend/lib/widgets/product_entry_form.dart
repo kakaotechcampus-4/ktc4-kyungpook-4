@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/bank_options.dart';
-import '../models/manual_product_entry.dart';
 import '../theme/app_colors.dart';
 import 'primary_button.dart';
 import 'searchable_select_field.dart';
+
+/// 상품 정보 기록 제출 콜백. 서버가 entry_id/created_at 을 발급하므로 여기선
+/// 입력된 원시 필드만 넘기고, 실제 생성(POST)은 호출하는 쪽(캘린더 화면)이
+/// 담당한다. 실패하면 예외를 던져서 폼이 계속 열려있게 한다.
+typedef ProductEntrySubmit = Future<void> Function({
+  required DateTime date,
+  required String institutionName,
+  required String productName,
+  required int amount,
+  required String memo,
+});
 
 /// 상품 정보를 입력받는 폼 본문. 바텀시트 안에 넣을 수도, 전체 화면
 /// Scaffold의 body로 넣을 수도 있도록 특정 컨테이너(바텀시트/화면)에
@@ -13,7 +23,7 @@ import 'searchable_select_field.dart';
 /// 이 위젯을 그대로 풀스크린 화면으로 옮기면 된다.
 class ProductEntryForm extends StatefulWidget {
   final DateTime initialDate;
-  final ValueChanged<ManualProductEntry> onSubmit;
+  final ProductEntrySubmit onSubmit;
   final VoidCallback? onCancel;
 
   const ProductEntryForm({
@@ -33,6 +43,7 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
   final _productNameController = TextEditingController();
   final _amountController = TextEditingController();
   final _memoController = TextEditingController();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -52,7 +63,8 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
     if (picked != null) setState(() => _date = picked);
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_isSubmitting) return;
     if (_institutionName.isEmpty) {
       _showMissingFieldMessage('기관을 선택해주세요.');
       return;
@@ -65,16 +77,18 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
       _showMissingFieldMessage('금액을 입력해주세요.');
       return;
     }
-    widget.onSubmit(
-      ManualProductEntry(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
+    setState(() => _isSubmitting = true);
+    try {
+      await widget.onSubmit(
         date: _date,
         institutionName: _institutionName,
         productName: _productNameController.text.trim(),
         amount: int.tryParse(_amountController.text) ?? 0,
         memo: _memoController.text.trim(),
-      ),
-    );
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   void _showMissingFieldMessage(String message) {
@@ -155,7 +169,7 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
         ),
         const SizedBox(height: 28),
         PrimaryButton(
-          label: '기록하기',
+          label: _isSubmitting ? '저장 중...' : '기록하기',
           onPressed: _submit,
         ),
       ],

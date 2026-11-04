@@ -66,12 +66,33 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         child: SingleChildScrollView(
           child: ProductEntryForm(
             initialDate: date,
-            onSubmit: (entry) {
-              ref.read(manualEntryProvider.notifier).add(entry);
-              Navigator.of(sheetContext).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('상품 정보를 기록했어요.')),
-              );
+            onSubmit: ({
+              required date,
+              required institutionName,
+              required productName,
+              required amount,
+              required memo,
+            }) async {
+              try {
+                await ref.read(manualEntryProvider.notifier).add(
+                      date: date,
+                      institutionName: institutionName,
+                      productName: productName,
+                      amount: amount,
+                      memo: memo,
+                    );
+                if (!sheetContext.mounted) return;
+                Navigator.of(sheetContext).pop();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('상품 정보를 기록했어요.')),
+                );
+              } catch (e) {
+                if (!sheetContext.mounted) return;
+                ScaffoldMessenger.of(sheetContext).showSnackBar(
+                  SnackBar(content: Text('기록에 실패했어요: $e')),
+                );
+              }
             },
           ),
         ),
@@ -85,10 +106,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (mounted) context.go(AppRoutes.login);
   }
 
+  Future<void> _deleteManualEntry(int entryId) async {
+    try {
+      await ref.read(manualEntryProvider.notifier).remove(entryId);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제에 실패했어요: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final eventsAsync = ref.watch(upcomingEventsProvider);
-    final manualEntries = ref.watch(manualEntryProvider);
+    final manualEntriesAsync = ref.watch(manualEntryProvider);
     final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
@@ -168,25 +200,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
-            eventsAsync.when(
-              data: (events) {
-                final tiles = _buildScheduleTiles(events, manualEntries);
-                return tiles.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                        child: Text('다가오는 일정이 여기에 표시됩니다'),
-                      )
-                    : Column(children: tiles);
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (error, _) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                child: Text('일정을 불러오지 못했습니다: $error'),
-              ),
-            ),
+            _buildScheduleSection(eventsAsync, manualEntriesAsync),
           ],
         ),
       ),
@@ -200,6 +214,39 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ),
       ),
     );
+  }
+
+  /// 서버 일정(upcomingEventsProvider)과 직접 기록(manualEntryProvider) 둘 다
+  /// 비동기라, 어느 한쪽이라도 로딩/에러면 그 상태를 먼저 보여주고
+  /// 둘 다 데이터가 있을 때만 합쳐서 타일 목록을 만든다.
+  Widget _buildScheduleSection(
+    AsyncValue<List<CalendarEvent>> eventsAsync,
+    AsyncValue<List<ManualProductEntry>> manualEntriesAsync,
+  ) {
+    if (eventsAsync.isLoading || manualEntriesAsync.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (eventsAsync.hasError || manualEntriesAsync.hasError) {
+      final error = eventsAsync.error ?? manualEntriesAsync.error;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Text('일정을 불러오지 못했습니다: $error'),
+      );
+    }
+
+    final tiles = _buildScheduleTiles(
+      eventsAsync.requireValue,
+      manualEntriesAsync.requireValue,
+    );
+    return tiles.isEmpty
+        ? const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Text('다가오는 일정이 여기에 표시됩니다'),
+          )
+        : Column(children: tiles);
   }
 
   /// 서버에서 온 일정(확정 가입 상품)과 사용자가 직접 기록한 항목 중
@@ -221,7 +268,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           date: entry.date,
           tile: ManualEntryTile(
             entry: entry,
-            onDelete: () => ref.read(manualEntryProvider.notifier).remove(entry.id),
+            onDelete: () => _deleteManualEntry(entry.entryId),
           ),
         ),
     ]..sort((a, b) => a.date.compareTo(b.date));

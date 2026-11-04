@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/calendar_event.dart';
 import '../models/onboarding_input.dart';
 import '../models/portfolio_option.dart';
+import '../models/product_summary.dart';
 import '../models/single_plan.dart';
 import 'api_config.dart';
 
@@ -130,5 +131,19 @@ class ApiClient {
   Future<List<CalendarEvent>> getCalendar(int portfolioId) async {
     final response = await http.get(_uri('/portfolios/$portfolioId/calendar'));
     return _decodeList(response).map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// 기관·상품유형으로 실제 상품을 검색한다. 로그인 불필요. 빈 목록이면
+  /// (기관이 상품 데이터에 없거나 등) 직접 입력으로 유도하면 된다.
+  Future<ProductSearchResult> searchProducts({
+    required String institution,
+    required String productType,
+  }) async {
+    final uri = _uri('/products').replace(queryParameters: {
+      'institution': institution,
+      'product_type': productType,
+    });
+    final response = await http.get(uri);
+    return ProductSearchResult.fromJson(_decodeObject(response));
   }
 }
