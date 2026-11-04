@@ -547,7 +547,9 @@ def _calc(allocations: TierAllocations, tax: TaxContext) -> _TierNumbers:
     )
 
 
-def _baseline_out(baseline: TierAllocations, profile: UserProfile, today: date, *, note: str | None = None) -> BaselineOut:
+def _baseline_out(
+    baseline: TierAllocations, profile: UserProfile, today: date, *, note: str | None = None
+) -> BaselineOut:
     numbers = _calc(baseline, _tax_context(profile, today))
     principal = sum(a.amount for a in baseline.deposit_allocs) + sum(
         a.amount * a.option.period_months for a in baseline.installment_allocs
