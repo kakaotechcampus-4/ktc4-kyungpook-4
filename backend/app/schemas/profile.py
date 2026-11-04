@@ -117,7 +117,10 @@ class EtcAnswersIn(BaseModel):
 
 class EtcAnswerResultOut(BaseModel):
     condition_ids: list[str]
-    met: bool = Field(description="해석 결과. 애매하거나 해석에 실패하면 false(미충족)")
+    met: bool = Field(description="충족으로 해석됐으면 true. 미충족·모름이면 false (둘의 구분은 status)")
+    status: Literal["met", "not_met", "unsure"] = Field(
+        description="met 충족 / not_met 명확히 미충족 / unsure 모름(모르겠다·애매함·해석 실패) - 최대형에서만 가정"
+    )
 
 
 class EtcAnswersOut(BaseModel):

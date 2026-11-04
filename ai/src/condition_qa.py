@@ -14,10 +14,11 @@ BE에서는 `from ktc4_ai.condition_qa import build_etc_questions, parse_answer`
 - 질문 생성: AI가 질문과 함께 근거 문구(grounding_quote)를 내고, 그 문구가 원문 안에
   실제로 있는지 코드에서 대조한다. 없거나 호출이 실패하면 원문을 그대로 보여주는
   안전한 질문으로 대체한다.
-- 답변 해석: 짧은 정답형 답변(네/아니요 등)과 정확히 일치할 때만 AI 없이 판정하고,
-  나머지는 AI가 confidence와 함께
-  판정한다. confidence가 high가 아니거나 실패하면 conservative_fallback()(=미충족)이다.
-  "애매하면 항상 미충족" - 계산값을 부풀리지 않는다.
+- 답변 해석: 짧은 정답형 답변(네/아니요/모르겠어요 등)과 정확히 일치할 때만 AI 없이 판정하고,
+  나머지는 AI가 confidence와 함께 판정한다. 결과는 True(충족) / False(미충족) / None(모름).
+  모르겠다는 답, confidence가 high가 아닌 답, 호출 실패는 모두 None(모름)이다.
+  [2026-11-04 변경] 예전엔 '모름'도 미충족으로 봤다. 멘토 피드백으로 STEP2 와 같은 기준 -
+  '모름'은 최대형에서만 가정(BE 가 처리) - 으로 바꿨다. 미충족은 명확히 아니라고 답한 경우뿐이다.
 
 NFR-04("LLM 호출 지점이 정확히 3곳"): (A) _build_question_ai, (B) _parse_answer_ai,
 (C) summary.generate_summary. 새 호출 지점은 추가하지 않았다.
@@ -145,7 +146,7 @@ def build_etc_questions(conditions: list, max_workers: int = MAX_PARALLEL_QUESTI
 
 
 # ---------------------------------------------------------------------------
-# 3) 답변 해석 (호출 지점 B) - 애매하면 항상 미충족
+# 3) 답변 해석 (호출 지점 B) - 애매하면 '모름'(None)
 # ---------------------------------------------------------------------------
 # 키워드는 "답변 전체가 정확히 이 말일 때"만 쓴다. 문장 안에 들어 있는지로 판단하면
 # "해당 안 돼요"('해당'), "예금 계좌 없어요"('예')처럼 반대로 판정되기 때문이다.
@@ -168,20 +169,18 @@ _ANSWER_PARSE_PROMPT = (
 )
 
 
-def conservative_fallback() -> bool:
-    """애매하거나 실패하면 항상 이 값 - 조건 미충족(False)."""
-    return False
+def _keyword_text(raw_answer: str) -> str:
+    """키워드 비교용 - 공백과 끝 문장부호를 지우고 영문은 소문자로."""
+    return _TRAILING_PUNCT_RE.sub("", _normalize(raw_answer).lower())
 
 
 def _quick_keyword_match(raw_answer: str) -> Optional[bool]:
-    """짧은 정답형 답변만 AI 없이 판정. 목록과 정확히 같지 않으면 None(AI로 넘김)."""
-    text = _TRAILING_PUNCT_RE.sub("", _normalize(raw_answer).lower())
+    """짧은 네/아니요 답변만 AI 없이 판정. 목록과 정확히 같지 않으면 None(AI로 넘김)."""
+    text = _keyword_text(raw_answer)
     if text in _YES_ANSWERS:
         return True
     if text in _NO_ANSWERS:
         return False
-    if text in _UNSURE_ANSWERS:
-        return conservative_fallback()  # 모르겠다 = 미충족. AI를 부를 필요 없음
     return None
 
 
@@ -204,12 +203,12 @@ def _parse_answer_ai(raw_answer: str) -> Optional[bool]:
         return None
 
 
-def parse_answer(raw_answer: str) -> bool:
-    """자유텍스트 답변 -> True(충족)/False(미충족). 순서: 키워드 -> AI -> 보수적 처리."""
+def parse_answer(raw_answer: str) -> Optional[bool]:
+    """자유텍스트 답변 -> True(충족) / False(미충족) / None(모름).
+    순서: 모르겠다는 답 -> 네/아니요 키워드 -> AI. AI 가 애매하다고 보거나 실패해도 None."""
+    if _keyword_text(raw_answer) in _UNSURE_ANSWERS:
+        return None  # 모르겠다 - AI를 부를 필요 없음
     quick = _quick_keyword_match(raw_answer)
     if quick is not None:
         return quick
-    ai_result = _parse_answer_ai(raw_answer)
-    if ai_result is not None:
-        return ai_result
-    return conservative_fallback()
+    return _parse_answer_ai(raw_answer)
