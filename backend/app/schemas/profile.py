@@ -26,8 +26,6 @@ YesNo = Literal[YES_NO_LABELS]
 
 
 class ProfileCreate(BaseModel):
-    user_id: int | None = Field(default=None, description="없으면 익명 사용자를 새로 만든다")
-
     # STEP1 - 금액은 원 단위
     lump_sum: int = Field(default=0, ge=0)
     monthly_saving: int = Field(default=0, ge=0)

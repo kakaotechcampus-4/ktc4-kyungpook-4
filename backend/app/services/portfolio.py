@@ -29,7 +29,7 @@ from decimal import Decimal
 # 같은 값을 BE 에서 따로 계산하면 reason 문장 속 숫자와 응답 필드가 어긋날 수 있어 그대로 가져다 쓴다.
 from ktc4_ai import config as ai_config
 from ktc4_ai.summary import _enrich_options, generate_summary
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.institution import Institution
@@ -674,6 +674,18 @@ def _holding_conditions(alloc: Allocation) -> list[UserHoldingCondition]:
         else:
             row.rate_bonus += applied.rate_bonus
     return list(by_type.values())
+
+
+async def close_active_portfolios(session: AsyncSession, user_id: int) -> None:
+    """새 안을 확정하기 전에 진행중인 안을 그만둔다. 이자는 그만둔 시각까지만 쌓인 것으로 본다.
+
+    커밋은 이어지는 persist_portfolio 가 한다 - 새 안 저장이 실패하면 이것도 같이 되돌려진다.
+    """
+    await session.execute(
+        update(UserPortfolio)
+        .where(UserPortfolio.user_id == user_id, UserPortfolio.status == "진행중")
+        .values(status="완료", closed_at=func.now())
+    )
 
 
 async def persist_portfolio(

@@ -2,10 +2,12 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_principal, get_principal_optional, owned_profile
+from app.core.security import set_guest_cookie
 from app.db.session import get_session
 from app.models.institution import Institution
 from app.models.profile import UserProfile, UserProfileBank, UserProfileSocial, UserProfileTaxExempt
@@ -25,10 +27,19 @@ from app.services.onboarding import interpret
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
 
-@router.post("", response_model=ProfileOut, status_code=201, summary="입력값 스냅샷 생성 (STEP1~3)")
+@router.post(
+    "",
+    response_model=ProfileOut,
+    status_code=201,
+    summary="입력값 스냅샷 생성 (STEP1~3)",
+    description="로그인했으면 그 사용자 것으로, 아니면 익명 사용자를 만들고 게스트 쿠키를 굽는다. "
+    "이후 추천·확정·캘린더는 같은 브라우저(쿠키)에서만 이 프로필에 접근할 수 있다.",
+)
 async def create_profile(
     body: ProfileCreate,
+    response: Response,
     session: Annotated[AsyncSession, Depends(get_session)],
+    owner: Annotated[AppUser | None, Depends(get_principal_optional)],
 ) -> ProfileOut:
     if body.lump_sum == 0 and body.monthly_saving == 0:
         raise HTTPException(status_code=422, detail="목돈 또는 월 저축액 중 하나는 0보다 커야 합니다")
@@ -48,13 +59,13 @@ async def create_profile(
     held_bank_codes = [code for code in parsed.held_bank_codes if code in found]
     main_bank_code = parsed.main_bank_code if parsed.main_bank_code in found else None
 
-    user_id = body.user_id
-    if user_id is None:
-        # 로그인 연동 전까지는 요청마다 익명 사용자를 만든다
-        user = AppUser(nickname="guest")
-        session.add(user)
+    if owner is None:
+        # 로그인도 게스트 쿠키도 없으면 익명 사용자를 만든다. 로그인하면 그 계정으로 옮겨진다
+        owner = AppUser(nickname="guest")
+        session.add(owner)
         await session.flush()
-        user_id = user.user_id
+        set_guest_cookie(response, owner.user_id)
+    user_id = owner.user_id
 
     profile = UserProfile(
         user_id=user_id,
@@ -97,13 +108,6 @@ async def create_profile(
     )
 
 
-async def _get_profile(session: AsyncSession, profile_id: int) -> UserProfile:
-    profile = await session.get(UserProfile, profile_id)
-    if profile is None:
-        raise HTTPException(status_code=404, detail="프로필을 찾을 수 없습니다")
-    return profile
-
-
 @router.post(
     "/{profile_id}/etc-questions",
     response_model=EtcQuestionsOut,
@@ -112,10 +116,11 @@ async def _get_profile(session: AsyncSession, profile_id: int) -> UserProfile:
 async def create_etc_questions(
     profile_id: int,
     session: Annotated[AsyncSession, Depends(get_session)],
+    owner: Annotated[AppUser, Depends(get_principal)],
 ) -> EtcQuestionsOut:
     """지금 추천 결과(4개 티어)에 들어간 상품의 '기타' 우대조건 중 아직 답하지 않은 것을 질문으로 만든다.
     질문 문장을 AI 로 만들어 몇 초 걸릴 수 있다. 이미 답한 조건은 다시 묻지 않는다."""
-    profile = await _get_profile(session, profile_id)
+    profile = await owned_profile(session, profile_id, owner)
     questions = await chatbot.build_questions(session, profile)
     return EtcQuestionsOut(
         questions=[
@@ -134,10 +139,11 @@ async def save_etc_answers(
     profile_id: int,
     body: EtcAnswersIn,
     session: Annotated[AsyncSession, Depends(get_session)],
+    owner: Annotated[AppUser, Depends(get_principal)],
 ) -> EtcAnswersOut:
     """답을 충족/미충족/모름으로 해석해 저장한다 (모르겠다·애매함은 모름). 같은 조건에 다시 답하면 덮어쓴다.
     저장 후 POST /portfolios/recommend 를 다시 부르면 답이 반영된 결과가 나온다."""
-    profile = await _get_profile(session, profile_id)
+    profile = await owned_profile(session, profile_id, owner)
     answers = [chatbot.EtcAnswer(a.condition_ids, a.question, a.answer) for a in body.answers]
     try:
         results = await chatbot.save_answers(session, profile, answers)
