@@ -36,6 +36,23 @@ class Settings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
 
+    # 소셜 로그인. 비밀값은 .env 에만 둔다 (서버는 /opt/ktc4/shared/.env).
+    JWT_SECRET: str = ""  # 비어 있으면 토큰을 발급하지 않는다
+    ACCESS_TOKEN_MINUTES: int = 30
+    REFRESH_TOKEN_DAYS: int = 14
+    # 소셜사에 등록한 redirect_uri 를 이 주소로 조립한다. 등록값과 한 글자라도 다르면 소셜사가 거부한다.
+    BACKEND_PUBLIC_URL: str = "http://localhost:8000"
+    FRONTEND_URL: str = "http://localhost:8080"  # 로그인이 끝나면 돌려보낼 곳
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    KAKAO_CLIENT_ID: str = ""  # 카카오 REST API 키
+    KAKAO_CLIENT_SECRET: str = ""
+
+    @property
+    def cookie_secure(self) -> bool:
+        """로컬(http)만 Secure 를 뺀다. 서버는 HTTPS 라 항상 붙인다."""
+        return self.ENV != "local"
+
     @property
     def database_url(self) -> str:
         return (

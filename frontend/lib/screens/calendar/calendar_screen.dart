@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/calendar_event.dart';
 import '../../models/manual_product_entry.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/calendar_provider.dart';
 import '../../providers/manual_entry_provider.dart';
 import '../../router/app_router.dart';
+import '../../services/auth_client.dart';
 import '../../widgets/manual_entry_tile.dart';
 import '../../widgets/month_calendar_grid.dart';
 import '../../widgets/month_year_picker.dart';
@@ -64,12 +66,33 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         child: SingleChildScrollView(
           child: ProductEntryForm(
             initialDate: date,
-            onSubmit: (entry) {
-              ref.read(manualEntryProvider.notifier).add(entry);
-              Navigator.of(sheetContext).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('상품 정보를 기록했어요.')),
-              );
+            onSubmit: ({
+              required date,
+              required institutionName,
+              required productName,
+              required amount,
+              required memo,
+            }) async {
+              try {
+                await ref.read(manualEntryProvider.notifier).add(
+                      date: date,
+                      institutionName: institutionName,
+                      productName: productName,
+                      amount: amount,
+                      memo: memo,
+                    );
+                if (!sheetContext.mounted) return;
+                Navigator.of(sheetContext).pop();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('상품 정보를 기록했어요.')),
+                );
+              } catch (e) {
+                if (!sheetContext.mounted) return;
+                ScaffoldMessenger.of(sheetContext).showSnackBar(
+                  SnackBar(content: Text('기록에 실패했어요: $e')),
+                );
+              }
             },
           ),
         ),
@@ -77,33 +100,66 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
+  Future<void> _logout() async {
+    await AuthClient.instance.logout();
+    ref.invalidate(currentUserProvider);
+    if (mounted) context.go(AppRoutes.login);
+  }
+
+  Future<void> _deleteManualEntry(int entryId) async {
+    try {
+      await ref.read(manualEntryProvider.notifier).remove(entryId);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('삭제에 실패했어요: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final eventsAsync = ref.watch(upcomingEventsProvider);
-    final manualEntries = ref.watch(manualEntryProvider);
+    final manualEntriesAsync = ref.watch(manualEntryProvider);
+    final userAsync = ref.watch(currentUserProvider);
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 24),
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () => context.push(AppRoutes.roadmap),
-                      icon: const Icon(Icons.route_outlined),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 16, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: userAsync.when(
+                      data: (user) => user == null
+                          ? const SizedBox.shrink()
+                          : Text(
+                              '${user.nickname}님 안녕하세요',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
                     ),
+                  ),
+                  IconButton(
+                    onPressed: () => context.push(AppRoutes.roadmap),
+                    icon: const Icon(Icons.route_outlined),
+                  ),
+                  IconButton(
+                    onPressed: _openMonthYearPicker,
+                    icon: const Icon(Icons.calendar_month_outlined),
+                  ),
+                  if (userAsync.value != null)
                     IconButton(
-                      onPressed: _openMonthYearPicker,
-                      icon: const Icon(Icons.calendar_month_outlined),
+                      onPressed: _logout,
+                      icon: const Icon(Icons.logout),
+                      tooltip: '로그아웃',
                     ),
-                  ],
-                ),
+                ],
               ),
             ),
             Row(
@@ -144,25 +200,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
-            eventsAsync.when(
-              data: (events) {
-                final tiles = _buildScheduleTiles(events, manualEntries);
-                return tiles.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                        child: Text('다가오는 일정이 여기에 표시됩니다'),
-                      )
-                    : Column(children: tiles);
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (error, _) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                child: Text('일정을 불러오지 못했습니다: $error'),
-              ),
-            ),
+            _buildScheduleSection(eventsAsync, manualEntriesAsync),
           ],
         ),
       ),
@@ -176,6 +214,39 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ),
       ),
     );
+  }
+
+  /// 서버 일정(upcomingEventsProvider)과 직접 기록(manualEntryProvider) 둘 다
+  /// 비동기라, 어느 한쪽이라도 로딩/에러면 그 상태를 먼저 보여주고
+  /// 둘 다 데이터가 있을 때만 합쳐서 타일 목록을 만든다.
+  Widget _buildScheduleSection(
+    AsyncValue<List<CalendarEvent>> eventsAsync,
+    AsyncValue<List<ManualProductEntry>> manualEntriesAsync,
+  ) {
+    if (eventsAsync.isLoading || manualEntriesAsync.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (eventsAsync.hasError || manualEntriesAsync.hasError) {
+      final error = eventsAsync.error ?? manualEntriesAsync.error;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Text('일정을 불러오지 못했습니다: $error'),
+      );
+    }
+
+    final tiles = _buildScheduleTiles(
+      eventsAsync.requireValue,
+      manualEntriesAsync.requireValue,
+    );
+    return tiles.isEmpty
+        ? const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Text('다가오는 일정이 여기에 표시됩니다'),
+          )
+        : Column(children: tiles);
   }
 
   /// 서버에서 온 일정(확정 가입 상품)과 사용자가 직접 기록한 항목 중
@@ -197,7 +268,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           date: entry.date,
           tile: ManualEntryTile(
             entry: entry,
-            onDelete: () => ref.read(manualEntryProvider.notifier).remove(entry.id),
+            onDelete: () => _deleteManualEntry(entry.entryId),
           ),
         ),
     ]..sort((a, b) => a.date.compareTo(b.date));

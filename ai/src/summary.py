@@ -16,14 +16,16 @@ Summary(호출 B) — [패키지 모듈] BE에서는 `from ktc4_ai.summary impor
   안정형 : 1금융권 상품만으로 구성(우대조건은 반영). "1금융권 선호" 사용자용.
            예금자보호는 저축은행·상호금융도 1억원으로 같으므로 "더 안전하다"고 말하지 않는다.
            단순형과는 비교하지 않는다(1금융만 쓰므로 단순형보다 낮을 수 있음).
-  단일형 : 주거래 은행 상품 중 실효금리 1위 하나에 전액(예금자보호 1억 원칙 미적용).
+  단일형 : 주거래 은행의 예금 1위 또는 적금 1위 하나(목돈·월 저축을 둘 다 입력하면 세후 이자가
+           큰 쪽). 예금자보호 1억 원칙 미적용. 고르지 않은 쪽 돈은 단일형 계산에서 빠진다.
            추천안이 아니라 비교 기준선 -> reason을 만들지 않고, 각 안의
-           "단일형 대비 +X원"(extra_vs_baseline)으로만 쓴다.
+           "단일형 대비 +X원"(extra_vs_baseline)으로만 쓴다. 이 값은 각 안에서 단일형과
+           같은 종류(product_type) 상품의 세후 이자만 비교한 값이다.
   (티어별 상품 구성/계산은 계산 엔진 책임. 이 모듈은 결과를 설명만 한다)
 
 BE 스키마(backend/app/schemas/portfolio.py)를 따름:
   PortfolioProductOut: institution_code(*), institution_name, product_name,
-                        term_months, interest_rate, allocated_amount, after_tax_interest,
+                        product_type(예금|적금), term_months, interest_rate, allocated_amount, after_tax_interest,
                         applied_conditions(*)
   PortfolioOptionOut:  tier, products, after_tax_total, tax_saving_won(*),
                         over_comprehensive_tax(*), reason  <- reason이 이 모듈의 산출물
@@ -38,7 +40,7 @@ BE 스키마(backend/app/schemas/portfolio.py)를 따름:
     already_met=false/None : 새로 해야 하는 일 -> required_actions에 들어감(보수적)
 
   baseline(단일형) 형태:
-    {"institution_name": "국민은행", "product_name": "...",
+    {"institution_name": "국민은행", "product_name": "...", "product_type": "예금",
      "after_tax_total": 412000, "exceeds_protection": false}
 
 AI 개입 범위(중요): 숫자(after_tax_total/interest_rate 등)를 다시 계산하거나 바꾸지
@@ -46,7 +48,7 @@ AI 개입 범위(중요): 숫자(after_tax_total/interest_rate 등)를 다시 �
 않도록 전부 이 파이썬 코드에서 미리 계산해서 넘긴다(_enrich_options). 저율과세 절감액,
 금융소득종합과세 초과 여부는 엔진이 계산한 값을 그대로 통과시킨다.
 
-NFR-04("LLM 호출 지점이 정확히 3곳"): (A) condition_qa.build_question, (B) condition_qa.
+NFR-04("LLM 호출 지점이 정확히 3곳"): (A) condition_qa.build_etc_questions, (B) condition_qa.
 parse_answer, (C) 이 Summary. 4개 티어 reason을 반드시 한 번의 호출로 묶어서 만든다.
 """
 import json
@@ -150,13 +152,14 @@ SYSTEM_PROMPT = (
     "구체적인 근거를 들어 왜 이 조합을 추천하는지 설명하는 글(reason)을 만들어줘. "
     "baseline에 대한 글은 만들지 마.\n\n"
     "안의 의미:\n"
-    "- baseline(단일형): 주거래 은행 상품 하나에 전액을 넣었을 때. 비교 기준으로만 써.\n"
+    "- baseline(단일형): 주거래 은행의 예금 또는 적금 상품 하나(baseline.product_type). "
+    "비교 기준으로만 써.\n"
     "- 단순형: 이미 충족하는 조건만으로 받을 수 있는 최대 이자. 지금 그대로 바로 실행 가능.\n"
     "- 균형형: 새 기관 1곳 가입, 자동이체 같은 가벼운 행동 변화로 더 받는 안.\n"
     "- 최대형: 카드 실적, 급여이체, 보험 가입 등 모든 우대조건을 충족한다고 가정한 최대 이자.\n"
     "- 안정형: 1금융권 상품만으로 구성한 안. 1금융권을 선호하는 사람을 위한 안.\n\n"
     "입력 필드 설명:\n"
-    "- baseline.after_tax_total / institution_name / product_name: 단일형 결과.\n"
+    "- baseline.after_tax_total / institution_name / product_name / product_type: 단일형 결과.\n"
     "- baseline.exceeds_protection: true면 주거래 은행 한 곳에 전액을 넣으면 1억원 초과분이 "
     "예금자보호를 받지 못한다는 뜻.\n"
     "- products[].is_existing_bank: true=이미 거래 중인 은행, false=새로 가입해야 하는 은행, "
@@ -170,7 +173,8 @@ SYSTEM_PROMPT = (
     "- required_actions: 이 안의 금리를 받으려면 새로 해야 하는 일 목록(문구 그대로 써).\n"
     "- has_insurance_condition: true면 보험·공제 가입 조건이 포함돼 있고, 보험료는 이자에 "
     "반영되지 않았음.\n"
-    "- extra_vs_baseline: 단일형(baseline)보다 세후 이자를 몇 원 더 받는지. "
+    "- extra_vs_baseline: 이 안의 baseline.product_type 상품(예금이면 예금, 적금이면 적금)이 "
+    "단일형(baseline)보다 세후 이자를 몇 원 더 받는지. 안 전체 합계와의 차이가 아니야. "
     "same_as_baseline이 true면 단일형과 결과가 같다는 뜻.\n"
     "- extra_vs_simple: (균형형·최대형에만) 단순형보다 세후 이자를 몇 원 더 받는지.\n"
     "- best_extra_elsewhere: (단순형에만) 균형형·최대형 중 최대 몇 원 더 받을 수 있는지와 "
@@ -184,9 +188,9 @@ SYSTEM_PROMPT = (
     "1문단 - 무엇을 어떻게 담았는지: 각 상품을 왜 골랐는지(금리, rate_gap_vs_simple, "
     "기존 거래 은행인지) 와 금액을 어떻게 나눴는지(allocated_amount). 만기가 같으면 함께 "
     "찾을 수 있다는 점도.\n"
-    "2문단 - 결과 숫자: 세후 이자 합계(after_tax_total)와, 주거래 은행 상품 하나에 넣었을 때보다 "
-    "extra_vs_baseline원 더 받는다는 점(same_as_baseline이면 '주거래 은행 상품 하나로도 같은 "
-    "결과'라고). 균형형·최대형은 extra_vs_simple(단순형 대비)도. tax_saving_won이 있으면 "
+    "2문단 - 결과 숫자: 세후 이자 합계(after_tax_total)와, {baseline.product_type}만 놓고 보면 "
+    "주거래 은행 {baseline.product_type} 하나에 넣었을 때보다 extra_vs_baseline원 더 받는다는 점"
+    "(same_as_baseline이면 '{baseline.product_type}은 주거래 은행 상품 하나로도 같은 결과'라고). 균형형·최대형은 extra_vs_simple(단순형 대비)도. tax_saving_won이 있으면 "
     "그중 저율과세로 줄어든 세금이 얼마인지.\n"
     "3문단 - 실행할 때 알아둘 점:\n"
     "  · 단순형: '추가 가입 없이 지금 계좌로 바로 가능'하다는 점과, best_extra_elsewhere가 있으면 "
@@ -287,6 +291,7 @@ def _enrich_options(
       {"main_bank_code": "BANK-0010927" | None,
        "held_bank_codes": ["BANK-0010927", "BANK-0015130", ...]}   # 보유(거래 중) 은행
     baseline: 단일형 결과(모듈 docstring 참고). 없으면 extra_vs_baseline=None.
+              product_type 이 있으면 각 안에서 같은 종류 상품의 세후 이자만 합쳐 비교한다.
 
     상품마다 붙이는 값:
       is_existing_bank    : 보유 은행 또는 주거래은행이면 True, 아니면 False,
@@ -299,7 +304,8 @@ def _enrich_options(
       new_banks               : 새로 가입해야 하는 기관 이름 목록(중복 제거)
       required_actions        : applied_conditions 중 아직 안 한 우대조건 -> 할 일 문구(중복 제거)
       has_insurance_condition : 보험/공제 가입 조건 포함 여부
-      extra_vs_baseline       : 단일형 대비 세후 이자 증가분(원). baseline 없으면 None
+      extra_vs_baseline       : 단일형 대비 세후 이자 증가분(원). baseline 없으면 None.
+                                baseline.product_type 과 같은 종류 상품끼리만 비교한다
       same_as_baseline        : extra_vs_baseline == 0
       extra_vs_simple         : (균형형·최대형만) 단순형 대비 세후 이자 증가분(원)
       tax_saving_won          : 엔진 값 그대로(정수가 아니면 None)
@@ -318,6 +324,8 @@ def _enrich_options(
     baseline_total = (baseline or {}).get("after_tax_total")
     if not isinstance(baseline_total, int):
         baseline_total = None
+    # 단일형은 예금·적금 중 하나만 쓰므로, 나머지 돈의 이자까지 '더 받는 돈'으로 세지 않게 같은 종류끼리 비교한다
+    baseline_type = (baseline or {}).get("product_type")
 
     simple = next((o for o in portfolio_options if o.get("tier") == SIMPLE_TIER), None)
     simple_total = simple.get("after_tax_total") if simple else None
@@ -380,7 +388,14 @@ def _enrich_options(
             extra_simple = total - simple_total
         extra_base = None
         if baseline_total is not None and isinstance(total, int):
-            extra_base = total - baseline_total
+            compare_total = total
+            if baseline_type:
+                compare_total = sum(
+                    p.get("after_tax_interest") or 0
+                    for p in opt.get("products", [])
+                    if p.get("product_type") == baseline_type
+                )
+            extra_base = compare_total - baseline_total
         tax_saving = opt.get("tax_saving_won")
         terms = {p.get("term_months") for p in products}
 
@@ -448,11 +463,14 @@ def _fallback_reason(option: dict, baseline: Optional[dict] = None) -> str:
         para1 += " 모든 상품의 만기가 같아 한 번에 찾을 수 있습니다."
 
     # 2문단: 숫자
+    # 단일형은 예금·적금 중 하나라, 차액도 그 종류끼리 비교한 값이다 (_enrich_options)
+    kind = (baseline or {}).get("product_type")
+    vs_base = f"{kind}만 놓고 보면 주거래 은행 {kind} 하나에" if kind else "주거래 은행 상품 하나에"
     para2 = f"세후 이자는 {total_str}입니다."
     if option.get("same_as_baseline"):
-        para2 = f"세후 이자는 {total_str}으로, 주거래 은행 상품 하나에 넣었을 때와 같습니다."
+        para2 = f"세후 이자는 {total_str}이고, {vs_base} 넣었을 때와 같습니다."
     elif isinstance(extra_base, int) and extra_base > 0:
-        para2 = f"세후 이자는 {total_str}으로, 주거래 은행 상품 하나에 넣었을 때보다 {extra_base:,}원을 더 받습니다."
+        para2 = f"세후 이자는 {total_str}이고, {vs_base} 넣었을 때보다 {extra_base:,}원을 더 받습니다."
     if isinstance(extra_simple, int) and extra_simple > 0:
         para2 += f" 단순형보다는 {extra_simple:,}원 많습니다."
     if isinstance(tax_saving, int) and tax_saving > 0:

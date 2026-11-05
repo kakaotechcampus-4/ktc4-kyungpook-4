@@ -48,6 +48,10 @@ class UserPortfolio(Base):
     after_tax_total: Mapped[int | None] = mapped_column(BigInteger, comment="만기 시 예상 세후 수령액(원)")
     status: Mapped[str] = mapped_column(String(10), server_default=text("'진행중'"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # 새 안을 확정하면 이전 진행중 안은 이 시각에 그만둔 것으로 본다. 이자는 이 시각까지만 쌓인다
+    closed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), comment="다른 안을 새로 확정해 그만둔 시각. 진행중이면 NULL"
+    )
 
     user: Mapped[AppUser] = relationship()
     profile: Mapped[UserProfile] = relationship()
@@ -62,6 +66,7 @@ class UserPortfolio(Base):
             "(goal_amount IS NULL OR goal_amount > 0) AND (after_tax_total IS NULL OR after_tax_total >= 0)",
             name="amounts",
         ),
+        CheckConstraint("closed_at IS NULL OR status = '완료'", name="closed"),
         Index("ix_user_portfolio_user_id", "user_id", text("created_at DESC")),
         Index("ix_user_portfolio_profile_id", "profile_id"),
         {"comment": "사용자가 실제로 선택한 배분안. 제안만 하고 안 고른 안은 저장하지 않는다"},

@@ -103,10 +103,14 @@ CREATE TABLE user_profile (
     monthly_card_usage   bigint,
     marketing_consent    boolean     NOT NULL DEFAULT false,
     app_install          boolean,
+    savings_auto_transfer boolean,
+    pension_transfer     boolean,
+    coop_insurance       boolean,
     accepts_membership   boolean,
     coop_tax_eligible    boolean,
     coop_exempt_used     bigint,
     tax_exempt_used      bigint      NOT NULL DEFAULT 0,
+    answers              jsonb,
     created_at           timestamptz NOT NULL DEFAULT now(),
 
     CONSTRAINT pk_user_profile PRIMARY KEY (profile_id),
@@ -132,6 +136,11 @@ COMMENT ON COLUMN user_profile.birth_date IS '만 나이 계산에 필요해 원
 COMMENT ON COLUMN user_profile.salary_transfer IS 'NULL = 아직 물어보지 않음 / 확인 불가';
 COMMENT ON COLUMN user_profile.marketing_consent IS
     '이 조회 건에서 받은 동의 기록. 계정 단위 최신 동의는 app_user.marketing_consent 를 본다';
+COMMENT ON COLUMN user_profile.savings_auto_transfer IS '적금 납입을 자동이체로 걸 수 있음. NULL = 모름';
+COMMENT ON COLUMN user_profile.pension_transfer IS
+    '연금 수령 계좌를 옮길 수 있음. 연금수령 우대조건 판정용. NULL = 모름';
+COMMENT ON COLUMN user_profile.coop_insurance IS
+    '공제(새마을금고·신협 등) 가입 실적이 있거나 가입 의사가 있음. 공제가입 우대조건 판정용. NULL = 모름';
 COMMENT ON COLUMN user_profile.accepts_membership IS
     '신협·새마을금고 조합원 가입(출자금 납입) 의향. 예탁금 가입 자격 판정에 쓴다. NULL = 미확인';
 COMMENT ON COLUMN user_profile.coop_tax_eligible IS
@@ -139,6 +148,8 @@ COMMENT ON COLUMN user_profile.coop_tax_eligible IS
 COMMENT ON COLUMN user_profile.coop_exempt_used IS
     '다른 조합에 이미 감면으로 넣어 둔 예탁금(원). 1인당 3천만원 한도에서 뺀다. NULL = 모름(0 으로 계산)';
 COMMENT ON COLUMN user_profile.tax_exempt_used IS '올해 이미 사용한 비과세 한도(원)';
+COMMENT ON COLUMN user_profile.answers IS
+    'STEP2·3 원문 답변(앱 선택지 문구 그대로). 해석 규칙이 바뀌어도 다시 계산할 수 있게 보관';
 
 CREATE INDEX ix_user_profile_user_id ON user_profile (user_id, created_at DESC);
 
@@ -167,6 +178,8 @@ CREATE TABLE user_profile_tax_exempt (
     CONSTRAINT pk_user_profile_tax_exempt PRIMARY KEY (id),
     CONSTRAINT fk_user_profile_tax_exempt_profile_id_user_profile
         FOREIGN KEY (profile_id) REFERENCES user_profile (profile_id) ON DELETE CASCADE,
+    CONSTRAINT ck_user_profile_tax_exempt_category
+        CHECK (category IN ('65세이상', '장애인', '유공자', '기초생활수급자')),
     CONSTRAINT uq_user_profile_tax_exempt_profile_id UNIQUE (profile_id, category)
 );
 
@@ -192,14 +205,18 @@ COMMENT ON TABLE user_profile_social IS '사회적 배려 대상 복수선택. �
 CREATE TABLE user_profile_extra (
     id             bigint      GENERATED ALWAYS AS IDENTITY,
     profile_id     bigint      NOT NULL,
+    condition_id   varchar(64) NOT NULL,
     condition_type varchar(50) NOT NULL,
     question_text  text        NOT NULL,
     answer_value   varchar(255),
+    raw_answer     text,
     answered_at    timestamptz,
 
     CONSTRAINT pk_user_profile_extra PRIMARY KEY (id),
     CONSTRAINT fk_user_profile_extra_profile_id_user_profile
         FOREIGN KEY (profile_id) REFERENCES user_profile (profile_id) ON DELETE CASCADE,
+    -- 조회 1건에서 같은 조건의 답은 하나만 둔다. condition_id 는 FK 없음 (ERD 재임포트로 바뀔 수 있다)
+    CONSTRAINT uq_user_profile_extra_profile_id UNIQUE (profile_id, condition_id),
     CONSTRAINT ck_user_profile_extra_condition_type
         CHECK (condition_type IN ('급여이체', '자동이체', '신규고객', '카드실적', '마케팅동의', '공과금이체', '연금수령', '비대면가입', '공제가입', '연령조건', '주거래은행', '기타')),
     -- 답을 받았으면 시각도 있어야 한다
@@ -210,6 +227,10 @@ CREATE TABLE user_profile_extra (
 COMMENT ON TABLE  user_profile_extra IS '고정 문항으로 못 채운 우대조건을 챗봇이 되물은 기록';
 COMMENT ON COLUMN user_profile_extra.condition_type IS
     'product_condition.condition_type 과 반드시 같은 어휘를 쓴다. 어긋나면 우대금리가 조용히 누락된다';
+COMMENT ON COLUMN user_profile_extra.condition_id IS
+    '챗봇이 물어본 우대조건 product_condition.condition_id. FK 없음 - ERD 재임포트로 바뀔 수 있다';
+COMMENT ON COLUMN user_profile_extra.raw_answer IS
+    '사용자가 입력한 원문 답변. answer_value 는 이것을 해석한 결과(true/false)';
 
 CREATE INDEX ix_user_profile_extra_profile_id ON user_profile_extra (profile_id);
 
@@ -435,6 +456,7 @@ CREATE TABLE user_portfolio (
     after_tax_total bigint,
     status          varchar(10) NOT NULL DEFAULT '진행중',
     created_at      timestamptz NOT NULL DEFAULT now(),
+    closed_at       timestamptz,
 
     CONSTRAINT pk_user_portfolio PRIMARY KEY (portfolio_id),
     CONSTRAINT fk_user_portfolio_user_id_app_user
@@ -448,11 +470,15 @@ CREATE TABLE user_portfolio (
         CHECK (status IN ('진행중', '완료')),
     CONSTRAINT ck_user_portfolio_amounts
         CHECK ((goal_amount IS NULL OR goal_amount > 0)
-           AND (after_tax_total IS NULL OR after_tax_total >= 0))
+           AND (after_tax_total IS NULL OR after_tax_total >= 0)),
+    -- 그만둔 안은 완료 상태여야 한다
+    CONSTRAINT ck_user_portfolio_closed
+        CHECK (closed_at IS NULL OR status = '완료')
 );
 
 COMMENT ON TABLE  user_portfolio IS '사용자가 실제로 선택한 배분안. 제안만 하고 안 고른 안은 저장하지 않는다';
 COMMENT ON COLUMN user_portfolio.after_tax_total IS '만기 시 예상 세후 수령액(원)';
+COMMENT ON COLUMN user_portfolio.closed_at IS '다른 안을 새로 확정해 그만둔 시각. 진행중이면 NULL';
 
 CREATE INDEX ix_user_portfolio_user_id ON user_portfolio (user_id, created_at DESC);
 CREATE INDEX ix_user_portfolio_profile_id ON user_portfolio (profile_id);
@@ -541,5 +567,35 @@ COMMENT ON COLUMN user_holding_condition.rate_bonus IS
 COMMENT ON COLUMN user_holding_condition.evidence_text IS '가산 근거가 된 약관 원문 인용 스냅샷';
 
 CREATE INDEX ix_user_holding_condition_holding_id ON user_holding_condition (holding_id);
+
+-- ── 사용자가 직접 기록한 상품 (추천·가입과 별개) ──────────────────────
+CREATE TABLE user_manual_entry (
+    entry_id         bigint       GENERATED ALWAYS AS IDENTITY,
+    user_id          bigint       NOT NULL,
+    entry_date       date         NOT NULL,
+    institution_name varchar(100) NOT NULL,
+    product_id       varchar(64),
+    product_name     varchar(200) NOT NULL,
+    amount           bigint       NOT NULL,
+    memo             text,
+    created_at       timestamptz  NOT NULL DEFAULT now(),
+
+    CONSTRAINT pk_user_manual_entry PRIMARY KEY (entry_id),
+    CONSTRAINT fk_user_manual_entry_user_id_app_user
+        FOREIGN KEY (user_id) REFERENCES app_user (user_id) ON DELETE CASCADE,
+    -- 상품이 재임포트로 지워져도 기록은 남긴다. 이름은 product_name 에 따로 있다
+    CONSTRAINT fk_user_manual_entry_product_id_product
+        FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE SET NULL,
+    CONSTRAINT ck_user_manual_entry_amount_positive CHECK (amount > 0)
+);
+
+COMMENT ON TABLE  user_manual_entry IS '사용자가 캘린더에서 직접 기록한 상품. 추천·가입(user_holding)과 별개';
+COMMENT ON COLUMN user_manual_entry.entry_date IS '사용자가 캘린더에서 고른 날짜';
+COMMENT ON COLUMN user_manual_entry.institution_name IS 'FE 기관 선택지 이름 그대로';
+COMMENT ON COLUMN user_manual_entry.product_id IS '상품 목록에서 골랐을 때만. 직접 입력했으면 NULL';
+COMMENT ON COLUMN user_manual_entry.product_name IS '목록에서 골라도 이름을 같이 저장한다 (스냅샷)';
+COMMENT ON COLUMN user_manual_entry.amount IS '금액(원)';
+
+CREATE INDEX ix_user_manual_entry_user_id ON user_manual_entry (user_id, entry_date);
 
 COMMIT;

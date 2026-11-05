@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../router/app_router.dart';
+import '../../services/auth_client.dart';
 import '../../utils/app_images.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -30,9 +31,14 @@ class _SplashScreenState extends State<SplashScreen> {
     // 보이는 화면을 최소 2초 볼 수 있다.
     await _precacheImages();
 
+    // 세션 확인은 최소 노출 시간과 동시에 진행해서, 로그인 돼있는 사용자가
+    // 매번 스플래시에서 괜히 더 오래 기다리지 않게 한다.
+    final sessionCheck = AuthClient.instance.fetchCurrentUser().catchError((_) => null);
     await Future.delayed(_minimumVisibleDuration);
+    final user = await sessionCheck;
 
-    if (mounted) context.go(AppRoutes.calendar);
+    if (!mounted) return;
+    context.go(user != null ? AppRoutes.calendar : AppRoutes.login);
   }
 
   Future<void> _precacheImages() {

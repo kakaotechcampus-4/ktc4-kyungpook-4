@@ -52,6 +52,13 @@ class SinglePlanCard extends StatelessWidget {
             '(${plan.annualRatePercent.toStringAsFixed(1)}%를 공표한 기간 후 실제로 받는 금액입니다.)',
             style: const TextStyle(fontSize: 12, color: AppColors.gray),
           ),
+          if (plan.periodNote != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              plan.periodNote!,
+              style: const TextStyle(fontSize: 12, color: Colors.orange),
+            ),
+          ],
         ],
       ),
     );

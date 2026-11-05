@@ -5,7 +5,8 @@
   균형형 : 약간의 행동 변화(새 기관 1곳 가입, 마케팅동의·비대면가입·자동이체)로 받는 최대 실수령액.
   최대형 : 모든 우대조건 달성을 가정한 최대 실수령액.
   안정형 : 1금융(은행)만으로 구성. 우대조건 범위는 균형형과 같다.
-  단일형 : 주거래은행 상품 중 실효금리 1위 하나에 전액. 추천안이 아니라 비교 기준선(baseline)이다.
+  단일형 : 주거래은행의 예금 1위 또는 적금 1위 하나(둘 다 입력하면 세후 이자가 큰 쪽). 추천안이 아니라
+           비교 기준선(baseline)이다. 티어와는 같은 종류 상품끼리 비교한다.
 어떤 우대조건을 인정하는지는 services/conditions.py, 세금은 services/tax.py 가 정한다.
 
 후보는 세후 기준 금리(실효금리 x (1 - 기대 세율)) 높은 순으로 고른다. 단일형을 뺀 안은
@@ -19,6 +20,7 @@ product 테이블만 조회하므로 미검증 특판(product 에 행이 없는 
 import asyncio
 import calendar as calendar_module
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
@@ -27,13 +29,13 @@ from decimal import Decimal
 # 같은 값을 BE 에서 따로 계산하면 reason 문장 속 숫자와 응답 필드가 어긋날 수 있어 그대로 가져다 쓴다.
 from ktc4_ai import config as ai_config
 from ktc4_ai.summary import _enrich_options, generate_summary
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.institution import Institution
 from app.models.portfolio import UserHolding, UserHoldingCondition, UserPortfolio
 from app.models.product import Product, ProductCondition, ProductOption
-from app.models.profile import UserProfile, UserProfileBank
+from app.models.profile import UserProfile, UserProfileBank, UserProfileExtra
 from app.schemas.calendar import CalendarEventOut
 from app.schemas.portfolio import BaselineOut, PortfolioOptionOut, PortfolioProductOut
 from app.services.conditions import AppliedCondition, Scope, evaluate
@@ -47,6 +49,10 @@ STABLE_TIER = "안정형"
 DEPOSIT_PROTECTION_LIMIT = 100_000_000  # 예금자보호 한도. 기관별 원금 합계를 여기까지만 담는다
 COMPREHENSIVE_TAX_THRESHOLD = 20_000_000  # 금융소득종합과세 기준 (연간 이자·배당)
 FIRST_TIER_INSTITUTION_TYPE = "은행"  # 1금융권
+# 챗봇 '기타' 조건 답을 user_profile_extra.answer_value 에 저장하는 값
+ETC_ANSWER_MET = "true"
+ETC_ANSWER_NOT_MET = "false"
+ETC_ANSWER_UNSURE = "unsure"  # 모르겠다·애매함·해석 실패. 답하지 않은 것처럼 최대형에서만 가정한다
 
 
 @dataclass(frozen=True)
@@ -97,6 +103,7 @@ class TierAllocations:
 class PortfolioPlan:
     tiers: dict[str, TierAllocations]
     baseline: TierAllocations | None  # 단일형. 주거래은행을 모르거나 그 은행 상품이 없으면 None
+    baseline_note: str | None = None  # 기간 대체 시 안내 문구
 
 
 @dataclass
@@ -142,15 +149,22 @@ def _tax_context(profile: UserProfile, join_date: date) -> TaxContext:
     )
 
 
-async def _closest_period(session: AsyncSession, product_type: str, period_months: int) -> int | None:
+async def _closest_period(
+    session: AsyncSession, product_type: str, period_months: int, institution_type: str | None = None
+) -> int | None:
     """상품 라인업이 1/3/6/12/24/36개월처럼 고정 구간이라, 요청 기간과 정확히 같은 옵션이
-    없을 수 있다. 요청 기간 이하 중 가장 긴 것을, 그마저 없으면 가장 짧은 것을 쓴다."""
+    없을 수 있다. 요청 기간 이하 중 가장 긴 것을, 그마저 없으면 가장 짧은 것을 쓴다.
+    institution_type 을 주면 그 기관 유형에 있는 기간만 본다."""
     stmt = (
         select(ProductOption.period_months)
         .join(Product, Product.product_id == ProductOption.product_id)
         .where(Product.product_type == product_type, Product.is_active.is_(True), Product.parse_status == "PARSED")
         .distinct()
     )
+    if institution_type is not None:
+        stmt = stmt.join(Institution, Institution.institution_code == Product.institution_code).where(
+            Institution.institution_type == institution_type
+        )
     available = sorted((await session.execute(stmt)).scalars().all())
     if not available:
         return None
@@ -158,10 +172,65 @@ async def _closest_period(session: AsyncSession, product_type: str, period_month
     return max(not_exceeding) if not_exceeding else min(available)
 
 
+async def _baseline_candidates_for_bank(
+    session: AsyncSession,
+    product_type: str,
+    period_months: int,
+    institution_code: str,
+) -> tuple[list[Candidate], str | None]:
+    """주거래은행 상품 중 기간이 가장 가까운 옵션을 반환한다.
+    사용자 기간 이하 상품이 없으면 가장 짧은 상품을 쓰고 period_note를 반환한다."""
+    stmt = (
+        select(ProductOption.period_months)
+        .join(Product, Product.product_id == ProductOption.product_id)
+        .where(
+            Product.product_type == product_type,
+            Product.is_active.is_(True),
+            Product.parse_status == "PARSED",
+            Product.institution_code == institution_code,
+        )
+        .distinct()
+    )
+    available = sorted((await session.execute(stmt)).scalars().all())
+    if not available:
+        return [], None
+
+    not_exceeding = [p for p in available if p <= period_months]
+    if not_exceeding:
+        matched = max(not_exceeding)
+        note = None
+    else:
+        matched = min(available)
+        note = f"입력하신 {period_months}개월보다 기간이 긴 {matched}개월 상품만 있어 가장 짧은 상품을 표시합니다."
+
+    stmt = (
+        select(Product, ProductOption, Institution.name, Institution.institution_type)
+        .join(ProductOption, ProductOption.product_id == Product.product_id)
+        .join(Institution, Institution.institution_code == Product.institution_code)
+        .where(
+            Product.product_type == product_type,
+            Product.is_active.is_(True),
+            Product.parse_status == "PARSED",
+            Product.institution_code == institution_code,
+            ProductOption.period_months == matched,
+        )
+    )
+    rows = (await session.execute(stmt)).all()
+
+    conditions: dict[str, list[ProductCondition]] = defaultdict(list)
+    if rows:
+        product_ids = {p.product_id for p, *_ in rows}
+        cond_stmt = select(ProductCondition).where(ProductCondition.product_id.in_(product_ids))
+        for cond in (await session.execute(cond_stmt)).scalars():
+            conditions[cond.product_id].append(cond)
+
+    return [Candidate(p, o, name, itype, conditions[p.product_id]) for p, o, name, itype in rows], note
+
+
 async def _matching_options(
-    session: AsyncSession, product_type: str, period_months: int
+    session: AsyncSession, product_type: str, period_months: int, institution_type: str | None = None
 ) -> tuple[int | None, list[Candidate]]:
-    matched_period = await _closest_period(session, product_type, period_months)
+    matched_period = await _closest_period(session, product_type, period_months, institution_type=institution_type)
     if matched_period is None:
         return None, []
 
@@ -176,6 +245,8 @@ async def _matching_options(
             ProductOption.period_months == matched_period,
         )
     )
+    if institution_type is not None:
+        stmt = stmt.where(Institution.institution_type == institution_type)
     rows = (await session.execute(stmt)).all()
 
     conditions: dict[str, list[ProductCondition]] = defaultdict(list)
@@ -213,6 +284,7 @@ def _rank(
     profile: UserProfile,
     banks: _BankInfo,
     tax: TaxContext,
+    etc_answers: dict[str, bool] | None = None,
 ) -> list[_Ranked]:
     """이 티어에서 쓸 수 있는 후보를 세후 기준 금리 높은 순으로 정렬한다."""
     ranked = []
@@ -231,6 +303,7 @@ def _rank(
             profile,
             is_main_bank=banks.is_main(code),
             is_new_institution=banks.is_new(code),
+            etc_answers=etc_answers,
         )
         ranked.append(_Ranked(c, rate, applied))
     ranked.sort(
@@ -299,12 +372,17 @@ def _allocate_greedy(
 
 
 def _best_single(
-    total: int, candidates: list[Candidate], profile: UserProfile, banks: _BankInfo, tax: TaxContext
+    total: int,
+    candidates: list[Candidate],
+    profile: UserProfile,
+    banks: _BankInfo,
+    tax: TaxContext,
+    etc_answers: dict[str, bool] | None = None,
 ) -> list[Allocation]:
     """단일형: 주거래은행 상품 중 세후 기준 1위 하나에 전액. 한도·예금자보호는 보지 않는다."""
     spec = TierSpec("단일형", Scope.SIMPLE, max_new_institutions=None)
     main_only = [c for c in candidates if banks.is_main(c.product.institution_code)]
-    ranked = _rank(main_only, spec, profile, banks, tax)
+    ranked = _rank(main_only, spec, profile, banks, tax, etc_answers)
     if total <= 0 or not ranked:
         return []
     top = ranked[0]
@@ -326,51 +404,121 @@ async def get_held_bank_codes(session: AsyncSession, profile: UserProfile) -> li
     return list((await session.execute(stmt)).scalars().all())
 
 
+def etc_answer_map(rows) -> dict[str, bool]:
+    """(condition_id, answer_value) 목록 -> {condition_id: 충족 여부}.
+    '모름'은 넣지 않는다 - 챗봇이 묻지 않은 조건처럼 최대형에서만 가정한다(conditions._answer_scope)."""
+    return {cid: value == ETC_ANSWER_MET for cid, value in rows if value in (ETC_ANSWER_MET, ETC_ANSWER_NOT_MET)}
+
+
+async def get_etc_answers(session: AsyncSession, profile: UserProfile) -> dict[str, bool]:
+    """챗봇에서 받은 '기타' 우대조건 답. {condition_id: 충족 여부}. 답하지 않았거나 '모름'인 조건은 들어 있지 않다."""
+    stmt = select(UserProfileExtra.condition_id, UserProfileExtra.answer_value).where(
+        UserProfileExtra.profile_id == profile.profile_id,
+        UserProfileExtra.answer_value.is_not(None),
+    )
+    return etc_answer_map((await session.execute(stmt)).all())
+
+
 async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioPlan:
     deposit_period, deposits = await _matching_options(session, "예금", profile.period_months)
     installment_period, installments = await _matching_options(session, "적금", profile.period_months)
     period = deposit_period or installment_period or profile.period_months
 
+    # 안정형은 1금융(은행)만 사용하므로 은행 전용 후보를 별도로 조회한다.
+    # 전체 금융기관 기준 매칭 기간에 은행 상품이 없을 수 있어서 은행 기간도 따로 계산한다.
+    bank_dep_period, bank_deposits = await _matching_options(
+        session, "예금", profile.period_months, institution_type=FIRST_TIER_INSTITUTION_TYPE
+    )
+    bank_inst_period, bank_installments = await _matching_options(
+        session, "적금", profile.period_months, institution_type=FIRST_TIER_INSTITUTION_TYPE
+    )
+    bank_period = bank_dep_period or bank_inst_period or period
+
     held = set(await get_held_bank_codes(session, profile))
     banks = _BankInfo(profile.main_bank_code, held | ({profile.main_bank_code} if profile.main_bank_code else set()))
     # 정렬에 쓰는 기대 세율만 본다. 실제 한도 차감은 세금 계산 단계에서 티어마다 새로 한다
     tax = _tax_context(profile, date.today())
+    etc_answers = await get_etc_answers(session, profile)
     use_deposit = profile.capital > 0 and deposit_period is not None
     use_installment = profile.monthly_saving > 0 and installment_period is not None
 
     tiers: dict[str, TierAllocations] = {}
     for spec in TIER_SPECS:
         state = _TierState()
+        if spec.bank_only:
+            cur_deposits = bank_deposits
+            cur_installments = bank_installments
+            cur_period = bank_period
+            cur_use_deposit = profile.capital > 0 and bank_dep_period is not None
+            cur_use_installment = profile.monthly_saving > 0 and bank_inst_period is not None
+        else:
+            cur_deposits = deposits
+            cur_installments = installments
+            cur_period = period
+            cur_use_deposit = use_deposit
+            cur_use_installment = use_installment
         deposit_allocs = (
             _allocate_greedy(
-                profile.capital, _rank(deposits, spec, profile, banks, tax), "amount_cap", spec, banks, state
+                profile.capital,
+                _rank(cur_deposits, spec, profile, banks, tax, etc_answers),
+                "amount_cap",
+                spec,
+                banks,
+                state,
             )
-            if use_deposit
+            if cur_use_deposit
             else []
         )
         installment_allocs = (
             _allocate_greedy(
                 profile.monthly_saving,
-                _rank(installments, spec, profile, banks, tax),
+                _rank(cur_installments, spec, profile, banks, tax, etc_answers),
                 "monthly_cap",
                 spec,
                 banks,
                 state,
             )
-            if use_installment
+            if cur_use_installment
             else []
         )
-        tiers[spec.name] = TierAllocations(period, deposit_allocs, installment_allocs)
+        tiers[spec.name] = TierAllocations(cur_period, deposit_allocs, installment_allocs)
 
     baseline = None
+    baseline_note = None
     if profile.main_bank_code:
-        base_deposits = _best_single(profile.capital, deposits, profile, banks, tax) if use_deposit else []
-        base_installments = (
-            _best_single(profile.monthly_saving, installments, profile, banks, tax) if use_installment else []
+        dep_cands, dep_note = (
+            await _baseline_candidates_for_bank(session, "예금", profile.period_months, profile.main_bank_code)
+            if use_deposit
+            else ([], None)
         )
-        if base_deposits or base_installments:
-            baseline = TierAllocations(period, base_deposits, base_installments)
-    return PortfolioPlan(tiers, baseline)
+        inst_cands, inst_note = (
+            await _baseline_candidates_for_bank(session, "적금", profile.period_months, profile.main_bank_code)
+            if use_installment
+            else ([], None)
+        )
+        base_deposits = _best_single(profile.capital, dep_cands, profile, banks, tax, etc_answers)
+        base_installments = _best_single(profile.monthly_saving, inst_cands, profile, banks, tax, etc_answers)
+        choices = []
+        if base_deposits:
+            choices.append((TierAllocations(base_deposits[0].option.period_months, base_deposits, []), dep_note))
+        if base_installments:
+            choices.append(
+                (TierAllocations(base_installments[0].option.period_months, [], base_installments), inst_note)
+            )
+        picked = _pick_single_kind(choices, lambda: _tax_context(profile, date.today()))
+        if picked:
+            baseline, baseline_note = picked
+    return PortfolioPlan(tiers, baseline, baseline_note)
+
+
+def _pick_single_kind(
+    choices: list[tuple[TierAllocations, str | None]], new_tax: Callable[[], TaxContext]
+) -> tuple[TierAllocations, str | None] | None:
+    """단일형은 예금·적금 중 하나만 쓴다. 목돈과 월 저축을 둘 다 입력했으면 세후 이자가 큰 쪽을 고른다.
+
+    고르지 않은 쪽 돈은 단일형 계산에서 빠진다. 그래서 티어와 비교할 때도 같은 종류 상품끼리만
+    비교한다 (ktc4_ai.summary._enrich_options 의 extra_vs_baseline). 같으면 예금을 고른다."""
+    return max(choices, key=lambda c: _calc(c[0], new_tax()).after_tax_total, default=None)
 
 
 @dataclass
@@ -403,6 +551,7 @@ def _calc(allocations: TierAllocations, tax: TaxContext) -> _TierNumbers:
             institution_code=alloc.product.institution_code,
             institution_name=alloc.institution_name,
             product_name=alloc.product.product_name,
+            product_type=alloc.product.product_type,
             term_months=alloc.option.period_months,
             base_rate=float(alloc.option.base_rate),
             interest_rate=float(alloc.effective_rate),
@@ -422,24 +571,32 @@ def _calc(allocations: TierAllocations, tax: TaxContext) -> _TierNumbers:
     )
 
 
-def _baseline_out(baseline: TierAllocations, profile: UserProfile, today: date) -> BaselineOut:
+def _baseline_out(
+    baseline: TierAllocations, profile: UserProfile, today: date, *, note: str | None = None
+) -> BaselineOut:
     numbers = _calc(baseline, _tax_context(profile, today))
     principal = sum(a.amount for a in baseline.deposit_allocs) + sum(
         a.amount * a.option.period_months for a in baseline.installment_allocs
     )
     return BaselineOut(
         institution_name=numbers.products[0].institution_name,
-        product_name=" + ".join(p.product_name for p in numbers.products),
+        product_name=numbers.products[0].product_name,
+        product_type=numbers.products[0].product_type,
         products=numbers.products,
         after_tax_total=numbers.after_tax_total,
         exceeds_protection=principal > DEPOSIT_PROTECTION_LIMIT,
+        period_note=note,
     )
 
 
 async def recommend_options(
-    session: AsyncSession, profile: UserProfile, plan: PortfolioPlan
+    session: AsyncSession, profile: UserProfile, plan: PortfolioPlan, *, with_reason: bool = True
 ) -> tuple[list[PortfolioOptionOut], BaselineOut | None]:
-    """티어들을 응답 형태로 만들고 AI Summary 로 reason 을 채운다."""
+    """티어들을 응답 형태로 만들고 AI Summary 로 reason 을 채운다.
+
+    with_reason=False 면 Summary 를 부르지 않고 reason 을 None 으로 둔다. Summary 가 한 번에 약 26초라
+    결과 화면은 숫자를 먼저 그리고, 이유는 POST /portfolios/reasons 로 따로 받는다.
+    """
     today = date.today()
     raw_options = []
     for tier_name, allocations in plan.tiers.items():
@@ -454,11 +611,12 @@ async def recommend_options(
                 "over_comprehensive_tax": numbers.over_comprehensive_tax,
             }
         )
-    baseline = _baseline_out(plan.baseline, profile, today) if plan.baseline else None
+    baseline = _baseline_out(plan.baseline, profile, today, note=plan.baseline_note) if plan.baseline else None
     baseline_ctx = (
         {
             "institution_name": baseline.institution_name,
             "product_name": baseline.product_name,
+            "product_type": baseline.product_type,
             "after_tax_total": baseline.after_tax_total,
             "exceeds_protection": baseline.exceeds_protection,
         }
@@ -476,10 +634,12 @@ async def recommend_options(
 
     # generate_summary 는 동기 함수이고 실패 시 sleep 하며 재시도한다. 이벤트 루프를 막지 않게 스레드로 돌린다.
     # 키가 없으면 어차피 실패하므로 재시도 대기 없이 바로 기본 문구로 넘어가게 한다.
-    retries = 3 if ai_config.OPENAI_API_KEY and ai_config.OPENAI_BASE_URL else 1
-    reasons = await asyncio.to_thread(
-        generate_summary, raw_options, user_context, baseline=baseline_ctx, retries=retries
-    )
+    reasons: dict[str, str] = {}
+    if with_reason:
+        retries = 3 if ai_config.OPENAI_API_KEY and ai_config.OPENAI_BASE_URL else 1
+        reasons = await asyncio.to_thread(
+            generate_summary, raw_options, user_context, baseline=baseline_ctx, retries=retries
+        )
     enriched = {o["tier"]: o for o in _enrich_options(raw_options, user_context, baseline_ctx)}
 
     options = []
@@ -488,7 +648,7 @@ async def recommend_options(
         options.append(
             PortfolioOptionOut(
                 **raw,
-                reason=reasons[raw["tier"]],
+                reason=reasons.get(raw["tier"]),
                 extra_vs_baseline=e["extra_vs_baseline"],
                 extra_vs_simple=e["extra_vs_simple"],
                 new_bank_count=len(e["new_banks"]),
@@ -514,6 +674,28 @@ def _holding_conditions(alloc: Allocation) -> list[UserHoldingCondition]:
         else:
             row.rate_bonus += applied.rate_bonus
     return list(by_type.values())
+
+
+async def active_portfolio_id(session: AsyncSession, user_id: int) -> int | None:
+    """진행중인 안. 확정할 때 이전 안을 그만두므로 보통 하나지만, 혹시 여럿이면 가장 최근 것."""
+    return await session.scalar(
+        select(UserPortfolio.portfolio_id)
+        .where(UserPortfolio.user_id == user_id, UserPortfolio.status == "진행중")
+        .order_by(UserPortfolio.created_at.desc(), UserPortfolio.portfolio_id.desc())
+        .limit(1)
+    )
+
+
+async def close_active_portfolios(session: AsyncSession, user_id: int) -> None:
+    """새 안을 확정하기 전에 진행중인 안을 그만둔다. 이자는 그만둔 시각까지만 쌓인 것으로 본다.
+
+    커밋은 이어지는 persist_portfolio 가 한다 - 새 안 저장이 실패하면 이것도 같이 되돌려진다.
+    """
+    await session.execute(
+        update(UserPortfolio)
+        .where(UserPortfolio.user_id == user_id, UserPortfolio.status == "진행중")
+        .values(status="완료", closed_at=func.now())
+    )
 
 
 async def persist_portfolio(

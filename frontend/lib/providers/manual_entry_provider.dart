@@ -1,25 +1,50 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/manual_product_entry.dart';
+import '../services/manual_entry_client.dart';
 
-/// MOCK: 캘린더에서 직접 기록한 상품 정보를 로컬 메모리에만 보관한다.
-/// 백엔드에 수동 등록 API(예: POST /portfolios/{id}/holdings)가 생기면
-/// add()에서 ApiClient 호출로 바꾸고, 목록은 서버 조회로 바꾸면 된다.
-/// 그 전까지는 앱을 새로고침하면 사라진다.
-class ManualEntryNotifier extends Notifier<List<ManualProductEntry>> {
+/// 캘린더에서 직접 기록한 상품 정보. 서버(/manual-entries)에 저장되는
+/// 로그인 사용자 전용 데이터라, 오늘 기준 한 달 전~6개월 뒤 범위로 한 번에
+/// 불러온다 ("다가오는 일정"에 필요한 미래 구간 + 지난 달까지의 과거 조회를
+/// 함께 커버하기 위함).
+class ManualEntryNotifier extends AsyncNotifier<List<ManualProductEntry>> {
   @override
-  List<ManualProductEntry> build() => [];
-
-  void add(ManualProductEntry entry) {
-    state = [...state, entry];
+  Future<List<ManualProductEntry>> build() {
+    final now = DateTime.now();
+    return ManualEntryClient.instance.list(
+      start: now.subtract(const Duration(days: 35)),
+      end: now.add(const Duration(days: 180)),
+    );
   }
 
-  void remove(String id) {
-    state = state.where((e) => e.id != id).toList();
+  Future<void> add({
+    required DateTime date,
+    required String institutionName,
+    String? productId,
+    required String productName,
+    required int amount,
+    String memo = '',
+  }) async {
+    final created = await ManualEntryClient.instance.create(
+      date: date,
+      institutionName: institutionName,
+      productId: productId,
+      productName: productName,
+      amount: amount,
+      memo: memo,
+    );
+    state = AsyncData([...?state.value, created]);
+  }
+
+  Future<void> remove(int entryId) async {
+    await ManualEntryClient.instance.delete(entryId);
+    state = AsyncData(
+      (state.value ?? const []).where((e) => e.entryId != entryId).toList(),
+    );
   }
 }
 
 final manualEntryProvider =
-    NotifierProvider<ManualEntryNotifier, List<ManualProductEntry>>(
+    AsyncNotifierProvider<ManualEntryNotifier, List<ManualProductEntry>>(
   ManualEntryNotifier.new,
 );

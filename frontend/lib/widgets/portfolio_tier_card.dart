@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/portfolio_option.dart';
+import '../providers/portfolio_provider.dart';
 import '../theme/app_colors.dart';
 import '../utils/currency_formatter.dart';
+import 'bot_chat_turn.dart';
 import 'product_detail_tile.dart';
 
 /// "안정형/단순형/균형형/최대형" 포트폴리오 카드. 선택된 카드만 펼쳐져서
 /// 상품 상세와 "왜 이 조합인가요?" 분석을 보여준다.
-class PortfolioTierCard extends StatelessWidget {
+class PortfolioTierCard extends ConsumerWidget {
   final PortfolioOption option;
   final bool isSelected;
   final VoidCallback onTap;
@@ -20,7 +23,7 @@ class PortfolioTierCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -52,7 +55,9 @@ class PortfolioTierCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '단일안 대비 + ${CurrencyFormatter.won(option.vsSingleDiff)}',
+                option.extraVsBaseline != null
+                    ? '단일안 대비 + ${CurrencyFormatter.won(option.extraVsBaseline!)}'
+                    : '단일안과 비교할 주거래은행 정보가 없어요',
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -99,10 +104,7 @@ class PortfolioTierCard extends StatelessWidget {
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  option.reason,
-                  style: const TextStyle(fontSize: 13, height: 1.5, color: Colors.black87),
-                ),
+                _ReasonText(option: option),
               ],
               const SizedBox(height: 12),
               Center(
@@ -118,6 +120,34 @@ class PortfolioTierCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// option.reason이 이미 있으면 그걸 쓰고(캐시), 없으면 portfolioReasonsProvider가
+/// 들고 올 때까지 "생각하는 중" 표시를 보여준다.
+class _ReasonText extends ConsumerWidget {
+  final PortfolioOption option;
+
+  const _ReasonText({required this.option});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reasonsAsync = ref.watch(portfolioReasonsProvider);
+    final reason = option.reason ?? reasonsAsync.value?[option.tier.apiValue];
+
+    if (reason != null) {
+      return Text(
+        reason,
+        style: const TextStyle(fontSize: 13, height: 1.5, color: Colors.black87),
+      );
+    }
+    if (reasonsAsync.hasError) {
+      return const Text(
+        '이유를 불러오지 못했어요.',
+        style: TextStyle(fontSize: 13, color: Colors.black54),
+      );
+    }
+    return const ThinkingIndicator();
   }
 }
 
