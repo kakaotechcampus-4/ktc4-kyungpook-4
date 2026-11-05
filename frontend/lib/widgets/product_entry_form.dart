@@ -57,11 +57,6 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
   @override
   void initState() {
     super.initState();
-    _productNameFocusNode.addListener(() {
-      if (_productNameFocusNode.hasFocus && _products.isNotEmpty) {
-        _openProductPicker();
-      }
-    });
     _productNameController.addListener(() {
       // 선택해둔 상품명과 다른 텍스트로 바뀌면(직접 수정) product_id는 더 이상
       // 유효하지 않으니 비운다.
@@ -223,6 +218,8 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
           controller: _productNameController,
           focusNode: _productNameFocusNode,
           enabled: _institutionName.isNotEmpty,
+          readOnly: _products.isNotEmpty,
+          onTap: _products.isEmpty ? null : _openProductPicker,
           decoration: _fieldDecoration(
             hintText: _institutionName.isEmpty ? '기관을 먼저 선택해주세요' : '예: 자유적금',
             suffixIcon: _isLoadingProducts
@@ -339,9 +336,20 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '상품 선택',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '상품 선택',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
