@@ -321,3 +321,41 @@ async def test_roadmap_numbers(maker):
     assert numbers.current_interest == saving  # 만기된 예금·그만둔 안은 '현재'가 아니다
     assert numbers.current_principal == 300_000  # 5/1, 6/1, 7/1 세 번
     assert numbers.active_portfolio_id == active_id
+
+
+async def test_my_calendar_follows_account_not_browser(clients, maker, monkeypatch):
+    """같은 계정으로 로그인하면 다른 브라우저에서도 진행중 안의 일정이 보인다."""
+    a, b = clients
+    account = SocialUser("KAKAO", uuid.uuid4().hex, None, "덕환")
+
+    async def fetch_user(provider, code):
+        return account
+
+    monkeypatch.setattr(oauth, "fetch_user", fetch_user)
+
+    async def login(client):
+        res = await client.get("/api/v1/auth/kakao/login")
+        state = parse_qs(urlparse(res.headers["location"]).query)["state"][0]
+        await client.get("/api/v1/auth/kakao/callback", params={"code": "c", "state": state})
+
+    assert (await a.get("/api/v1/users/me/calendar")).status_code == 401
+    await login(a)
+    assert (await a.get("/api/v1/users/me/calendar")).json() == []  # 아직 고른 안이 없다
+
+    profile_id = await create_profile(a)  # 로그인 상태라 계정 것으로 만들어진다
+    assert "guest_token" not in a.cookies
+    user_id = (await a.get("/api/v1/users/me")).json()["user_id"]
+    start = date.today()
+    await add_portfolio(
+        maker,
+        user_id,
+        profile_id,
+        monthly_amount=100_000,
+        start_date=start,
+        maturity_date=portfolio_service._add_months(start, 6),
+    )
+
+    await login(b)  # 다른 브라우저, 같은 계정
+    events = (await b.get("/api/v1/users/me/calendar")).json()
+    assert len(events) == 6
+    assert events == (await a.get("/api/v1/users/me/calendar")).json()
