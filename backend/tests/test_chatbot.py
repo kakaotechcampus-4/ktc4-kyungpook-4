@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from ktc4_ai import condition_qa
 
+from app.api.deps import get_principal
 from app.db.session import get_session
 from app.main import app
 from app.services import chatbot
@@ -75,11 +76,15 @@ def test_recommended_options_collects_all_tiers_but_not_baseline():
 # --- API ------------------------------------------------------------------------
 
 
+_OWNER_ID = 7
+
+
 class _FakeSession:
     """프로필 조회만 흉내 낸다. profile_id 1 만 있다."""
 
     async def get(self, model, pk):
-        return SimpleNamespace(profile_id=pk) if pk == 1 else None
+        # 프로필 주인은 아래 fixture 가 로그인시킨 사용자(7)
+        return SimpleNamespace(profile_id=pk, user_id=_OWNER_ID) if pk == 1 else None
 
 
 @pytest.fixture
@@ -88,8 +93,10 @@ def client():
         yield _FakeSession()
 
     app.dependency_overrides[get_session] = fake_session
+    app.dependency_overrides[get_principal] = lambda: SimpleNamespace(user_id=_OWNER_ID)
     yield TestClient(app)
     app.dependency_overrides.pop(get_session, None)
+    app.dependency_overrides.pop(get_principal, None)
 
 
 def test_questions_api(client, monkeypatch):

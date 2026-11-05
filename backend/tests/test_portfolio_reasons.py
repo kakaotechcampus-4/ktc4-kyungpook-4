@@ -5,15 +5,19 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.deps import get_principal
 from app.db.session import get_session
 from app.main import app
 from app.schemas.portfolio import PortfolioOptionOut
 from app.services import portfolio as portfolio_service
 
+_OWNER_ID = 7
+
 
 class _FakeSession:
     async def get(self, model, pk):
-        return SimpleNamespace(profile_id=pk) if pk == 1 else None
+        # 프로필 주인은 아래 fixture 가 로그인시킨 사용자(7)
+        return SimpleNamespace(profile_id=pk, user_id=_OWNER_ID) if pk == 1 else None
 
 
 @pytest.fixture
@@ -45,8 +49,10 @@ def client(monkeypatch):
     monkeypatch.setattr(portfolio_service, "build_tiers", fake_build_tiers)
     monkeypatch.setattr(portfolio_service, "recommend_options", fake_recommend_options)
     app.dependency_overrides[get_session] = fake_session
+    app.dependency_overrides[get_principal] = lambda: SimpleNamespace(user_id=_OWNER_ID)
     yield TestClient(app), calls
     app.dependency_overrides.pop(get_session, None)
+    app.dependency_overrides.pop(get_principal, None)
 
 
 def test_recommend_with_reason_by_default(client):

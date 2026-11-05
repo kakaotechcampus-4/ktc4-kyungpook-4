@@ -13,7 +13,15 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.security import REFRESH_COOKIE, clear_auth_cookies, create_access_token, set_auth_cookies
+from app.core.security import (
+    GUEST_COOKIE,
+    REFRESH_COOKIE,
+    clear_auth_cookies,
+    clear_guest_cookie,
+    create_access_token,
+    decode_guest_token,
+    set_auth_cookies,
+)
 from app.db.redis import get_redis
 from app.db.session import get_session
 from app.services import auth as auth_service
@@ -54,6 +62,7 @@ async def callback(
     code: str | None = None,
     state: str | None = None,
     error: str | None = None,
+    guest_token: Annotated[str | None, Cookie(alias=GUEST_COOKIE)] = None,
 ) -> RedirectResponse:
     # state 를 먼저 확인한다. 우리가 시작하지 않은 로그인(CSRF)이면 여기서 끊긴다.
     next_path = await auth_service.consume_state(redis, state, provider) if state else None
@@ -71,6 +80,11 @@ async def callback(
     user_id = await auth_service.find_or_create_user(session, social)
     response = _to_frontend(next_path)
     set_auth_cookies(response, create_access_token(user_id), await auth_service.issue_refresh(redis, user_id))
+    # 로그인 전에 게스트로 만든 기록은 이 계정으로 옮긴다
+    guest_id = decode_guest_token(guest_token) if guest_token else None
+    if guest_id is not None:
+        await auth_service.adopt_guest(session, guest_id, user_id)
+        clear_guest_cookie(response)
     return response
 
 

@@ -456,6 +456,7 @@ CREATE TABLE user_portfolio (
     after_tax_total bigint,
     status          varchar(10) NOT NULL DEFAULT '진행중',
     created_at      timestamptz NOT NULL DEFAULT now(),
+    closed_at       timestamptz,
 
     CONSTRAINT pk_user_portfolio PRIMARY KEY (portfolio_id),
     CONSTRAINT fk_user_portfolio_user_id_app_user
@@ -469,11 +470,15 @@ CREATE TABLE user_portfolio (
         CHECK (status IN ('진행중', '완료')),
     CONSTRAINT ck_user_portfolio_amounts
         CHECK ((goal_amount IS NULL OR goal_amount > 0)
-           AND (after_tax_total IS NULL OR after_tax_total >= 0))
+           AND (after_tax_total IS NULL OR after_tax_total >= 0)),
+    -- 그만둔 안은 완료 상태여야 한다
+    CONSTRAINT ck_user_portfolio_closed
+        CHECK (closed_at IS NULL OR status = '완료')
 );
 
 COMMENT ON TABLE  user_portfolio IS '사용자가 실제로 선택한 배분안. 제안만 하고 안 고른 안은 저장하지 않는다';
 COMMENT ON COLUMN user_portfolio.after_tax_total IS '만기 시 예상 세후 수령액(원)';
+COMMENT ON COLUMN user_portfolio.closed_at IS '다른 안을 새로 확정해 그만둔 시각. 진행중이면 NULL';
 
 CREATE INDEX ix_user_portfolio_user_id ON user_portfolio (user_id, created_at DESC);
 CREATE INDEX ix_user_portfolio_profile_id ON user_portfolio (profile_id);
