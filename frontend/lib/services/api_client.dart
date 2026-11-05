@@ -199,4 +199,13 @@ class ApiClient {
     if (response.statusCode == 401) return null;
     return RoadmapStats.fromJson(_decodeObject(response));
   }
+
+  /// 지금 사용자(로그인 또는 게스트 쿠키)의 진행중 안 일정. 포트폴리오 번호를 기억하지 않아도 돼서
+  /// 새로고침·로그인 뒤에도, 같은 계정이면 다른 브라우저에서도 같은 일정이 나온다.
+  /// 이 브라우저에 기록이 없으면(401) 빈 목록.
+  Future<List<CalendarEvent>> getMyCalendar() async {
+    final response = await _client.get(_uri('/users/me/calendar'));
+    if (response.statusCode == 401) return const [];
+    return _decodeList(response).map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }
