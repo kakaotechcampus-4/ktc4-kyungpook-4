@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../providers/chatbot_provider.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../providers/portfolio_provider.dart';
 import '../../router/app_router.dart';
@@ -10,9 +11,11 @@ import '../../theme/app_colors.dart';
 import '../../utils/app_images.dart';
 
 /// 마스코트가 빙글빙글 도는 동안 로딩 바가 한 번 가득 차고, 그 사이 프로필을
-/// 만든다. 결과 화면·챗봇 질문·재추천이 전부 이 profile_id 하나를 계속 써야
-/// 하므로, 생성은 이 화면 한 곳에서만 하고 [currentProfileIdProvider]에
-/// 저장해둔다. 애니메이션과 생성 둘 다 끝나야 결과 화면으로 넘어간다.
+/// 만들고 '기타' 우대조건 챗봇 질문이 있는지 확인한다. 결과 화면·챗봇 질문·
+/// 재추천이 전부 이 profile_id 하나를 계속 써야 하므로, 생성은 이 화면 한
+/// 곳에서만 하고 [currentProfileIdProvider]에 저장해둔다. 애니메이션과 준비
+/// 둘 다 끝나야 다음 화면(챗봇 질문이 있으면 챗봇, 없으면 바로 결과)으로
+/// 넘어간다.
 class LoadingScreen extends ConsumerStatefulWidget {
   const LoadingScreen({super.key});
 
@@ -31,21 +34,28 @@ class _LoadingScreenState extends ConsumerState<LoadingScreen>
   )..forward();
 
   bool _animationDone = false;
+  bool _prepared = false;
   bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
     _barFill.addStatusListener(_onBarFillStatusChanged);
-    _createProfile();
+    _prepare();
   }
 
-  Future<void> _createProfile() async {
+  Future<void> _prepare() async {
     try {
       final input = ref.read(onboardingProvider);
       final profileId = await ApiClient.instance.createProfile(input);
       if (!mounted) return;
       ref.read(currentProfileIdProvider.notifier).state = profileId;
+
+      final questions = await ApiClient.instance.fetchEtcQuestions(profileId);
+      if (!mounted) return;
+      ref.read(pendingEtcQuestionsProvider.notifier).state = questions;
+
+      _prepared = true;
       _tryProceed();
     } catch (_) {
       if (!mounted) return;
@@ -62,16 +72,17 @@ class _LoadingScreenState extends ConsumerState<LoadingScreen>
     });
   }
 
-  /// 로딩 바 애니메이션이 끝났고 프로필도 준비됐을 때만 결과 화면으로 넘어간다.
+  /// 로딩 바 애니메이션이 끝났고 프로필·챗봇 질문 확인도 끝났을 때만 넘어간다.
+  /// 질문이 있으면 챗봇 화면으로, 없으면 바로 결과 화면으로.
   void _tryProceed() {
-    if (_hasError || !_animationDone) return;
-    if (ref.read(currentProfileIdProvider) == null) return;
-    context.go(AppRoutes.result);
+    if (_hasError || !_animationDone || !_prepared) return;
+    final questions = ref.read(pendingEtcQuestionsProvider);
+    context.go(questions.isEmpty ? AppRoutes.result : AppRoutes.chatbotEtc);
   }
 
   void _retry() {
     setState(() => _hasError = false);
-    _createProfile();
+    _prepare();
   }
 
   @override

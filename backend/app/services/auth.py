@@ -8,14 +8,18 @@ import json
 import secrets
 
 from redis.asyncio import Redis
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.security import hash_token, new_refresh_token
+from app.models.manual_entry import UserManualEntry
+from app.models.portfolio import UserPortfolio
+from app.models.profile import UserProfile
 from app.models.user import AppUser, SocialAccount
 from app.services.oauth import SocialUser
+from app.services.portfolio import close_active_portfolios
 
 STATE_TTL_SECONDS = 600  # 소셜사 로그인 화면에서 머무를 수 있는 시간
 DEFAULT_NICKNAME = "사용자"  # 소셜사가 닉네임을 안 주면 (app_user.nickname 은 NOT NULL)
@@ -87,6 +91,30 @@ async def find_or_create_user(session: AsyncSession, social: SocialUser) -> int:
             raise
         return user_id
     return user.user_id
+
+
+async def adopt_guest(session: AsyncSession, guest_id: int, user_id: int) -> None:
+    """로그인 전에 게스트로 만든 프로필·포트폴리오를 로그인한 계정으로 옮기고 게스트를 지운다.
+
+    게스트 쪽에 진행중인 안이 있으면 그게 더 최근에 고른 안이므로 계정 쪽 진행중 안을 그만둔다.
+    """
+    if guest_id == user_id:
+        return
+    is_social = await session.scalar(select(SocialAccount.social_id).where(SocialAccount.user_id == guest_id).limit(1))
+    if is_social is not None or await session.get(AppUser, guest_id) is None:
+        return  # 게스트가 아니거나 이미 옮겨졌다
+
+    guest_active = await session.scalar(
+        select(UserPortfolio.portfolio_id)
+        .where(UserPortfolio.user_id == guest_id, UserPortfolio.status == "진행중")
+        .limit(1)
+    )
+    if guest_active is not None:
+        await close_active_portfolios(session, user_id)
+    for model in (UserProfile, UserPortfolio, UserManualEntry):
+        await session.execute(update(model).where(model.user_id == guest_id).values(user_id=user_id))
+    await session.execute(delete(AppUser).where(AppUser.user_id == guest_id))
+    await session.commit()
 
 
 async def _find_user_id(session: AsyncSession, social: SocialUser) -> int | None:

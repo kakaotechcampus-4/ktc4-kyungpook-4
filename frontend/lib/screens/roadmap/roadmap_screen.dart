@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/onboarding_input.dart';
-import '../../providers/onboarding_provider.dart';
+import '../../models/roadmap_stats.dart';
+import '../../providers/roadmap_provider.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/app_images.dart';
 import '../../utils/currency_formatter.dart';
@@ -12,9 +12,8 @@ import '../../widgets/next_step_button.dart';
 /// 목표 금액까지 원금+이자가 쌓여가는 과정을 토스뱅크 만보기 스타일의
 /// 구불구불한 경로로 보여주는 화면.
 ///
-/// 실제 가입 상품의 금리·가입일을 아직 추적하지 않아서, 금리는 임시
-/// 가정값을 쓰고 "지금 몇 개월째인지"는 +/- 로 직접 조절하는 데모 형태로
-/// 우선 구현했다. 나중에 실제 포트폴리오 데이터와 연결하면 된다.
+/// 숫자는 백엔드(GET /users/me/roadmap)가 실제 가입 상품의 확정금리·가입일로
+/// 오늘까지 쌓인 세후 이자를 계산해 준다. 목표 금액은 아직 이 화면에서만 쓴다.
 class RoadmapScreen extends ConsumerStatefulWidget {
   const RoadmapScreen({super.key});
 
@@ -23,13 +22,8 @@ class RoadmapScreen extends ConsumerStatefulWidget {
 }
 
 class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
-  /// 데모용 평균 금리. 실제 가입 상품의 금리 데이터가 연결되면 이 값 대신
-  /// 그 상품의 금리를 써야 한다.
-  static const _demoAnnualRate = 0.035;
-
   final _goalController = TextEditingController();
   int _goalAmountWon = 0;
-  int _elapsedMonths = 1;
 
   @override
   void dispose() {
@@ -47,10 +41,6 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final input = ref.watch(onboardingProvider);
-    final periodMonths = input.periodMonths;
-    _elapsedMonths = _elapsedMonths.clamp(0, periodMonths == 0 ? 0 : periodMonths);
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -72,7 +62,7 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
       ),
       body: SafeArea(
         top: false,
-        child: _goalAmountWon == 0 ? _buildGoalInput() : _buildRoadmap(input),
+        child: _goalAmountWon == 0 ? _buildGoalInput() : _buildRoadmap(),
       ),
     );
   }
@@ -125,54 +115,43 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
     );
   }
 
-  Widget _buildRoadmap(OnboardingInput input) {
-    final monthlySavingWon = input.monthlySaving * 1000;
-    final lumpSumWon = input.lumpSum * 1000;
-    final periodMonths = input.periodMonths;
-    const monthlyRate = _demoAnnualRate / 12;
+  Widget _buildRoadmap() {
+    return ref.watch(roadmapProvider).when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => _buildMessage('로드맵을 불러오지 못했어요.\n잠시 후 다시 시도해주세요.'),
+          data: (stats) {
+            if (stats == null) {
+              return _buildMessage('아직 고른 저축 안이 없어요.\n추천을 받고 안을 고르면 이자가 쌓여가는 걸 보여드릴게요.');
+            }
+            return Column(
+              children: [
+                Expanded(
+                  child: _RoadmapPath(
+                    goalAmountWon: _goalAmountWon,
+                    currentAmountWon: stats.currentPrincipal + stats.currentInterest,
+                  ),
+                ),
+                _buildStatsPanel(stats),
+              ],
+            );
+          },
+        );
+  }
 
-    int principalAt(int months) => lumpSumWon + monthlySavingWon * months;
-
-    double interestUpTo(int months) {
-      var runningPrincipal = lumpSumWon;
-      var interest = 0.0;
-      for (var m = 1; m <= months; m++) {
-        runningPrincipal += monthlySavingWon;
-        interest += runningPrincipal * monthlyRate;
-      }
-      return interest;
-    }
-
-    final principalSoFar = principalAt(_elapsedMonths);
-    final interestSoFar = interestUpTo(_elapsedMonths);
-    final totalSoFar = principalSoFar + interestSoFar.round();
-
-    final totalInterestAtMaturity = interestUpTo(periodMonths);
-    final diffRounded = (totalInterestAtMaturity - interestSoFar).round();
-    // 음수 방지용 하한만 필요해서 단순 비교로 처리한다.
-    // (web에서는 int가 JS number로 표현되어 `1 << 62` 같은 큰 시프트가
-    // 깨지므로, clamp(0, 아주 큰 수) 패턴은 피한다.)
-    final remainingInterest = diffRounded < 0 ? 0 : diffRounded;
-
-    return Column(
-      children: [
-        Expanded(
-          child: _RoadmapPath(goalAmountWon: _goalAmountWon, currentAmountWon: totalSoFar),
+  Widget _buildMessage(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600, height: 1.5),
         ),
-        _buildStatsPanel(
-          totalSoFar: totalSoFar,
-          remainingInterest: remainingInterest,
-          periodMonths: periodMonths,
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildStatsPanel({
-    required int totalSoFar,
-    required int remainingInterest,
-    required int periodMonths,
-  }) {
+  Widget _buildStatsPanel(RoadmapStats stats) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       decoration: BoxDecoration(
@@ -190,49 +169,28 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
               _StatColumn(
                 icon: Icons.calendar_today_outlined,
                 label: '경과 개월',
-                value: '$_elapsedMonths개월',
+                value: '${stats.elapsedMonths}개월',
               ),
               _StatColumn(
                 icon: Icons.savings_outlined,
-                label: '모은 원금+이자',
-                value: CurrencyFormatter.won(totalSoFar),
+                label: '총 이자',
+                value: CurrencyFormatter.won(stats.totalInterest),
               ),
               _StatColumn(
                 icon: Icons.trending_up,
-                label: '만기까지 이자',
-                value: CurrencyFormatter.won(remainingInterest),
+                label: '현재 이자',
+                value: CurrencyFormatter.won(stats.currentInterest),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          if (periodMonths == 0)
-            Text(
-              '1단계에서 저축 조건을 먼저 입력하면 더 정확하게 보여드려요.',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-              textAlign: TextAlign.center,
-            )
-          else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '데모: 경과 개월 조정',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                ),
-                IconButton(
-                  onPressed: _elapsedMonths <= 0
-                      ? null
-                      : () => setState(() => _elapsedMonths--),
-                  icon: const Icon(Icons.remove_circle_outline, size: 20),
-                ),
-                IconButton(
-                  onPressed: _elapsedMonths >= periodMonths
-                      ? null
-                      : () => setState(() => _elapsedMonths++),
-                  icon: const Icon(Icons.add_circle_outline, size: 20),
-                ),
-              ],
-            ),
+          Text(
+            stats.activePortfolioId == null
+                ? '지금 진행 중인 안이 없어요. 새 안을 고르면 현재 이자가 다시 쌓여요.'
+                : '이자는 세후 금액이에요. 가입할 때 확정된 금리로 오늘까지 쌓인 만큼이에요.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );

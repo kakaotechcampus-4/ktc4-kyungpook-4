@@ -29,7 +29,7 @@ from decimal import Decimal
 # 같은 값을 BE 에서 따로 계산하면 reason 문장 속 숫자와 응답 필드가 어긋날 수 있어 그대로 가져다 쓴다.
 from ktc4_ai import config as ai_config
 from ktc4_ai.summary import _enrich_options, generate_summary
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.institution import Institution
@@ -149,15 +149,22 @@ def _tax_context(profile: UserProfile, join_date: date) -> TaxContext:
     )
 
 
-async def _closest_period(session: AsyncSession, product_type: str, period_months: int) -> int | None:
+async def _closest_period(
+    session: AsyncSession, product_type: str, period_months: int, institution_type: str | None = None
+) -> int | None:
     """상품 라인업이 1/3/6/12/24/36개월처럼 고정 구간이라, 요청 기간과 정확히 같은 옵션이
-    없을 수 있다. 요청 기간 이하 중 가장 긴 것을, 그마저 없으면 가장 짧은 것을 쓴다."""
+    없을 수 있다. 요청 기간 이하 중 가장 긴 것을, 그마저 없으면 가장 짧은 것을 쓴다.
+    institution_type 을 주면 그 기관 유형에 있는 기간만 본다."""
     stmt = (
         select(ProductOption.period_months)
         .join(Product, Product.product_id == ProductOption.product_id)
         .where(Product.product_type == product_type, Product.is_active.is_(True), Product.parse_status == "PARSED")
         .distinct()
     )
+    if institution_type is not None:
+        stmt = stmt.join(Institution, Institution.institution_code == Product.institution_code).where(
+            Institution.institution_type == institution_type
+        )
     available = sorted((await session.execute(stmt)).scalars().all())
     if not available:
         return None
@@ -221,9 +228,9 @@ async def _baseline_candidates_for_bank(
 
 
 async def _matching_options(
-    session: AsyncSession, product_type: str, period_months: int
+    session: AsyncSession, product_type: str, period_months: int, institution_type: str | None = None
 ) -> tuple[int | None, list[Candidate]]:
-    matched_period = await _closest_period(session, product_type, period_months)
+    matched_period = await _closest_period(session, product_type, period_months, institution_type=institution_type)
     if matched_period is None:
         return None, []
 
@@ -238,6 +245,8 @@ async def _matching_options(
             ProductOption.period_months == matched_period,
         )
     )
+    if institution_type is not None:
+        stmt = stmt.where(Institution.institution_type == institution_type)
     rows = (await session.execute(stmt)).all()
 
     conditions: dict[str, list[ProductCondition]] = defaultdict(list)
@@ -415,6 +424,16 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
     installment_period, installments = await _matching_options(session, "적금", profile.period_months)
     period = deposit_period or installment_period or profile.period_months
 
+    # 안정형은 1금융(은행)만 사용하므로 은행 전용 후보를 별도로 조회한다.
+    # 전체 금융기관 기준 매칭 기간에 은행 상품이 없을 수 있어서 은행 기간도 따로 계산한다.
+    bank_dep_period, bank_deposits = await _matching_options(
+        session, "예금", profile.period_months, institution_type=FIRST_TIER_INSTITUTION_TYPE
+    )
+    bank_inst_period, bank_installments = await _matching_options(
+        session, "적금", profile.period_months, institution_type=FIRST_TIER_INSTITUTION_TYPE
+    )
+    bank_period = bank_dep_period or bank_inst_period or period
+
     held = set(await get_held_bank_codes(session, profile))
     banks = _BankInfo(profile.main_bank_code, held | ({profile.main_bank_code} if profile.main_bank_code else set()))
     # 정렬에 쓰는 기대 세율만 본다. 실제 한도 차감은 세금 계산 단계에서 티어마다 새로 한다
@@ -426,31 +445,43 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
     tiers: dict[str, TierAllocations] = {}
     for spec in TIER_SPECS:
         state = _TierState()
+        if spec.bank_only:
+            cur_deposits = bank_deposits
+            cur_installments = bank_installments
+            cur_period = bank_period
+            cur_use_deposit = profile.capital > 0 and bank_dep_period is not None
+            cur_use_installment = profile.monthly_saving > 0 and bank_inst_period is not None
+        else:
+            cur_deposits = deposits
+            cur_installments = installments
+            cur_period = period
+            cur_use_deposit = use_deposit
+            cur_use_installment = use_installment
         deposit_allocs = (
             _allocate_greedy(
                 profile.capital,
-                _rank(deposits, spec, profile, banks, tax, etc_answers),
+                _rank(cur_deposits, spec, profile, banks, tax, etc_answers),
                 "amount_cap",
                 spec,
                 banks,
                 state,
             )
-            if use_deposit
+            if cur_use_deposit
             else []
         )
         installment_allocs = (
             _allocate_greedy(
                 profile.monthly_saving,
-                _rank(installments, spec, profile, banks, tax, etc_answers),
+                _rank(cur_installments, spec, profile, banks, tax, etc_answers),
                 "monthly_cap",
                 spec,
                 banks,
                 state,
             )
-            if use_installment
+            if cur_use_installment
             else []
         )
-        tiers[spec.name] = TierAllocations(period, deposit_allocs, installment_allocs)
+        tiers[spec.name] = TierAllocations(cur_period, deposit_allocs, installment_allocs)
 
     baseline = None
     baseline_note = None
@@ -643,6 +674,18 @@ def _holding_conditions(alloc: Allocation) -> list[UserHoldingCondition]:
         else:
             row.rate_bonus += applied.rate_bonus
     return list(by_type.values())
+
+
+async def close_active_portfolios(session: AsyncSession, user_id: int) -> None:
+    """새 안을 확정하기 전에 진행중인 안을 그만둔다. 이자는 그만둔 시각까지만 쌓인 것으로 본다.
+
+    커밋은 이어지는 persist_portfolio 가 한다 - 새 안 저장이 실패하면 이것도 같이 되돌려진다.
+    """
+    await session.execute(
+        update(UserPortfolio)
+        .where(UserPortfolio.user_id == user_id, UserPortfolio.status == "진행중")
+        .values(status="완료", closed_at=func.now())
+    )
 
 
 async def persist_portfolio(

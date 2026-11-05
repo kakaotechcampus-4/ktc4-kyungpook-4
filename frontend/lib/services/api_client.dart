@@ -3,10 +3,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/calendar_event.dart';
+import '../models/etc_question.dart';
 import '../models/onboarding_input.dart';
 import '../models/portfolio_option.dart';
+import '../models/product_summary.dart';
+import '../models/roadmap_stats.dart';
 import '../models/single_plan.dart';
 import 'api_config.dart';
+import 'http_client/credentialed_client_stub.dart'
+    if (dart.library.html) 'http_client/credentialed_client_web.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -17,11 +22,15 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-/// 백엔드(api/v1) 호출을 모아둔 곳. 인증은 아직 없어서 헤더에 토큰을 싣지 않는다.
+/// 백엔드(api/v1) 호출을 모아둔 곳.
+/// 프로필·추천·확정·캘린더는 만든 사람(로그인 또는 게스트 쿠키)만 볼 수 있어서 쿠키를 싣는다.
+/// 서버는 FE 와 주소가 같아 원래 실리지만, 로컬 개발(포트가 다름)에서는 이게 있어야 실린다.
 class ApiClient {
   ApiClient._();
 
   static final ApiClient instance = ApiClient._();
+
+  final http.Client _client = createCredentialedClient();
 
   Uri _uri(String path) => Uri.parse('${ApiConfig.baseUrl}$path');
 
@@ -80,7 +89,7 @@ class ApiClient {
       if (input.additionalNote.isNotEmpty) 'additional_note': input.additionalNote,
     };
 
-    final response = await http.post(
+    final response = await _client.post(
       _uri('/profiles'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
@@ -102,11 +111,13 @@ class ApiClient {
     return int.tryParse(input.mutualFinanceExistingAmountText);
   }
 
+  /// with_reason: false 로 불러서 AI 추천 이유(26초 가량) 없이 숫자만 빠르게 받는다.
+  /// 이유는 fetchPortfolioReasons 로 따로 받아서 화면에 나중에 채워 넣는다.
   Future<(List<PortfolioOption>, SinglePlan?)> recommendPortfolios(int profileId) async {
-    final response = await http.post(
+    final response = await _client.post(
       _uri('/portfolios/recommend'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'profile_id': profileId}),
+      body: jsonEncode({'profile_id': profileId, 'with_reason': false}),
     );
     final body = _decodeObject(response);
     final options = (body['options'] as List<dynamic>)
@@ -117,9 +128,45 @@ class ApiClient {
     return (options, baseline);
   }
 
+  /// 4안의 AI 추천 이유만 따로 받는다 (느림, ~26초). 티어 이름(PortfolioTier.apiValue) ->
+  /// 이유 문장.
+  Future<Map<String, String>> fetchPortfolioReasons(int profileId) async {
+    final response = await _client.post(
+      _uri('/portfolios/reasons'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'profile_id': profileId}),
+    );
+    final body = _decodeObject(response);
+    return (body['reasons'] as Map<String, dynamic>).cast<String, String>();
+  }
+
+  /// 지금 추천 결과 상품의 '기타' 우대조건 중 아직 안 물은 것을 질문으로 받는다.
+  /// 빈 리스트면 더 물을 게 없다는 뜻 - 챗봇을 건너뛰고 바로 결과로 가면 된다.
+  Future<List<EtcQuestion>> fetchEtcQuestions(int profileId) async {
+    final response = await _client.post(
+      _uri('/profiles/$profileId/etc-questions'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    final body = _decodeObject(response);
+    return (body['questions'] as List<dynamic>)
+        .map((q) => EtcQuestion.fromJson(q as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// '기타' 우대조건 질문의 답을 저장한다. 저장 후 recommendPortfolios 를 다시 부르면
+  /// 반영된 결과가 나온다.
+  Future<void> sendEtcAnswers(int profileId, List<EtcAnswerSubmission> answers) async {
+    final response = await _client.post(
+      _uri('/profiles/$profileId/etc-answers'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'answers': answers.map((a) => a.toJson()).toList()}),
+    );
+    _decodeObject(response);
+  }
+
   /// 추천안 중 하나를 확정 가입한다. 반환값은 이후 캘린더 조회에 쓰는 portfolio_id.
   Future<int> selectPortfolio({required int profileId, required PortfolioTier tier}) async {
-    final response = await http.post(
+    final response = await _client.post(
       _uri('/portfolios'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'profile_id': profileId, 'tier': tier.apiValue}),
@@ -128,7 +175,28 @@ class ApiClient {
   }
 
   Future<List<CalendarEvent>> getCalendar(int portfolioId) async {
-    final response = await http.get(_uri('/portfolios/$portfolioId/calendar'));
+    final response = await _client.get(_uri('/portfolios/$portfolioId/calendar'));
     return _decodeList(response).map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  /// 기관·상품유형으로 실제 상품을 검색한다. 로그인 불필요. 빈 목록이면
+  /// (기관이 상품 데이터에 없거나 등) 직접 입력으로 유도하면 된다.
+  Future<ProductSearchResult> searchProducts({
+    required String institution,
+    required String productType,
+  }) async {
+    final uri = _uri('/products').replace(queryParameters: {
+      'institution': institution,
+      'product_type': productType,
+    });
+    final response = await _client.get(uri);
+    return ProductSearchResult.fromJson(_decodeObject(response));
+  }
+
+  /// 로드맵 숫자(경과 개월·총 이자·현재 이자). 이 브라우저에서 만든 기록이 없으면(401) null.
+  Future<RoadmapStats?> fetchRoadmap() async {
+    final response = await _client.get(_uri('/users/me/roadmap'));
+    if (response.statusCode == 401) return null;
+    return RoadmapStats.fromJson(_decodeObject(response));
   }
 }
