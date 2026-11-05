@@ -30,8 +30,8 @@ class Settings(BaseSettings):
         "http://localhost:8080",
     ]
 
-    # Redis 는 캐시 전용이다. 원본 데이터는 절대 여기에만 두지 않는다.
-    # (추천 결과 캐시 / 공시 API 응답 / 크롤링 중복 체크 / 세션)
+    # Redis 에는 날아가도 되는 것만 둔다. 원본 데이터는 절대 여기에만 두지 않는다.
+    # (캐시 / 로그인 state·refresh 토큰·앱 일회용 코드 - 날아가면 다시 로그인하면 된다)
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # 소셜사에 등록한 redirect_uri 를 이 주소로 조립한다. 등록값과 한 글자라도 다르면 소셜사가 거부한다.
     BACKEND_PUBLIC_URL: str = "http://localhost:8000"
     FRONTEND_URL: str = "http://localhost:8080"  # 로그인이 끝나면 돌려보낼 곳
+    # 앱(안드로이드) 로그인이 끝나면 돌려보낼 곳. 앱 매니페스트의 intent-filter 와 같아야 한다.
+    # 요청값이 아니라 설정으로만 정한다 - 아무 주소로나 일회용 코드를 보내게 두면 가로챌 수 있다
+    APP_REDIRECT_URI: str = "safebrother://auth"
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
     KAKAO_CLIENT_ID: str = ""  # 카카오 REST API 키
