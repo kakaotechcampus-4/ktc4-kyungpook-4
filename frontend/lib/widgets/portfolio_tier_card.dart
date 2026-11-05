@@ -66,7 +66,7 @@ class PortfolioTierCard extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                '계좌 개설 ${option.newAccountCount}개\n방문 ${option.branchVisitCount}회',
+                '계좌 개설 ${option.newAccountCount}개',
                 style: const TextStyle(fontSize: 13, color: Colors.black54),
               ),
               if (isSelected) ...[
@@ -95,7 +95,7 @@ class PortfolioTierCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '신규 계좌 ${option.newAccountCount}개 · 지점 방문 ${option.branchVisitCount}회',
+                  '신규 계좌 ${option.newAccountCount}개',
                   style: const TextStyle(fontSize: 13, color: Colors.black54),
                 ),
                 const SizedBox(height: 16),

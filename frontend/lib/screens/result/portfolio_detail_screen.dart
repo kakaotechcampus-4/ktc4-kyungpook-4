@@ -124,7 +124,7 @@ class PortfolioDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        '계좌 개설 ${option.newAccountCount}개\n방문 ${option.branchVisitCount}회',
+                        '계좌 개설 ${option.newAccountCount}개',
                         style: const TextStyle(fontSize: 13, color: Colors.black54),
                       ),
                       const SizedBox(height: 20),
@@ -134,7 +134,6 @@ class PortfolioDetailScreen extends ConsumerWidget {
                           child: ProductDetailTile(
                             index: i + 1,
                             product: option.products[i],
-                            showLink: true,
                           ),
                         ),
                     ],
