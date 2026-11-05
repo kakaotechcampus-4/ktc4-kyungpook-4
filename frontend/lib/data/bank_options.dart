@@ -1,4 +1,7 @@
 /// 은행 선택 항목에서 쓰이는 은행 목록.
+/// 우체국예금·씨티은행은 금감원 공시 데이터에 없어 institution_code 매핑이
+/// 안 돼서(AI팀 요청, backend/app/services/onboarding.py의 BANK_CODES 참고)
+/// 선택지에서 뺐다.
 const List<String> bankOptions = [
   '국민은행',
   '우리은행',
@@ -15,9 +18,7 @@ const List<String> bankOptions = [
   '경남은행',
   '제주은행',
   '신협',
-  '우체국예금',
   '케이뱅크',
   '토스뱅크',
   'SC제일은행',
-  '씨티은행',
 ];
