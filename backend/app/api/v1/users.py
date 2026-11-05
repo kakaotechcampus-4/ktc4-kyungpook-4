@@ -10,7 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user, get_principal
 from app.db.session import get_session
 from app.models.user import AppUser, SocialAccount
+from app.schemas.calendar import CalendarEventOut
 from app.schemas.user import RoadmapOut, UserMeOut
+from app.services import portfolio as portfolio_service
 from app.services.roadmap import build_roadmap
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -57,3 +59,21 @@ async def get_my_roadmap(
 ) -> RoadmapOut:
     numbers = await build_roadmap(session, user, date.today())
     return RoadmapOut(**numbers.__dict__)
+
+
+@router.get(
+    "/me/calendar",
+    response_model=list[CalendarEventOut],
+    summary="내 진행중 안의 다가오는 납입·만기 일정",
+    description="포트폴리오 번호 없이 지금 사용자(로그인 또는 게스트 쿠키)의 진행중 안을 찾아 일정을 준다. "
+    "같은 계정으로 로그인하면 다른 브라우저·새로고침 뒤에도 같은 일정이 나온다. 진행중 안이 없으면 빈 목록.",
+    responses={401: {"description": "로그인도 게스트 쿠키도 없음"}},
+)
+async def get_my_calendar(
+    user: Annotated[AppUser, Depends(get_principal)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> list[CalendarEventOut]:
+    portfolio_id = await portfolio_service.active_portfolio_id(session, user.user_id)
+    if portfolio_id is None:
+        return []
+    return await portfolio_service.get_calendar_events(session, portfolio_id)

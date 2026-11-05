@@ -676,6 +676,16 @@ def _holding_conditions(alloc: Allocation) -> list[UserHoldingCondition]:
     return list(by_type.values())
 
 
+async def active_portfolio_id(session: AsyncSession, user_id: int) -> int | None:
+    """진행중인 안. 확정할 때 이전 안을 그만두므로 보통 하나지만, 혹시 여럿이면 가장 최근 것."""
+    return await session.scalar(
+        select(UserPortfolio.portfolio_id)
+        .where(UserPortfolio.user_id == user_id, UserPortfolio.status == "진행중")
+        .order_by(UserPortfolio.created_at.desc(), UserPortfolio.portfolio_id.desc())
+        .limit(1)
+    )
+
+
 async def close_active_portfolios(session: AsyncSession, user_id: int) -> None:
     """새 안을 확정하기 전에 진행중인 안을 그만둔다. 이자는 그만둔 시각까지만 쌓인 것으로 본다.
 
