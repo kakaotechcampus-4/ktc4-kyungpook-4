@@ -18,12 +18,6 @@ class LoginScreen extends StatelessWidget {
     await launchUrl(url, webOnlyWindowName: '_self');
   }
 
-  void _naverNotReady(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('네이버 로그인은 아직 준비 중이에요.')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,17 +43,6 @@ class LoginScreen extends StatelessWidget {
                 foregroundColor: Colors.black,
                 icon: Image.asset(AppImages.kakaoLogo, width: 20, height: 20),
                 onPressed: () => _startLogin(SocialProvider.kakao),
-              ),
-              const SizedBox(height: 12),
-              // 백엔드 /auth/{provider}/login 이 아직 google·kakao 만 받아서
-              // (네이버는 Available values 에 없음), 눌러도 로그인을 시도하지
-              // 않고 안내만 한다.
-              _SocialButton(
-                label: '네이버로 계속하기',
-                backgroundColor: const Color(0xFF03C75A),
-                foregroundColor: Colors.white,
-                icon: Image.asset(AppImages.naverLogo, width: 20, height: 20),
-                onPressed: () => _naverNotReady(context),
               ),
               const SizedBox(height: 12),
               _SocialButton(

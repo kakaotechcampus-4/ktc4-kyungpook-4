@@ -11,5 +11,4 @@ class AppImages {
   static const safeMascot = '$_base/safe_mascot.png';
   static const kakaoLogo = '$_base/kakao.png';
   static const googleLogo = '$_base/google.png';
-  static const naverLogo = '$_base/naver.png';
 }
