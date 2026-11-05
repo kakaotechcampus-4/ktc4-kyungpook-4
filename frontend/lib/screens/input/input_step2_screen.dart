@@ -73,6 +73,9 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
         alignment: 0,
+        // 다음 질문이 이미 화면에 보이면 그대로 두고, 안 보일 때만 최소한으로
+        // 끌어올린다 - 매번 맨 위로 강제 스냅시키면 화면이 확 튀는 느낌이 든다.
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
       );
     });
   }
