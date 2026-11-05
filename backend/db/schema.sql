@@ -563,4 +563,34 @@ COMMENT ON COLUMN user_holding_condition.evidence_text IS '가산 근거가 된 
 
 CREATE INDEX ix_user_holding_condition_holding_id ON user_holding_condition (holding_id);
 
+-- ── 사용자가 직접 기록한 상품 (추천·가입과 별개) ──────────────────────
+CREATE TABLE user_manual_entry (
+    entry_id         bigint       GENERATED ALWAYS AS IDENTITY,
+    user_id          bigint       NOT NULL,
+    entry_date       date         NOT NULL,
+    institution_name varchar(100) NOT NULL,
+    product_id       varchar(64),
+    product_name     varchar(200) NOT NULL,
+    amount           bigint       NOT NULL,
+    memo             text,
+    created_at       timestamptz  NOT NULL DEFAULT now(),
+
+    CONSTRAINT pk_user_manual_entry PRIMARY KEY (entry_id),
+    CONSTRAINT fk_user_manual_entry_user_id_app_user
+        FOREIGN KEY (user_id) REFERENCES app_user (user_id) ON DELETE CASCADE,
+    -- 상품이 재임포트로 지워져도 기록은 남긴다. 이름은 product_name 에 따로 있다
+    CONSTRAINT fk_user_manual_entry_product_id_product
+        FOREIGN KEY (product_id) REFERENCES product (product_id) ON DELETE SET NULL,
+    CONSTRAINT ck_user_manual_entry_amount_positive CHECK (amount > 0)
+);
+
+COMMENT ON TABLE  user_manual_entry IS '사용자가 캘린더에서 직접 기록한 상품. 추천·가입(user_holding)과 별개';
+COMMENT ON COLUMN user_manual_entry.entry_date IS '사용자가 캘린더에서 고른 날짜';
+COMMENT ON COLUMN user_manual_entry.institution_name IS 'FE 기관 선택지 이름 그대로';
+COMMENT ON COLUMN user_manual_entry.product_id IS '상품 목록에서 골랐을 때만. 직접 입력했으면 NULL';
+COMMENT ON COLUMN user_manual_entry.product_name IS '목록에서 골라도 이름을 같이 저장한다 (스냅샷)';
+COMMENT ON COLUMN user_manual_entry.amount IS '금액(원)';
+
+CREATE INDEX ix_user_manual_entry_user_id ON user_manual_entry (user_id, entry_date);
+
 COMMIT;
