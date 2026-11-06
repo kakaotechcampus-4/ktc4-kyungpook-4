@@ -52,6 +52,7 @@ class ApiClient {
   /// STEP2·3 답변은 화면 선택지 문구를 그대로 보낸다 (백엔드 app/services/onboarding.py 가 해석).
   /// 안 물어본(비어 있는) 항목은 보내지 않는다 - 빈 문자열("")은 422 가 난다.
   Future<int> createProfile(OnboardingInput input) async {
+    await ensureGuestToken();
     final body = <String, dynamic>{
       'lump_sum': input.lumpSum,
       'monthly_saving': input.monthlySaving,
