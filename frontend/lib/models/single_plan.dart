@@ -2,7 +2,10 @@
 class SinglePlan {
   final String institutionName;
   final String productName;
-  final int monthlyAmount;
+
+  /// 예금 | 적금. allocatedAmount 가 원금인지 월 납입액인지 이걸로 구분한다.
+  final String productType;
+  final int allocatedAmount;
   final int termMonths;
   final double annualRatePercent;
   final int afterTaxInterest;
@@ -11,7 +14,8 @@ class SinglePlan {
   const SinglePlan({
     required this.institutionName,
     required this.productName,
-    required this.monthlyAmount,
+    required this.productType,
+    required this.allocatedAmount,
     required this.termMonths,
     required this.annualRatePercent,
     required this.afterTaxInterest,
@@ -25,7 +29,8 @@ class SinglePlan {
     return SinglePlan(
       institutionName: json['institution_name'] as String? ?? '',
       productName: json['product_name'] as String? ?? '',
-      monthlyAmount: (first?['allocated_amount'] as num?)?.toInt() ?? 0,
+      productType: json['product_type'] as String? ?? '예금',
+      allocatedAmount: (first?['allocated_amount'] as num?)?.toInt() ?? 0,
       termMonths: (first?['term_months'] as num?)?.toInt() ?? 0,
       annualRatePercent: (first?['interest_rate'] as num?)?.toDouble() ?? 0.0,
       afterTaxInterest: (json['after_tax_total'] as num?)?.toInt() ?? 0,
