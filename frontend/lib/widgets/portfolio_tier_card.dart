@@ -53,7 +53,12 @@ class PortfolioTierCard extends ConsumerWidget {
                   _SelectionCircle(isSelected: isSelected),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
+              Text(
+                option.tier.description,
+                style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
+              ),
+              const SizedBox(height: 10),
               Text(
                 option.extraVsBaseline != null
                     ? '단일안 대비 + ${CurrencyFormatter.won(option.extraVsBaseline!)}'

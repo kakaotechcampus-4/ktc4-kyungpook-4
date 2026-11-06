@@ -33,6 +33,11 @@ class SinglePlanCard extends StatelessWidget {
             plan.productName,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 4),
+          const Text(
+            singlePlanDescription,
+            style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
+          ),
           const SizedBox(height: 16),
           Text(
             '${CurrencyFormatter.manwon(monthlyManwon)}씩 ${plan.termMonths}개월 납부 시 세후 이자',
