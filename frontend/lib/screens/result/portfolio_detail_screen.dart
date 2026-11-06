@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/portfolio_option.dart';
+import '../../models/single_plan.dart';
 import '../../providers/portfolio_provider.dart';
 import '../../providers/result_provider.dart';
 import '../../router/app_router.dart';
@@ -80,6 +81,11 @@ class PortfolioDetailScreen extends ConsumerWidget {
                         '단일안 적용',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        singlePlanDescription,
+                        style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
+                      ),
                       const SizedBox(height: 8),
                       if (singlePlan != null)
                         Text(
@@ -111,7 +117,12 @@ class PortfolioDetailScreen extends ConsumerWidget {
                         option.tier.label,
                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
+                      Text(
+                        option.tier.description,
+                        style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
+                      ),
+                      const SizedBox(height: 10),
                       Text(
                         option.extraVsBaseline != null
                             ? '단일안 대비 + ${CurrencyFormatter.won(option.extraVsBaseline!)}'
