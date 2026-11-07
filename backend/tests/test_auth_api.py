@@ -4,6 +4,7 @@
 DB 가 안 떠 있으면 conftest 가 skip 한다.
 """
 
+import asyncio
 import uuid
 from urllib.parse import parse_qs, urlparse
 
@@ -19,6 +20,7 @@ from app.db.base import Base
 from app.db.redis import get_redis
 from app.db.session import get_session
 from app.main import app
+from app.services import auth as auth_service
 from app.services import oauth
 from app.services.oauth import OAuthError, SocialUser
 
@@ -230,7 +232,7 @@ async def test_me_requires_login(client):
     assert (await me(client)).status_code == 401
 
 
-async def test_refresh_rotates_and_old_token_is_dead(client, monkeypatch):
+async def test_refresh_rotates(client, monkeypatch):
     fake_provider(monkeypatch, social())
     await login(client)
     old_refresh = client.cookies.get("refresh_token")
@@ -241,10 +243,50 @@ async def test_refresh_rotates_and_old_token_is_dead(client, monkeypatch):
     assert new_refresh and new_refresh != old_refresh
     assert (await me(client)).status_code == 200
 
-    # 이미 쓴 refresh 토큰을 다시 내면 거부하고 쿠키도 지운다
+
+def _set_cookie_names(res) -> set[str]:
+    return {c.split("=", 1)[0] for c in res.headers.get_list("set-cookie")}
+
+
+async def test_concurrent_refresh_does_not_log_out(client, monkeypatch):
+    """access 만료 직후 여러 요청이 같은 refresh 토큰으로 동시에 refresh 해도 전부 성공한다.
+    교체(새 refresh 발급)는 한 요청만 하고, 나머지는 access 만 새로 받는다."""
+    fake_provider(monkeypatch, social())
+    await login(client)
+    old_refresh = client.cookies.get("refresh_token")
     client.cookies.clear()
-    res = await client.post("/api/v1/auth/refresh", headers={"Cookie": f"refresh_token={old_refresh}"})
+
+    responses = await asyncio.gather(
+        *[client.post("/api/v1/auth/refresh", headers={"Cookie": f"refresh_token={old_refresh}"}) for _ in range(5)]
+    )
+    assert [r.status_code for r in responses] == [204] * 5
+    assert all("access_token" in _set_cookie_names(r) for r in responses)
+    assert sum("refresh_token" in _set_cookie_names(r) for r in responses) == 1
+
+
+async def test_old_refresh_works_only_during_grace(client, monkeypatch):
+    monkeypatch.setattr(auth_service, "REFRESH_GRACE_SECONDS", 1)
+    fake_provider(monkeypatch, social())
+    await login(client)
+    old_refresh = client.cookies.get("refresh_token")
+    await client.post("/api/v1/auth/refresh")  # 교체
+    client.cookies.clear()
+    stale = {"Cookie": f"refresh_token={old_refresh}"}
+
+    late = await client.post("/api/v1/auth/refresh", headers=stale)  # 늦게 도착한 요청
+    assert late.status_code == 204
+    assert _set_cookie_names(late) == {"access_token"}  # 새 refresh 는 주지 않는다
+
+    await asyncio.sleep(1.1)
+    expired = await client.post("/api/v1/auth/refresh", headers=stale)
+    assert expired.status_code == 401
+
+
+async def test_failed_refresh_keeps_cookies(client):
+    """실패 응답이 쿠키를 지우면, 늦게 도착한 옛 요청 하나가 이미 받은 새 refresh 까지 지워 로그아웃시킨다."""
+    res = await client.post("/api/v1/auth/refresh", headers={"Cookie": "refresh_token=garbage"})
     assert res.status_code == 401
+    assert res.headers.get_list("set-cookie") == []
 
 
 async def test_refresh_without_cookie_is_401(client):

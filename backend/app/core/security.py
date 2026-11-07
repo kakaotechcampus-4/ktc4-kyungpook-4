@@ -77,14 +77,29 @@ def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+def set_access_cookie(response: Response, access_token: str) -> None:
     # SameSite 는 Lax 여야 한다. Strict 면 소셜사에서 콜백으로 돌아오는 요청에 쿠키가 안 실린다.
-    common = {"httponly": True, "secure": settings.cookie_secure, "samesite": "lax"}
     response.set_cookie(
-        ACCESS_COOKIE, access_token, max_age=settings.ACCESS_TOKEN_MINUTES * 60, path=_ACCESS_PATH, **common
+        ACCESS_COOKIE,
+        access_token,
+        max_age=settings.ACCESS_TOKEN_MINUTES * 60,
+        path=_ACCESS_PATH,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="lax",
     )
+
+
+def set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    set_access_cookie(response, access_token)
     response.set_cookie(
-        REFRESH_COOKIE, refresh_token, max_age=settings.REFRESH_TOKEN_DAYS * 86400, path=_REFRESH_PATH, **common
+        REFRESH_COOKIE,
+        refresh_token,
+        max_age=settings.REFRESH_TOKEN_DAYS * 86400,
+        path=_REFRESH_PATH,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="lax",
     )
 
 

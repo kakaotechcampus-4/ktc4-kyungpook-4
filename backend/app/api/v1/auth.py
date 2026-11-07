@@ -20,6 +20,7 @@ from app.core.security import (
     clear_guest_cookie,
     create_access_token,
     decode_guest_token,
+    set_access_cookie,
     set_auth_cookies,
 )
 from app.db.redis import get_redis
@@ -100,13 +101,16 @@ async def refresh(
 ) -> Response:
     rotated = await auth_service.rotate_refresh(redis, refresh_token) if refresh_token else None
     if rotated is None:
-        response = JSONResponse(status_code=401, content={"detail": "다시 로그인해 주세요"})
-        clear_auth_cookies(response)
-        return response
+        # 쿠키는 지우지 않는다. 늦게 도착한 옛 요청의 실패가 이미 받은 새 refresh 쿠키까지 지우면 로그아웃된다.
+        # 로그아웃은 /auth/logout 에서만 한다
+        return JSONResponse(status_code=401, content={"detail": "다시 로그인해 주세요"})
 
     user_id, new_refresh = rotated
     response = Response(status_code=204)
-    set_auth_cookies(response, create_access_token(user_id), new_refresh)
+    if new_refresh is None:  # 다른 요청이 이미 교체함 - access 만 새로 준다
+        set_access_cookie(response, create_access_token(user_id))
+    else:
+        set_auth_cookies(response, create_access_token(user_id), new_refresh)
     return response
 
 
