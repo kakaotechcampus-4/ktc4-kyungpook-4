@@ -21,8 +21,8 @@ class InputStep1Screen extends ConsumerStatefulWidget {
   ConsumerState<InputStep1Screen> createState() => _InputStep1ScreenState();
 }
 
-/// 저축 기간은 60개월(5년) 이상 받지 않는다. 상품 최대 기간이 36개월 안팎이라
-/// 그 이상은 추천해줄 안이 없다.
+/// 저축 기간은 60개월(5년)까지만 받는다(60개월은 가능, 그 초과는 불가).
+/// 상품 최대 기간이 36개월 안팎이라 그 이상은 추천해줄 안이 없다.
 const _maxPeriodMonths = 60;
 
 class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
@@ -62,7 +62,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
   Widget build(BuildContext context) {
     final input = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
-    final isPeriodTooLong = input.periodMonths >= _maxPeriodMonths;
+    final isPeriodTooLong = input.periodMonths > _maxPeriodMonths;
     final canProceed = input.lumpSum > 0 &&
         input.monthlySaving > 0 &&
         input.periodMonths > 0 &&
@@ -105,7 +105,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
                 controller: _periodMonthsController,
                 onChanged: (v) => notifier.updatePeriodMonths(_parseAmount(v)),
                 errorText: isPeriodTooLong
-                    ? '$_maxPeriodMonths개월 미만으로 입력해주세요'
+                    ? '$_maxPeriodMonths개월 이하로 입력해주세요'
                     : null,
               ),
               const SizedBox(height: 32),
