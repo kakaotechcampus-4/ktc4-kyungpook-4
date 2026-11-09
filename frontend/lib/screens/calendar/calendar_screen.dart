@@ -252,15 +252,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   /// 서버에서 온 일정(확정 가입 상품)과 사용자가 직접 기록한 항목 중
-  /// 오늘 이후(오늘 포함) 것만 날짜순으로 합쳐서 타일 위젯 목록으로 만든다.
-  /// 지난 일정은 "다가오는 일정"에 보일 이유가 없어서 여기서 걸러낸다.
+  /// 오늘부터 2개월 이내(오늘 포함) 것만 날짜순으로 합쳐서 타일 위젯 목록으로
+  /// 만든다. 지난 일정이나 너무 먼 미래의 일정은 "다가오는 일정"에 보일
+  /// 이유가 없어서 여기서 걸러낸다.
   List<Widget> _buildScheduleTiles(
     List<CalendarEvent> events,
     List<ManualProductEntry> manualEntries,
   ) {
     final today = DateTime.now();
     final startOfToday = DateTime(today.year, today.month, today.day);
-    bool isUpcoming(DateTime date) => !date.isBefore(startOfToday);
+    // 2개월 뒤 같은 날짜의 다음날 0시 - 그 날짜까지는 일정의 시각과 무관하게 전부 포함한다.
+    final endExclusive = DateTime(today.year, today.month + 2, today.day + 1);
+    bool isUpcoming(DateTime date) =>
+        !date.isBefore(startOfToday) && date.isBefore(endExclusive);
 
     final items = <({DateTime date, Widget tile})>[
       for (final event in events.where((e) => isUpcoming(e.date)))
