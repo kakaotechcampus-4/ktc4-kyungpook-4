@@ -54,12 +54,10 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
 
   final _scrollController = ScrollController();
   final _amountController = TextEditingController();
-  final _noteController = TextEditingController();
 
   late final List<String> _mutualBanks = _mutualBanksOf(ref.read(onboardingProvider));
 
   final List<_Stage> _path = [];
-  final List<String> _sentNotes = [];
   var _status = _ChatStatus.asking;
 
   _Stage? get _currentStage => _path.isEmpty ? null : _path.last;
@@ -75,7 +73,6 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
   void dispose() {
     _scrollController.dispose();
     _amountController.dispose();
-    _noteController.dispose();
     super.dispose();
   }
 
@@ -140,27 +137,12 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
   /// 결과 화면으로 바로 가지 않고, 모아가 준비하는 모습을 보여주는
   /// 로딩 화면을 한 번 거친다.
   void _goToResult() {
-    final draft = _noteController.text.trim();
-    if (draft.isNotEmpty) {
-      ref.read(onboardingProvider.notifier).updateAdditionalNote(draft);
-    }
     context.go(AppRoutes.loading);
-  }
-
-  void _sendNote() {
-    final text = _noteController.text.trim();
-    if (text.isEmpty) return;
-    ref.read(onboardingProvider.notifier).updateAdditionalNote(text);
-    setState(() => _sentNotes.add(text));
-    _noteController.clear();
-    FocusScope.of(context).unfocus();
-    _scrollToBottomSoon();
   }
 
   @override
   Widget build(BuildContext context) {
     final input = ref.watch(onboardingProvider);
-    final isClosingActive = _currentStage == _Stage.closing;
 
     return Scaffold(
       body: SafeArea(
@@ -173,7 +155,10 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const StepIndicator(currentStep: 3),
+                    StepIndicator(
+                      currentStep: 3,
+                      onStepTap: (step) => context.go(AppRoutes.inputStep(step)),
+                    ),
                     const SizedBox(height: 32),
                     for (final stage in _path) ...[
                       _buildStageTurn(
@@ -184,10 +169,6 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                       ),
                       const SizedBox(height: 20),
                     ],
-                    for (final note in _sentNotes) ...[
-                      UserChatBubble(text: note),
-                      const SizedBox(height: 12),
-                    ],
                     if (_status == _ChatStatus.thinking)
                       const BotChatTurn(content: ThinkingIndicator()),
                     if (_status == _ChatStatus.error)
@@ -196,7 +177,6 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                 ),
               ),
             ),
-            if (isClosingActive) _buildNoteInputBar(),
           ],
         ),
       ),
@@ -329,6 +309,8 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
         );
 
       case _Stage.existingAmount:
+        final isNoneSelected = !input.mutualFinanceExistingAmountUnknown &&
+            input.mutualFinanceExistingAmountText == '0';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -348,7 +330,9 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                   width: 120,
                   child: TextField(
                     controller: _amountController,
-                    enabled: isActive && !input.mutualFinanceExistingAmountUnknown,
+                    enabled: isActive &&
+                        !input.mutualFinanceExistingAmountUnknown &&
+                        !isNoneSelected,
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -356,7 +340,7 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                     decoration: InputDecoration(
                       hintText: '0',
                       filled: true,
-                      fillColor: input.mutualFinanceExistingAmountUnknown
+                      fillColor: input.mutualFinanceExistingAmountUnknown || isNoneSelected
                           ? Colors.grey.shade100
                           : Colors.white,
                       contentPadding:
@@ -376,6 +360,25 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                 ),
                 const SizedBox(width: 8),
                 const Text('원'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OptionChip(
+                    label: '없어요',
+                    selected: isNoneSelected,
+                    onTap: () {
+                      if (!isActive) return;
+                      _amountController.text = '0';
+                      ref
+                          .read(onboardingProvider.notifier)
+                          .updateMutualFinanceExistingAmountText('0');
+                      _advance();
+                    },
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OptionChip(
@@ -393,7 +396,7 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                 ),
               ],
             ),
-            if (isActive && !input.mutualFinanceExistingAmountUnknown) ...[
+            if (isActive && !input.mutualFinanceExistingAmountUnknown && !isNoneSelected) ...[
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
@@ -413,9 +416,8 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
           children: [
             const BotChatTurn(
               content: Text(
-                '됐어요!\n추가로 궁금하신 점이나,\n'
-                '모아가 OO님에 대해 알아야 할 부분이 있다면\n'
-                '무엇이든 말해주세요!',
+                '됐어요!\n필요한 내용은 다 들었어요.\n'
+                '이제 OO님께 맞는 포트폴리오를\n준비해볼게요!',
                 style: _botTextStyle,
               ),
             ),
@@ -465,49 +467,6 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildNoteInputBar() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _noteController,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendNote(),
-              decoration: InputDecoration(
-                hintText: '자유롭게 입력해주세요',
-                filled: true,
-                fillColor: AppColors.background,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: _sendNote,
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.lavender,
-              shape: const CircleBorder(),
-            ),
-            icon: const Icon(Icons.arrow_upward, color: Colors.white),
-          ),
-        ],
-      ),
     );
   }
 }

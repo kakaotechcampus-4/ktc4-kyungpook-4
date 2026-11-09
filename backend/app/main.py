@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import health, portfolios, profiles
+from app.api.v1 import auth, health, manual_entries, portfolios, products, profiles, users
 from app.core.config import settings
 from app.db.redis import redis
 from app.db.session import engine
@@ -36,3 +36,7 @@ app.add_middleware(
 app.include_router(health.router, prefix=settings.API_V1_PREFIX)
 app.include_router(profiles.router, prefix=settings.API_V1_PREFIX)
 app.include_router(portfolios.router, prefix=settings.API_V1_PREFIX)
+app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
+app.include_router(users.router, prefix=settings.API_V1_PREFIX)
+app.include_router(products.router, prefix=settings.API_V1_PREFIX)
+app.include_router(manual_entries.router, prefix=settings.API_V1_PREFIX)
