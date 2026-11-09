@@ -13,6 +13,7 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.clock import kst_date
 from app.models.portfolio import UserHolding, UserPortfolio
 from app.models.product import Product, ProductOption
 from app.models.profile import UserProfile
@@ -37,6 +38,9 @@ class RoadmapNumbers:
     current_interest: int
     current_principal: int
     active_portfolio_id: int | None
+    active_total: int  # 진행중 안의 넣은 원금 + 번 이자(세후). 만기된 상품도 포함해 줄지 않는다
+    goal_amount: int | None
+    goal_date: date | None
 
 
 def _term_months(start: date, maturity: date) -> int:
@@ -85,7 +89,7 @@ async def build_roadmap(session: AsyncSession, user: AppUser, today: date) -> Ro
     first_profile = await session.scalar(
         select(func.min(UserProfile.created_at)).where(UserProfile.user_id == user.user_id)
     )
-    started_at = min(d.date() for d in (user.created_at, first_profile) if d is not None)
+    started_at = min(kst_date(d) for d in (user.created_at, first_profile) if d is not None)
 
     rows = (
         await session.execute(
@@ -100,19 +104,20 @@ async def build_roadmap(session: AsyncSession, user: AppUser, today: date) -> Ro
         )
     ).all()
 
-    total = current = current_principal = 0
-    active_id = None
+    total = current = current_principal = active_total = 0
+    active = None
     taxes = {}  # 포트폴리오마다 조합 감면 한도를 따로 쓴다
     for portfolio, profile, holding, institution_code in rows:
         if portfolio.portfolio_id not in taxes:
             taxes[portfolio.portfolio_id] = _tax_context(profile, holding.start_date)
-        until = portfolio.closed_at.date() if portfolio.closed_at else today
+        until = kst_date(portfolio.closed_at) if portfolio.closed_at else today
         a = accrued(holding, min(until, today))
         # 상품이 지워져 기관 코드를 모르면 조합 감면 없이 일반과세로 본다 (이자를 부풀리지 않는 쪽)
         after_tax = taxes[portfolio.portfolio_id].after_tax(institution_code or "", a.interest, a.total_principal)
         total += after_tax.after_tax
         if portfolio.status == "진행중":
-            active_id = portfolio.portfolio_id
+            active = portfolio
+            active_total += a.paid_principal + after_tax.after_tax
             if holding.maturity_date is None or holding.maturity_date > today:
                 current += after_tax.after_tax
                 current_principal += a.paid_principal
@@ -123,5 +128,8 @@ async def build_roadmap(session: AsyncSession, user: AppUser, today: date) -> Ro
         total_interest=total,
         current_interest=current,
         current_principal=current_principal,
-        active_portfolio_id=active_id,
+        active_portfolio_id=active.portfolio_id if active else None,
+        active_total=active_total,
+        goal_amount=active.goal_amount if active else None,
+        goal_date=active.goal_date if active else None,
     )

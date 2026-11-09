@@ -12,7 +12,10 @@ class SinglePlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final monthlyManwon = plan.monthlyAmount ~/ 10000;
+    final amountManwon = plan.allocatedAmount ~/ 10000;
+    final amountLabel = plan.productType == '적금'
+        ? '${CurrencyFormatter.manwon(amountManwon)}씩 ${plan.termMonths}개월 납부'
+        : '${CurrencyFormatter.manwon(amountManwon)} ${plan.termMonths}개월 예치';
 
     return Container(
       width: double.infinity,
@@ -33,9 +36,14 @@ class SinglePlanCard extends StatelessWidget {
             plan.productName,
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 4),
+          const Text(
+            singlePlanDescription,
+            style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
+          ),
           const SizedBox(height: 16),
           Text(
-            '${CurrencyFormatter.manwon(monthlyManwon)}씩 ${plan.termMonths}개월 납부 시 세후 이자',
+            '$amountLabel 시 세후 이자',
             style: const TextStyle(fontSize: 14, color: Colors.black54),
           ),
           const SizedBox(height: 4),

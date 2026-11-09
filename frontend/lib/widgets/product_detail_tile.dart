@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/portfolio_option.dart';
 import '../theme/app_colors.dart';
 import '../utils/currency_formatter.dart';
 
 /// 포트폴리오를 구성하는 상품 한 개를 보여주는 타일.
-/// [showLink]가 true면 하단에 공식 사이트 바로가기 링크도 함께 보여준다.
 class ProductDetailTile extends StatelessWidget {
   final int index;
   final PortfolioProduct product;
-  final bool showLink;
 
   const ProductDetailTile({
     super.key,
     required this.index,
     required this.product,
-    this.showLink = false,
   });
 
   @override
@@ -76,32 +72,6 @@ class ProductDetailTile extends StatelessWidget {
               ),
             ],
           ),
-          if (showLink) ...[
-            const SizedBox(height: 10),
-            InkWell(
-              onTap: () => launchUrl(
-                Uri.parse(product.detailUrl),
-                mode: LaunchMode.externalApplication,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '상품 상세 설명 바로 가기',
-                    style: TextStyle(fontSize: 13, color: AppColors.gray),
-                  ),
-                  Text(
-                    product.detailUrl,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.gray,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );

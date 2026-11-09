@@ -26,6 +26,8 @@ from app.services.portfolio import close_active_portfolios
 
 STATE_TTL_SECONDS = 600  # 소셜사 로그인 화면에서 머무를 수 있는 시간
 APP_CODE_TTL_SECONDS = 60  # 앱이 딥링크로 받은 일회용 코드를 토큰으로 바꿔야 하는 시간
+# 교체된 refresh 토큰을 이 시간 동안은 받아준다. 동시에 나간 refresh 요청이 로그아웃되지 않게 하기 위해서다
+REFRESH_GRACE_SECONDS = 30
 DEFAULT_NICKNAME = "사용자"  # 소셜사가 닉네임을 안 주면 (app_user.nickname 은 NOT NULL)
 _NICKNAME_MAX = 50
 
@@ -36,6 +38,10 @@ def _state_key(state: str) -> str:
 
 def _refresh_key(token: str) -> str:
     return f"auth:refresh:{hash_token(token)}"
+
+
+def _rotated_key(token: str) -> str:
+    return f"auth:refresh-rotated:{hash_token(token)}"
 
 
 def _app_code_key(code: str) -> str:
@@ -172,16 +178,36 @@ async def _find_user_id(session: AsyncSession, social: SocialUser) -> int | None
 
 async def issue_refresh(redis: Redis, user_id: int) -> str:
     token = new_refresh_token()
-    await redis.set(_refresh_key(token), user_id, ex=settings.REFRESH_TOKEN_DAYS * 86400)
+    await _store_refresh(redis, token, user_id)
     return token
 
 
+async def _store_refresh(redis: Redis, token: str, user_id: int | str) -> None:
+    await redis.set(_refresh_key(token), user_id, ex=settings.REFRESH_TOKEN_DAYS * 86400)
+
+
 async def rotate_refresh(redis: Redis, token: str) -> tuple[int, str] | None:
-    """쓴 refresh 토큰은 지우고 새로 발급한다. 이미 쓴 토큰을 다시 내면 None."""
-    user_id = await redis.getdel(_refresh_key(token))
+    """refresh 토큰을 새로 바꾼다. (user_id, 새 refresh) 를 주고, 유효하지 않으면 None.
+
+    access 가 만료되면 여러 요청이 동시에 같은 refresh 토큰으로 들어온다 (탭 여러 개, 이미 보낸 요청).
+    쓰자마자 지우면 첫 요청만 성공하고 나머지는 실패해 로그아웃되므로:
+    - 교체는 SET NX 로 한 요청만 한다 (원자적). 새 refresh 를 옛 토큰 자리에 적어 두고,
+      옛 토큰 수명은 유예 시간으로 줄인다
+    - 유예 시간 동안 같은 옛 토큰으로 온 요청은 그 새 refresh 를 그대로 받는다. 웹은 같은 쿠키를 다시 굽게 되고,
+      앱은 어느 응답을 저장해도 같은 토큰이라 어긋나지 않는다
+    - 유예 시간이 지나면 옛 토큰은 만료돼 None
+    새 refresh 원문은 유예 시간 동안만 Redis 에 남는다. 해시만 두면 늦게 온 요청에 돌려줄 수 없어서다.
+    """
+    user_id = await redis.get(_refresh_key(token))
     if user_id is None:
         return None
-    return int(user_id), await issue_refresh(redis, int(user_id))
+    new_token = new_refresh_token()
+    if await redis.set(_rotated_key(token), new_token, nx=True, ex=REFRESH_GRACE_SECONDS):
+        await _store_refresh(redis, new_token, user_id)
+        await redis.expire(_refresh_key(token), REFRESH_GRACE_SECONDS)
+        return int(user_id), new_token
+    rotated = await redis.get(_rotated_key(token))  # 다른 요청이 이미 교체함
+    return (int(user_id), rotated) if rotated is not None else None
 
 
 async def revoke_refresh(redis: Redis, token: str) -> None:

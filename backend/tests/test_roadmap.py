@@ -16,6 +16,7 @@ from sqlalchemy import create_engine, select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 import app.models  # noqa: F401  - Base.metadata 를 채운다
+from app.core.clock import kst_date
 from app.core.config import settings
 from app.db.base import Base
 from app.db.redis import get_redis
@@ -161,10 +162,18 @@ async def create_profile(client: AsyncClient) -> int:
     return res.json()["profile_id"]
 
 
-async def add_portfolio(maker, user_id: int, profile_id: int, *, status="진행중", closed_at=None, **holding) -> int:
+async def add_portfolio(
+    maker, user_id: int, profile_id: int, *, status="진행중", closed_at=None, goal=None, **holding
+) -> int:
     async with maker() as session:
         portfolio = UserPortfolio(
-            user_id=user_id, profile_id=profile_id, portfolio_type="균형형", status=status, closed_at=closed_at
+            user_id=user_id,
+            profile_id=profile_id,
+            portfolio_type="균형형",
+            status=status,
+            closed_at=closed_at,
+            goal_amount=goal[0] if goal else None,
+            goal_date=goal[1] if goal else None,
         )
         session.add(portfolio)
         await session.flush()
@@ -290,7 +299,7 @@ async def test_roadmap_numbers(maker):
     await add_portfolio(maker, uid, pid, status="완료", closed_at=datetime(2026, 5, 1, tzinfo=UTC), **old)
     # 진행중 안: 이미 만기된 예금 + 진행중 적금
     active = {"amount": 1_000_000, "start_date": date(2026, 1, 1), "maturity_date": date(2026, 4, 1)}
-    active_id = await add_portfolio(maker, uid, pid, **active)
+    active_id = await add_portfolio(maker, uid, pid, goal=(11_200_000, date(2027, 5, 1)), **active)
     running = {"monthly_amount": 100_000, "start_date": date(2026, 5, 1), "maturity_date": date(2027, 5, 1)}
     async with maker() as session:
         session.add(
@@ -321,6 +330,9 @@ async def test_roadmap_numbers(maker):
     assert numbers.current_interest == saving  # 만기된 예금·그만둔 안은 '현재'가 아니다
     assert numbers.current_principal == 300_000  # 5/1, 6/1, 7/1 세 번
     assert numbers.active_portfolio_id == active_id
+    # 목표 경로 위치는 만기된 예금(원금+이자)도 계속 센다 - 만기됐다고 아바타가 뒤로 가지 않는다
+    assert numbers.active_total == 1_000_000 + matured + 300_000 + saving
+    assert (numbers.goal_amount, numbers.goal_date) == (11_200_000, date(2027, 5, 1))
 
 
 async def test_my_calendar_follows_account_not_browser(clients, maker, monkeypatch):
@@ -359,3 +371,30 @@ async def test_my_calendar_follows_account_not_browser(clients, maker, monkeypat
     events = (await b.get("/api/v1/users/me/calendar")).json()
     assert len(events) == 6
     assert events == (await a.get("/api/v1/users/me/calendar")).json()
+
+
+async def test_active_total_does_not_drop_at_maturity(maker):
+    """예금이 만기되는 날을 지나도 목표 경로 위치(active_total)는 줄지 않고, current_* 만 빠진다."""
+    async with maker() as session:
+        user = AppUser(nickname="만기")
+        session.add(user)
+        await session.flush()
+        profile = UserProfile(user_id=user.user_id, capital=1_000_000, period_months=6)
+        session.add(profile)
+        await session.commit()
+    deposit = {"amount": 1_000_000, "start_date": date(2026, 1, 1), "maturity_date": date(2026, 7, 1)}
+    await add_portfolio(maker, user.user_id, profile.profile_id, **deposit)
+
+    async with maker() as session:
+        u = await session.get(AppUser, user.user_id)
+        before = await build_roadmap(session, u, date(2026, 6, 30))
+        after = await build_roadmap(session, u, date(2026, 7, 2))
+    assert after.active_total >= before.active_total
+    assert (before.current_principal, after.current_principal) == (1_000_000, 0)
+    assert after.goal_amount is None  # 목표가 없는 안이면 null
+
+
+def test_kst_date_handles_utc_midnight():
+    # UTC 11/5 20:00 = 한국 11/6 05:00
+    assert kst_date(datetime(2026, 11, 5, 20, 0, tzinfo=UTC)) == date(2026, 11, 6)
+    assert kst_date(datetime(2026, 11, 5, 14, 59, tzinfo=UTC)) == date(2026, 11, 5)

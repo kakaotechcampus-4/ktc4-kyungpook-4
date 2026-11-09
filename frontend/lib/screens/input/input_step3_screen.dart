@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/onboarding_input.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
@@ -309,6 +310,8 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
         );
 
       case _Stage.existingAmount:
+        final isNoneSelected = !input.mutualFinanceExistingAmountUnknown &&
+            input.mutualFinanceExistingAmountText == '0';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -328,7 +331,9 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                   width: 120,
                   child: TextField(
                     controller: _amountController,
-                    enabled: isActive && !input.mutualFinanceExistingAmountUnknown,
+                    enabled: isActive &&
+                        !input.mutualFinanceExistingAmountUnknown &&
+                        !isNoneSelected,
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -336,7 +341,7 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                     decoration: InputDecoration(
                       hintText: '0',
                       filled: true,
-                      fillColor: input.mutualFinanceExistingAmountUnknown
+                      fillColor: input.mutualFinanceExistingAmountUnknown || isNoneSelected
                           ? Colors.grey.shade100
                           : Colors.white,
                       contentPadding:
@@ -356,6 +361,25 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                 ),
                 const SizedBox(width: 8),
                 const Text('원'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OptionChip(
+                    label: '없어요',
+                    selected: isNoneSelected,
+                    onTap: () {
+                      if (!isActive) return;
+                      _amountController.text = '0';
+                      ref
+                          .read(onboardingProvider.notifier)
+                          .updateMutualFinanceExistingAmountText('0');
+                      _advance();
+                    },
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OptionChip(
@@ -373,7 +397,7 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                 ),
               ],
             ),
-            if (isActive && !input.mutualFinanceExistingAmountUnknown) ...[
+            if (isActive && !input.mutualFinanceExistingAmountUnknown && !isNoneSelected) ...[
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
@@ -388,13 +412,14 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
         );
 
       case _Stage.closing:
+        final name = ref.watch(userDisplayNameProvider);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const BotChatTurn(
+            BotChatTurn(
               content: Text(
                 '됐어요!\n필요한 내용은 다 들었어요.\n'
-                '이제 OO님께 맞는 포트폴리오를\n준비해볼게요!',
+                '이제 $name님께 맞는 포트폴리오를\n준비해볼게요!',
                 style: _botTextStyle,
               ),
             ),

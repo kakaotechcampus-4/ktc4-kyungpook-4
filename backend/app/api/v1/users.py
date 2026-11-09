@@ -1,6 +1,5 @@
 """사용자 API."""
 
-from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -8,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_principal
+from app.core import clock
 from app.db.session import get_session
 from app.models.user import AppUser, SocialAccount
 from app.schemas.calendar import CalendarEventOut
@@ -50,14 +50,15 @@ async def get_me(
     "/me/roadmap",
     response_model=RoadmapOut,
     summary="로드맵 숫자 - 경과 개월, 총 이자, 현재 이자 (세후)",
-    description="로그인 또는 게스트 쿠키 필요. 이자는 가입 때 확정금리로 오늘까지 쌓인 만큼을 단리로 센다.",
+    description="로그인 또는 게스트 쿠키 필요. 이자는 가입 때 확정금리로 오늘(한국 시간)까지 쌓인 만큼을 단리로 센다. "
+    "목표 경로의 현재 위치는 active_total, 목표는 goal_amount 를 쓴다.",
     responses={401: {"description": "로그인도 게스트 쿠키도 없음"}},
 )
 async def get_my_roadmap(
     user: Annotated[AppUser, Depends(get_principal)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> RoadmapOut:
-    numbers = await build_roadmap(session, user, date.today())
+    numbers = await build_roadmap(session, user, clock.today())
     return RoadmapOut(**numbers.__dict__)
 
 

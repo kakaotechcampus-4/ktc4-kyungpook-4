@@ -23,7 +23,10 @@ class RoadmapScreen extends ConsumerStatefulWidget {
 
 class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
   final _goalController = TextEditingController();
-  int _goalAmountWon = 0;
+
+  /// 서버가 goal_amount 를 못 주는 경우(진행 중인 안이 없음)에만 쓰는 수동 입력값.
+  /// 0 이면 아직 설정 안 한 것.
+  int _manualGoalAmountWon = 0;
 
   @override
   void dispose() {
@@ -35,7 +38,7 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
     final digits = _goalController.text.replaceAll(',', '');
     final value = int.tryParse(digits);
     if (value == null || value <= 0) return;
-    setState(() => _goalAmountWon = value);
+    setState(() => _manualGoalAmountWon = value);
     FocusScope.of(context).unfocus();
   }
 
@@ -51,18 +54,36 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
           style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
         iconTheme: const IconThemeData(color: Colors.black87),
-        actions: _goalAmountWon == 0
+        actions: _manualGoalAmountWon == 0
             ? null
             : [
                 TextButton(
-                  onPressed: () => setState(() => _goalAmountWon = 0),
+                  onPressed: () => setState(() => _manualGoalAmountWon = 0),
                   child: const Text('목표 다시 설정'),
                 ),
               ],
       ),
       body: SafeArea(
         top: false,
-        child: _goalAmountWon == 0 ? _buildGoalInput() : _buildRoadmap(),
+        child: ref.watch(roadmapProvider).when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) =>
+                  _buildMessage('로드맵을 불러오지 못했어요.\n잠시 후 다시 시도해주세요.'),
+              data: (stats) {
+                if (stats == null) {
+                  return _buildMessage(
+                      '아직 고른 저축 안이 없어요.\n추천을 받고 안을 고르면 이자가 쌓여가는 걸 보여드릴게요.');
+                }
+                // goal_amount 는 진행 중인 안(목돈+월저축x기간)에서 서버가 계산해 준다.
+                // 진행 중인 안이 없어 null 이면 사용자가 직접 입력한 값으로 대신한다.
+                final goalAmount = stats.goalAmount ??
+                    (_manualGoalAmountWon == 0 ? null : _manualGoalAmountWon);
+                if (goalAmount == null) {
+                  return _buildGoalInput();
+                }
+                return _buildRoadmap(stats, goalAmount);
+              },
+            ),
       ),
     );
   }
@@ -115,27 +136,18 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
     );
   }
 
-  Widget _buildRoadmap() {
-    return ref.watch(roadmapProvider).when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => _buildMessage('로드맵을 불러오지 못했어요.\n잠시 후 다시 시도해주세요.'),
-          data: (stats) {
-            if (stats == null) {
-              return _buildMessage('아직 고른 저축 안이 없어요.\n추천을 받고 안을 고르면 이자가 쌓여가는 걸 보여드릴게요.');
-            }
-            return Column(
-              children: [
-                Expanded(
-                  child: _RoadmapPath(
-                    goalAmountWon: _goalAmountWon,
-                    currentAmountWon: stats.currentPrincipal + stats.currentInterest,
-                  ),
-                ),
-                _buildStatsPanel(stats),
-              ],
-            );
-          },
-        );
+  Widget _buildRoadmap(RoadmapStats stats, int goalAmount) {
+    return Column(
+      children: [
+        Expanded(
+          child: _RoadmapPath(
+            goalAmountWon: goalAmount,
+            currentAmountWon: stats.activeTotal,
+          ),
+        ),
+        _buildStatsPanel(stats),
+      ],
+    );
   }
 
   Widget _buildMessage(String message) {
@@ -183,6 +195,13 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
               ),
             ],
           ),
+          if (stats.goalDate != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              '목표일 ${stats.goalDate!.year}년 ${stats.goalDate!.month}월 ${stats.goalDate!.day}일',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ],
           const SizedBox(height: 16),
           Text(
             stats.activePortfolioId == null
