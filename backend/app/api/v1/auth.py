@@ -205,9 +205,9 @@ async def refresh(
 
     rotated = await auth_service.rotate_refresh(redis, refresh_token) if refresh_token else None
     if rotated is None:
-        response = JSONResponse(status_code=401, content={"detail": "다시 로그인해 주세요"})
-        clear_auth_cookies(response)
-        return response
+        # 쿠키는 지우지 않는다. 늦게 도착한 옛 요청의 실패가 이미 받은 새 refresh 쿠키까지 지우면 로그아웃된다.
+        # 로그아웃은 /auth/logout 에서만 한다
+        return JSONResponse(status_code=401, content={"detail": "다시 로그인해 주세요"})
 
     user_id, new_refresh = rotated
     response = Response(status_code=204)

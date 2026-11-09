@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/portfolio_option.dart';
 import '../../models/single_plan.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/portfolio_provider.dart';
 import '../../providers/result_provider.dart';
 import '../../router/app_router.dart';
@@ -53,20 +54,28 @@ class _ResultList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final name = ref.watch(userDisplayNameProvider);
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
       children: [
         // ↓↓↓ 화면 구간 사이 세로 간격은 이 SizedBox 들의 height 값만
         // 바꾸면 조절된다 (숫자가 클수록 스크롤이 길어짐).
-        const _IntroSection(),
+        _IntroSection(name: name),
         const SizedBox(height: 300),
-        const Text(
-          'OO님의 주거래은행인 OO은행의\n단일안 적용 상품과 비교해볼게요',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 15, height: 1.5, color: Colors.black87),
-        ),
-        const SizedBox(height: 50),
-        if (singlePlan != null) SinglePlanCard(plan: singlePlan!),
+        if (singlePlan != null) ...[
+          Text(
+            '$name님의 주거래은행인 ${singlePlan!.institutionName}의\n단일안 적용 상품과 비교해볼게요',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 15, height: 1.5, color: Colors.black87),
+          ),
+          const SizedBox(height: 50),
+          SinglePlanCard(plan: singlePlan!),
+        ] else
+          const Text(
+            '주거래은행 정보가 없어 단일안 비교를 표시할 수 없어요',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 15, height: 1.5, color: Colors.black54),
+          ),
         const SizedBox(height: 100),
         const _PortfolioIntroText(),
         const SizedBox(height: 50),
@@ -118,17 +127,19 @@ class _ResultList extends ConsumerWidget {
 }
 
 class _IntroSection extends StatelessWidget {
-  const _IntroSection();
+  final String name;
+
+  const _IntroSection({required this.name});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         const SizedBox(height: 50),
-        const Text(
-          'OO님을 위한',
+        Text(
+          '$name님을 위한',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.black87),
+          style: const TextStyle(fontSize: 16, color: Colors.black87),
         ),
         const SizedBox(height: 4),
         const Text(

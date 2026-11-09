@@ -27,10 +27,7 @@ class TutorialScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userAsync = ref.watch(currentUserProvider);
-    final name = userAsync.value?.nickname.isNotEmpty == true
-        ? userAsync.value!.nickname
-        : 'OO';
+    final name = ref.watch(userDisplayNameProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,

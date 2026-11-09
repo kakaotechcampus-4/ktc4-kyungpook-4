@@ -12,3 +12,6 @@ http.Client createCredentialedClient() => RefreshingClient(
       BrowserClient()..withCredentials = true,
       () => Uri.parse('${ApiConfig.baseUrl}/auth/refresh'),
     );
+
+/// 웹은 쿠키로 게스트를 식별하므로(서버가 첫 요청에 알아서 구워 준다) 따로 할 일이 없다.
+Future<void> ensureGuestToken() async {}

@@ -8,3 +8,10 @@ import '../services/auth_client.dart';
 final currentUserProvider = FutureProvider<CurrentUser?>((ref) {
   return AuthClient.instance.fetchCurrentUser();
 });
+
+/// 화면에 "OO님"처럼 보여줄 사용자 이름. 로그인 안 했거나(게스트) 닉네임이
+/// 없으면 'OO'로 대체한다.
+final userDisplayNameProvider = Provider<String>((ref) {
+  final nickname = ref.watch(currentUserProvider).value?.nickname;
+  return nickname != null && nickname.isNotEmpty ? nickname : 'OO';
+});

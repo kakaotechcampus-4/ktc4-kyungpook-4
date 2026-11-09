@@ -4,6 +4,7 @@
 DB 가 안 떠 있으면 conftest 가 skip 한다.
 """
 
+import asyncio
 import secrets
 import uuid
 from urllib.parse import parse_qs, urlparse
@@ -23,6 +24,7 @@ from app.db.session import get_session
 from app.main import app
 from app.models.profile import UserProfile
 from app.models.user import AppUser
+from app.services import auth as auth_service
 from app.services import oauth
 from app.services.auth import pkce_challenge
 from app.services.oauth import OAuthError, SocialUser
@@ -228,6 +230,7 @@ async def test_app_login_adopts_guest_records(client, maker, monkeypatch):
 
 
 async def test_app_refresh_rotates_with_body(client, monkeypatch):
+    monkeypatch.setattr(auth_service, "REFRESH_GRACE_SECONDS", 1)
     fake_provider(monkeypatch)
     verifier = new_verifier()
     code = code_of(await app_login(client, verifier))
@@ -238,9 +241,31 @@ async def test_app_refresh_rotates_with_body(client, monkeypatch):
     second = res.json()
     assert second["refresh_token"] != first["refresh_token"]
     assert (await client.get("/api/v1/users/me", headers=bearer(second["access_token"]))).status_code == 200
-    # 쓴 refresh 토큰은 죽는다
+    # 쓴 refresh 토큰은 유예 시간 동안만 같은 새 토큰을 받고, 그 뒤엔 죽는다
+    late = await client.post("/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]})
+    assert late.status_code == 200
+    assert late.json()["refresh_token"] == second["refresh_token"]
+    await asyncio.sleep(1.1)
     old = await client.post("/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]})
     assert old.status_code == 401
+
+
+async def test_app_concurrent_refresh_gets_same_tokens(client, monkeypatch):
+    """앱이 access 만료 직후 여러 요청에서 동시에 refresh 해도 전부 200 이고 같은 새 refresh 를 받는다.
+    어느 응답을 저장해도 다음 refresh 가 된다."""
+    fake_provider(monkeypatch)
+    verifier = new_verifier()
+    code = code_of(await app_login(client, verifier))
+    first = (await client.post("/api/v1/auth/app/token", json={"code": code, "code_verifier": verifier})).json()
+
+    responses = await asyncio.gather(
+        *[client.post("/api/v1/auth/refresh", json={"refresh_token": first["refresh_token"]}) for _ in range(5)]
+    )
+    assert [r.status_code for r in responses] == [200] * 5
+    new_refreshes = {r.json()["refresh_token"] for r in responses}
+    assert len(new_refreshes) == 1 and first["refresh_token"] not in new_refreshes
+    again = await client.post("/api/v1/auth/refresh", json={"refresh_token": new_refreshes.pop()})
+    assert again.status_code == 200
 
 
 async def test_app_logout_revokes_refresh_from_body(client, monkeypatch):

@@ -32,13 +32,17 @@ class OptionChip extends StatelessWidget {
             width: selected ? 1.5 : 1,
           ),
         ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: selected ? AppColors.labelPurple : Colors.black87,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: selected ? AppColors.labelPurple : Colors.black87,
+            ),
           ),
         ),
       ),

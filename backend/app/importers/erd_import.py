@@ -38,6 +38,7 @@ from typing import Any
 from sqlalchemy import func, update
 from sqlalchemy.dialects.postgresql import insert
 
+from app.core import clock
 from app.db.session import SessionLocal
 from app.models import BatchRun, Institution, Product, ProductCondition, ProductOption
 
@@ -242,7 +243,7 @@ def build_rows(src: dict[str, list[dict]], report: Report) -> dict[str, list[dic
                 "parse_status": head.get("parse_status") or "PENDING",
                 # NOT NULL 이다. DEFAULT CURRENT_DATE 는 컬럼을 생략했을 때만 걸리는데
                 # 임포터는 모든 컬럼을 명시해서 넣으므로 여기서 직접 채운다.
-                "snapshot_date": _as_date(head.get("snapshot_date")) or date.today(),
+                "snapshot_date": _as_date(head.get("snapshot_date")) or clock.today(),
                 "sale_end_date": _as_date(head.get("sale_end_date")),
                 "is_active": head.get("is_active", True),
             }

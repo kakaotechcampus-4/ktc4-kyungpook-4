@@ -16,8 +16,12 @@ class OnboardingNotifier extends Notifier<OnboardingInput> {
 
   void toggleCurrentBank(String bank) {
     final banks = List<String>.from(state.currentBanks);
-    if (!banks.remove(bank)) banks.add(bank);
-    state = state.copyWith(currentBanks: banks);
+    final wasSelected = banks.remove(bank);
+    if (!wasSelected) banks.add(bank);
+    // 주거래은행은 보유 은행 중에서만 고를 수 있으니, 방금 뺀 은행이 주거래은행이었다면
+    // 같이 비운다 (다시 보유 목록에 없는 은행을 주거래로 들고 있지 않게).
+    final mainBank = wasSelected && state.mainBank == bank ? '' : state.mainBank;
+    state = state.copyWith(currentBanks: banks, mainBank: mainBank);
   }
 
   void updateMainBank(String value) =>
