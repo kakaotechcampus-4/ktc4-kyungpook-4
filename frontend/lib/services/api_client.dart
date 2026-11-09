@@ -183,16 +183,26 @@ class ApiClient {
   /// 기관(필수)·상품유형(선택, 예금/적금/예탁금)으로 실제 상품을 검색한다.
   /// 로그인 불필요. 빈 목록이면(기관이 상품 데이터에 없거나 등) 직접 입력으로
   /// 유도하면 된다.
+  /// 신협·새마을금고는 [branch](지점 institution_code)를 주면 그 지점 상품이 금리와 함께 온다.
   Future<ProductSearchResult> searchProducts({
     required String institution,
     String? productType,
+    String? branch,
   }) async {
     final uri = _uri('/products').replace(queryParameters: {
       'institution': institution,
       'product_type': ?productType,
+      'branch': ?branch,
     });
     final response = await _client.get(uri);
     return ProductSearchResult.fromJson(_decodeObject(response));
+  }
+
+  /// 신협·새마을금고 지점 목록(지역 → 이름 순). 상품을 보려면 먼저 지점을 골라야 한다.
+  Future<List<BranchSummary>> fetchBranches(String institution) async {
+    final uri = _uri('/products/branches').replace(queryParameters: {'institution': institution});
+    final items = _decodeObject(await _client.get(uri))['items'] as List<dynamic>;
+    return items.map((e) => BranchSummary.fromJson(e as Map<String, dynamic>)).toList();
   }
 
   /// 로드맵 숫자(경과 개월·총 이자·현재 이자). 이 브라우저에서 만든 기록이 없으면(401) null.

@@ -48,6 +48,13 @@ def seeded(async_db_url, test_database_url):
                 f"('{KB}', '국민은행', '은행'), ('CU-1', '대구신협', '신협'), ('CU-2', '부산신협', '신협')"
             )
         )
+        conn.execute(
+            text(
+                "INSERT INTO institution (institution_code, name, institution_type, region) VALUES "
+                "('MG-1', '가창새마을금고 본점', '새마을금고', '대구 달성군'), "
+                "('MG-2', '상품없는새마을금고 본점', '새마을금고', '부산 중구')"
+            )
+        )
     eng.dispose()
     return async_db_url
 
@@ -70,6 +77,7 @@ def _products(seeded, test_database_url):
         ("CU-1-A", "CU-1", "정기예탁금", "예탁금", 2),
         ("CU-2-A", "CU-2", "정기예탁금", "예탁금", 2),  # 조합이 달라도 이름이 같으면 하나로 묶인다
         ("CU-2-B", "CU-2", "자유적립적금", "적금", 1),
+        ("MG-1-A", "MG-1", "MG 정기예탁금", "예탁금", 2),
     ]
     with eng.begin() as conn:
         for pid, inst, name, kind, run in rows:
@@ -86,6 +94,7 @@ def _products(seeded, test_database_url):
             ("KB-SAVE-OLD", 12, 2.0, 2.5),
             ("CU-1-A", 12, 3.5, 3.5),
             ("CU-2-A", 6, 3.3, 3.3),
+            ("MG-1-A", 12, 3.1, 3.6),
         ]:
             conn.execute(
                 text(
@@ -155,6 +164,44 @@ async def test_coop_products_grouped_by_name(client):
         ("자유적립적금", False, []),
     ]
     assert all(i["product_id"] is None and i["max_rate"] is None for i in body["items"])
+
+
+async def test_coop_branches(client):
+    body = (await client.get("/api/v1/products/branches", params={"institution": "새마을금고"})).json()
+    # 상품이 없는 지점은 뺀다. 지역을 붙여 '대구'로 검색되게 한다
+    assert body["items"] == [
+        {
+            "institution_code": "MG-1",
+            "name": "가창새마을금고 본점",
+            "region": "대구 달성군",
+            "label": "가창새마을금고 본점 (대구 달성군)",
+        }
+    ]
+    cu = (await client.get("/api/v1/products/branches", params={"institution": "신협"})).json()
+    assert [i["label"] for i in cu["items"]] == ["대구신협", "부산신협"]
+
+
+async def test_branches_only_for_coops(client):
+    res = await client.get("/api/v1/products/branches", params={"institution": "국민은행"})
+    assert res.status_code == 422
+
+
+async def test_coop_branch_products_have_rates(client):
+    """지점을 고르면 이름으로 묶지 않고 그 지점 상품을 금리와 함께 준다."""
+    body = (await client.get("/api/v1/products", params={"institution": "신협", "branch": "CU-1"})).json()
+    assert body["grouped_by_name"] is False
+    assert [(i["product_id"], i["product_name"], i["base_rate"], i["max_rate"]) for i in body["items"]] == [
+        ("CU-1-A", "정기예탁금", 3.5, 3.5)
+    ]
+    mg = (await client.get("/api/v1/products", params={"institution": "새마을금고", "branch": "MG-1"})).json()
+    assert [(i["product_id"], i["max_rate"]) for i in mg["items"]] == [("MG-1-A", 3.6)]
+
+
+async def test_branch_of_other_type_is_empty(client):
+    res = await client.get("/api/v1/products", params={"institution": "새마을금고", "branch": "CU-1"})
+    assert res.json()["items"] == []
+    bank = await client.get("/api/v1/products", params={"institution": "국민은행", "branch": "CU-1"})
+    assert [i["product_id"] for i in bank.json()["items"]] == ["KB-DEP", "KB-SAVE-NEW", "KB-SAVE-OLD"]  # 은행은 무시
 
 
 async def test_institution_without_data_is_empty(client):
