@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,16 +50,53 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
   late final _birthMonthController = TextEditingController(
     text: ref.read(onboardingProvider).birthMonth,
   );
+  final _birthMonthFocusNode = FocusNode();
   late final _birthDayController = TextEditingController(
     text: ref.read(onboardingProvider).birthDay,
   );
+
+  // "1"은 10/11/12 로 이어질 수 있어 애매하니 잠깐 기다렸다가, 더 안 치면
+  // "01"로 채워 넣는다. 2~9는 뒤에 뭘 더 쳐도 유효한 두 자리 월이 될 수
+  // 없어서(20~99는 없는 월) 바로 채워도 된다.
+  Timer? _monthAutoPadTimer;
 
   @override
   void dispose() {
     _birthYearController.dispose();
     _birthMonthController.dispose();
+    _birthMonthFocusNode.dispose();
     _birthDayController.dispose();
+    _monthAutoPadTimer?.cancel();
     super.dispose();
+  }
+
+  void _onBirthMonthChanged(String value) {
+    _monthAutoPadTimer?.cancel();
+    ref.read(onboardingProvider.notifier).updateBirthMonth(value);
+
+    if (value.length == 2) {
+      FocusScope.of(context).nextFocus();
+      return;
+    }
+    if (value.length != 1 || value == '0') return;
+
+    if (value != '1') {
+      _padBirthMonthAndAdvance(value);
+      return;
+    }
+    _monthAutoPadTimer = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted) return;
+      if (_birthMonthFocusNode.hasFocus && _birthMonthController.text == '1') {
+        _padBirthMonthAndAdvance('1');
+      }
+    });
+  }
+
+  void _padBirthMonthAndAdvance(String singleDigit) {
+    final padded = '0$singleDigit';
+    _birthMonthController.text = padded;
+    ref.read(onboardingProvider.notifier).updateBirthMonth(padded);
+    FocusScope.of(context).nextFocus();
   }
 
   /// 질문 [questionIndex](0-based)가 이번에 처음 답변 완료됐다면 다음 질문으로 스크롤한다.
@@ -115,8 +154,11 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                 title: '주 거래은행이 어디인가요?',
                 description: '(단일 선택)',
                 child: SearchableSelectField(
-                  hintText: '은행을 선택해주세요',
-                  options: bankOptions,
+                  hintText: input.currentBanks.isEmpty
+                      ? '먼저 보유 중인 은행을 선택해주세요'
+                      : '은행을 선택해주세요',
+                  options: input.currentBanks,
+                  enabled: input.currentBanks.isNotEmpty,
                   selectedValues:
                       input.mainBank.isEmpty ? const [] : [input.mainBank],
                   onSelect: (bank) {
@@ -156,13 +198,9 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                           flex: 2,
                           child: _DigitField(
                             controller: _birthMonthController,
+                            focusNode: _birthMonthFocusNode,
                             maxLength: 2,
-                            onChanged: (v) {
-                              notifier.updateBirthMonth(v);
-                              if (v.length == 2) {
-                                FocusScope.of(context).nextFocus();
-                              }
-                            },
+                            onChanged: _onBirthMonthChanged,
                           ),
                         ),
                         const Padding(
@@ -414,11 +452,13 @@ class _QuestionBlock extends StatelessWidget {
 
 class _DigitField extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final int maxLength;
   final ValueChanged<String> onChanged;
 
   const _DigitField({
     required this.controller,
+    this.focusNode,
     required this.maxLength,
     required this.onChanged,
   });
@@ -427,6 +467,7 @@ class _DigitField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       keyboardType: TextInputType.number,
       textAlign: TextAlign.center,
       maxLength: maxLength,

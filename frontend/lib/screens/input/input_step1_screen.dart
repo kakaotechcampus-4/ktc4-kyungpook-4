@@ -21,6 +21,10 @@ class InputStep1Screen extends ConsumerStatefulWidget {
   ConsumerState<InputStep1Screen> createState() => _InputStep1ScreenState();
 }
 
+/// 저축 기간은 60개월(5년)까지만 받는다(60개월은 가능, 그 초과는 불가).
+/// 상품 최대 기간이 36개월 안팎이라 그 이상은 추천해줄 안이 없다.
+const _maxPeriodMonths = 60;
+
 class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
   late final _lumpSumController = TextEditingController(
     text: _initialText(ref.read(onboardingProvider).lumpSum),
@@ -58,8 +62,11 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
   Widget build(BuildContext context) {
     final input = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
-    final canProceed =
-        input.lumpSum > 0 && input.monthlySaving > 0 && input.periodMonths > 0;
+    final isPeriodTooLong = input.periodMonths > _maxPeriodMonths;
+    final canProceed = input.lumpSum > 0 &&
+        input.monthlySaving > 0 &&
+        input.periodMonths > 0 &&
+        !isPeriodTooLong;
 
     return Scaffold(
       body: SafeArea(
@@ -97,6 +104,9 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
                 suffixText: '개월',
                 controller: _periodMonthsController,
                 onChanged: (v) => notifier.updatePeriodMonths(_parseAmount(v)),
+                errorText: isPeriodTooLong
+                    ? '$_maxPeriodMonths개월 이하로 입력해주세요'
+                    : null,
               ),
               const SizedBox(height: 32),
               Align(
@@ -140,6 +150,7 @@ class _AmountField extends StatelessWidget {
   final String label;
   final String description;
   final String suffixText;
+  final String? errorText;
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
 
@@ -147,12 +158,19 @@ class _AmountField extends StatelessWidget {
     required this.label,
     required this.description,
     required this.suffixText,
+    this.errorText,
     required this.controller,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isInvalid = errorText != null;
+    final errorBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(color: Colors.red.shade400, width: 1),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -205,11 +223,18 @@ class _AmountField extends StatelessWidget {
               horizontal: 16,
               vertical: 14,
             ),
-            border: _fieldBorder,
-            enabledBorder: _fieldBorder,
-            focusedBorder: _fieldBorder,
+            border: isInvalid ? errorBorder : _fieldBorder,
+            enabledBorder: isInvalid ? errorBorder : _fieldBorder,
+            focusedBorder: isInvalid ? errorBorder : _fieldBorder,
           ),
         ),
+        if (errorText != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            errorText!,
+            style: TextStyle(fontSize: 12, color: Colors.red.shade400),
+          ),
+        ],
       ],
     );
   }

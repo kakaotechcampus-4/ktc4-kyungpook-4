@@ -69,6 +69,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             onSubmit: ({
               required date,
               required institutionName,
+              productId,
               required productName,
               required amount,
               required memo,
@@ -77,6 +78,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 await ref.read(manualEntryProvider.notifier).add(
                       date: date,
                       institutionName: institutionName,
+                      productId: productId,
                       productName: productName,
                       amount: amount,
                       memo: memo,

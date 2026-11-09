@@ -179,15 +179,16 @@ class ApiClient {
     return _decodeList(response).map((e) => CalendarEvent.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  /// 기관·상품유형으로 실제 상품을 검색한다. 로그인 불필요. 빈 목록이면
-  /// (기관이 상품 데이터에 없거나 등) 직접 입력으로 유도하면 된다.
+  /// 기관(필수)·상품유형(선택, 예금/적금/예탁금)으로 실제 상품을 검색한다.
+  /// 로그인 불필요. 빈 목록이면(기관이 상품 데이터에 없거나 등) 직접 입력으로
+  /// 유도하면 된다.
   Future<ProductSearchResult> searchProducts({
     required String institution,
-    required String productType,
+    String? productType,
   }) async {
     final uri = _uri('/products').replace(queryParameters: {
       'institution': institution,
-      'product_type': productType,
+      'product_type': ?productType,
     });
     final response = await _client.get(uri);
     return ProductSearchResult.fromJson(_decodeObject(response));

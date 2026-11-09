@@ -309,6 +309,8 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
         );
 
       case _Stage.existingAmount:
+        final isNoneSelected = !input.mutualFinanceExistingAmountUnknown &&
+            input.mutualFinanceExistingAmountText == '0';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -328,7 +330,9 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                   width: 120,
                   child: TextField(
                     controller: _amountController,
-                    enabled: isActive && !input.mutualFinanceExistingAmountUnknown,
+                    enabled: isActive &&
+                        !input.mutualFinanceExistingAmountUnknown &&
+                        !isNoneSelected,
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -336,7 +340,7 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                     decoration: InputDecoration(
                       hintText: '0',
                       filled: true,
-                      fillColor: input.mutualFinanceExistingAmountUnknown
+                      fillColor: input.mutualFinanceExistingAmountUnknown || isNoneSelected
                           ? Colors.grey.shade100
                           : Colors.white,
                       contentPadding:
@@ -356,6 +360,25 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                 ),
                 const SizedBox(width: 8),
                 const Text('원'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OptionChip(
+                    label: '없어요',
+                    selected: isNoneSelected,
+                    onTap: () {
+                      if (!isActive) return;
+                      _amountController.text = '0';
+                      ref
+                          .read(onboardingProvider.notifier)
+                          .updateMutualFinanceExistingAmountText('0');
+                      _advance();
+                    },
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OptionChip(
@@ -373,7 +396,7 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
                 ),
               ],
             ),
-            if (isActive && !input.mutualFinanceExistingAmountUnknown) ...[
+            if (isActive && !input.mutualFinanceExistingAmountUnknown && !isNoneSelected) ...[
               const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
