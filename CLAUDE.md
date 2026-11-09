@@ -9,9 +9,8 @@
 - Frontend: Flutter (Dart), Riverpod(flutter_riverpod), go_router, http
 - Backend: FastAPI (Python 3.13), SQLAlchemy 2.0(async) + Alembic, `uv`
 - DB: PostgreSQL 16
-- Cache: Redis 7 (현재 캐시 전용. 로그인/세션 관련 용도는 아직 미구현)
-- 인증: 소셜 로그인(Google/Kakao/Naver) 설계만 있고 미구현 — 지금은 프로필 생성 시
-  `user_id` 없으면 익명 사용자를 자동 생성하는 임시 방식으로 동작
+- Cache: Redis 7 (캐시 + 로그인 state·refresh 토큰 저장. 날아가면 다시 로그인하면 되는 것만 둔다)
+- 인증: 소셜 로그인(Google·Kakao. Naver 는 제외) — 2026-11 구현됨. 자세한 건 아래 "인증·게스트" 참고
 
 ## 브랜치 전략 (2026-09-26 변경 — 중요)
 
@@ -44,12 +43,14 @@ repo-root/
   backend/
     app/
       main.py
-      core/                 # 환경변수 설정 (config.py). CORS 설정 있음. JWT 는 아직 없음
+      core/                 # config.py(환경변수·CORS), security.py(JWT 발급·검증, 인증 쿠키)
       db/                   # base.py, session.py, redis.py
       models/               # SQLAlchemy 모델 = 테이블 정의 (아래 "DB 스키마" 참고)
       schemas/              # Pydantic 요청/응답 모델 (profile, portfolio, calendar)
-      services/             # portfolio.py — 포트폴리오 계산 엔진
-      api/v1/                # 라우터: health, profiles, portfolios
+      services/             # portfolio.py(계산 엔진), conditions.py(우대조건 판정), tax.py,
+                            #   auth.py·oauth.py(로그인), chatbot.py, roadmap.py 등
+      api/deps.py           # 현재 사용자 판별(로그인 쿠키 → 게스트 쿠키 순), 소유권 확인
+      api/v1/               # 라우터: health, auth, users, profiles, portfolios, products, manual_entries
       tests/
     alembic/versions/       # 마이그레이션 이력 (autogenerate)
     db/schema.sql           # 전체 스키마 문서 (모델과 자동 대조됨, test_schema_sync.py)
@@ -104,9 +105,10 @@ repo-root/
 ## AI ↔ 백엔드 인터페이스
 
 - AI 팀 산출물(`ai/output/erd/*.jsonl`)을 institution/product/product_option/
-  product_condition 4테이블로 적재하는 실제 임포터가 있다
-  (`feature/be-importer`에서 작업됐고, 코드는 원격에 남아 있음 — 브랜치 자체는 close됨.
-  현재 개발은 `db/seed_sample.sql` 로 대체 중이니 실제 임포터 연결 필요 여부 확인할 것)
+  product_condition 4테이블로 적재하는 임포터: `app/importers/erd_import.py`.
+  배포 때마다 서버에서 자동 실행된다(upsert — 산출물에서 사라진 행을 지우지는 않는다)
+- 추천 이유(AI Summary)와 파생값(`extra_vs_baseline`, `new_banks` 등)은 `ai/src/summary.py`
+  (`ktc4_ai.summary`)가 계산한다. BE 는 그 값을 응답에 그대로 쓴다
 - 특판 검증 파이프라인이 사라졌으므로, 계산 엔진은 그냥 `product` 테이블만 조회하면
   자동으로 공시 검증된 상품만 보게 된다 (더 이상 별도 필터링 로직 불필요)
 - **미해결 요청 (AI 팀 → BE, 2026-09-20 PR #6 에서 제기)**: `product_condition` 에
@@ -126,28 +128,56 @@ repo-root/
 - 상품(`product`, `product_option`)은 DELETE+INSERT 가 아니라 **upsert** 로 갱신 —
   안 그러면 `user_holding` 이 물고 있는 링크가 배치마다 끊김
 
-## 현재 백엔드 API (`app/api/v1/`)
+## 인증·게스트 (2026-11 구현)
 
-- `POST /api/v1/profiles` — STEP1 입력 저장 (`user_id` 없으면 익명 사용자 자동 생성)
-- `POST /api/v1/portfolios/recommend` — 예금/적금 `base_rate` 기준 3안 추천
-  (**우대조건 미반영** — `product_condition` 아직 계산에 안 붙음)
-- `POST /api/v1/portfolios` — 추천안 확정 가입 (`user_portfolio`/`user_holding` 생성)
-- `GET /api/v1/portfolios/{id}/calendar` — 납입/만기 일정
+- 소셜 로그인 흐름: FE 가 `/auth/{provider}/login` 으로 이동 → 소셜사 로그인 →
+  `/auth/{provider}/callback` 에서 쿠키를 굽고 FE(`FRONTEND_URL`)로 돌려보낸다
+- 토큰은 전부 **HttpOnly 쿠키**로만 오간다 (FE 코드는 값을 못 읽고, 브라우저가 자동으로 싣는다)
+  - `access_token`(JWT, 30분) / `refresh_token`(랜덤, 14일, Redis 에 해시로 저장) /
+    `guest_token`(JWT, 30일 — 로그인 안 한 사용자)
+  - FE 는 401 을 받으면 `/auth/refresh` 를 한 번 부른다 (`refreshing_client.dart`)
+- **요청 본문에 `user_id` 를 받지 않는다** — 누가 요청했는지는 쿠키로만 판단(`app/api/deps.py`
+  `get_principal_optional`: 로그인 쿠키 → 게스트 쿠키 순). 본문으로 받으면 남의 기록에 접근 가능해짐
+- 로그인도 게스트 쿠키도 없이 `POST /profiles` 를 부르면 익명 사용자를 만들고 게스트 쿠키를 굽는다
+- **게스트 → 로그인 승계**: 로그인 콜백에서 게스트 쿠키가 있으면 프로필·포트폴리오·직접 기록을
+  계정으로 옮기고 게스트를 지운다 (`services/auth.py` `adopt_guest`). 같은 브라우저에서만 해당
+- **앱(안드로이드)**: 쿠키 대신 `Authorization: Bearer <토큰>` 헤더를 쓴다 (`deps.py` 가 헤더 → 쿠키 순으로 확인)
+  - 게스트: `POST /auth/app/guest` 로 게스트 토큰을 받아 기기에 저장 → 헤더로 보낸다
+  - 로그인: 외부 브라우저로 `/auth/{provider}/login?client=app&code_challenge=<PKCE>` →
+    콜백이 `APP_REDIRECT_URI`(`safebrother://auth`)`?code=<일회용 코드>` 로 앱을 연다 →
+    `POST /auth/app/token`(code + code_verifier + guest_token) 으로 토큰 JSON 을 받으며 게스트 기록도 승계
+  - 토큰 갱신·로그아웃: `/auth/refresh`·`/auth/logout` 본문에 `refresh_token` 을 넣는다 (refresh 는 200 + JSON)
+  - 소셜사 콘솔의 redirect URI 는 웹과 같다(서버 콜백). 앱 쪽 구현은 `feature/be-app-auth` PR 본문의 FE 가이드 참고
+- 서버 비밀값: `JWT_SECRET`(첫 배포 때 자동 생성), `GOOGLE_*`·`KAKAO_*`(비우면 그 로그인은 503)
+- 설정: `APP_REDIRECT_URI`(기본 `safebrother://auth`) — 요청값으로 받지 않고 설정으로만 정한다(코드 가로채기 방지)
+
+## 현재 백엔드 API (`app/api/v1/`, 전부 `/api/v1` 아래)
+
+- `auth`: `GET /{provider}/login`, `GET /{provider}/callback`, `POST /refresh`, `POST /logout`,
+  `POST /app/guest`·`POST /app/token`(앱 전용)
+- `users`: `GET /me`(로그인 필수), `GET /me/roadmap`, `GET /me/calendar`
+- `profiles`: `POST ""`(STEP1~3 입력 저장), `POST /{id}/etc-questions`·`/{id}/etc-answers`(챗봇 '기타' 조건)
+- `portfolios`: `POST /recommend`(4안 + 단일형, 우대조건 반영), `POST /reasons`(추천 이유만 따로),
+  `POST ""`(추천안 확정 가입), `GET /{id}/calendar`
+- `products`: `GET ""`(기관별 상품 목록), `manual-entries`: 캘린더 직접 기록 저장·조회·삭제
 - 상품 기간이 1/3/6/12/24/36개월 등 고정 구간이라, 요청 기간과 정확히 같은 옵션이
   없으면 그 이하 중 가장 긴 기간으로 대체 매칭한다
 
-## 프론트-백엔드 인터페이스 갭 (미해결)
+## 프론트-백엔드 인터페이스 갭 (2026-11-05 기준)
 
-프론트가 결과 화면(`PortfolioDetailScreen` 등)을 만들면서 아직 백엔드가 안 주는
-필드를 모델에 미리 만들어두고 TODO 로 표시해뒀다 (`frontend/lib/models/portfolio_option.dart`):
+FE 결과 화면이 `frontend/lib/services/portfolio_field_mocks.dart` 의 가짜 값을 아직 쓰고 있다.
+"예시" 표시가 없어 실제 값으로 오인될 수 있다.
 
-- `PortfolioProduct.amountDescription`, `conditionDescription`, `detailUrl`(상품 공식
-  안내 페이지 링크)
-- `PortfolioOption.vsSingleDiff`(단일안 대비 세후 이자 차액), `newAccountCount`,
-  `branchVisitCount`
-
-지금은 빈 문자열/0 으로 채워져 있다 — 백엔드 스키마·API 응답에 이 값들을 추가하거나,
-프론트와 논의해서 처리 방향을 정해야 한다.
+- 이미 BE 가 주고 있어 **FE 매핑만 바꾸면 되는 것**
+  - `newAccountCount` ← `new_bank_count` (지금은 상품 개수를 그대로 보여줘서 틀림)
+  - `conditionDescription` ← 상품별 `applied_conditions`
+  - `amountDescription` ← `product_type` + `allocated_amount` + `interest_rate`
+    (예금이면 원금, 적금이면 월 납입액)
+- **데이터가 없어 숨기는 게 나은 것**
+  - `detailUrl`: 상품 공식 페이지 URL 이 산출물에 없다(`product_condition.evidence_url` 은
+    우대조건 있는 상품에만 있음). AI 팀 수집이 필요
+  - `branchVisitCount`: `product_option.join_channel` 값이 산출물에서 비어 있어 믿을 수 없다
+- 단일형 카드(`single_plan_card.dart`)는 `product_type` 으로 "예치"/"월 납입" 문구를 나눠야 함 (PR #57)
 
 ## 로컬 개발 환경
 
@@ -191,4 +221,4 @@ flutter run
   ssh ktc-server 'cd /opt/ktc4/current/deploy && sudo docker compose ps'
   ssh ktc-server 'cd /opt/ktc4/current/deploy && sudo docker compose logs --tail 100 backend'
   ```
-- 서버 DB 를 직접 수정할 때는 지우기 전에 대상과 생성 시각을 먼저 확인한다 (로그인이 없어 팀원 테스트 데이터도 게스트로 섞여 있다)
+- 서버 DB 를 직접 수정할 때는 지우기 전에 대상과 생성 시각을 먼저 확인한다 (로그인 전에 만든 팀원 테스트 데이터가 게스트로 섞여 있다)

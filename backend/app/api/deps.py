@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import Cookie, Depends, HTTPException
+from fastapi import Cookie, Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import ACCESS_COOKIE, GUEST_COOKIE, decode_access_token, decode_guest_token
@@ -12,17 +12,28 @@ from app.models.profile import UserProfile
 from app.models.user import AppUser
 
 
+def bearer_token(authorization: Annotated[str | None, Header()] = None) -> str | None:
+    """앱(안드로이드)은 쿠키 저장소가 없어 토큰을 `Authorization: Bearer <토큰>` 헤더로 보낸다.
+    웹은 지금처럼 쿠키만 쓴다. 헤더에는 access 토큰이나 guest 토큰이 올 수 있고, 종류(typ)로 구분한다."""
+    if authorization is None:
+        return None
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer":
+        return None
+    return token.strip() or None
+
+
 async def get_current_user_optional(
     session: Annotated[AsyncSession, Depends(get_session)],
+    bearer: Annotated[str | None, Depends(bearer_token)],
     access_token: Annotated[str | None, Cookie(alias=ACCESS_COOKIE)] = None,
 ) -> AppUser | None:
     """로그인했으면 그 사용자, 아니면 None. 토큰이 만료됐거나 위조됐어도 None 이다."""
-    if access_token is None:
-        return None
-    user_id = decode_access_token(access_token)
-    if user_id is None:
-        return None
-    return await session.get(AppUser, user_id)  # 탈퇴 등으로 계정이 없으면 None
+    for token in (bearer, access_token):
+        user_id = decode_access_token(token) if token else None
+        if user_id is not None:
+            return await session.get(AppUser, user_id)  # 탈퇴 등으로 계정이 없으면 None
+    return None
 
 
 async def get_current_user(user: Annotated[AppUser | None, Depends(get_current_user_optional)]) -> AppUser:
@@ -35,20 +46,20 @@ async def get_current_user(user: Annotated[AppUser | None, Depends(get_current_u
 async def get_principal_optional(
     session: Annotated[AsyncSession, Depends(get_session)],
     user: Annotated[AppUser | None, Depends(get_current_user_optional)],
+    bearer: Annotated[str | None, Depends(bearer_token)],
     guest_token: Annotated[str | None, Cookie(alias=GUEST_COOKIE)] = None,
 ) -> AppUser | None:
-    """로그인한 사용자, 아니면 게스트 쿠키의 익명 사용자, 둘 다 없으면 None.
+    """로그인한 사용자, 아니면 게스트 토큰(헤더 또는 쿠키)의 익명 사용자, 둘 다 없으면 None.
 
     프로필·포트폴리오처럼 로그인 전에도 쓰는 기록의 주인을 가릴 때 쓴다.
     """
     if user is not None:
         return user
-    if guest_token is None:
-        return None
-    guest_id = decode_guest_token(guest_token)
-    if guest_id is None:
-        return None
-    return await session.get(AppUser, guest_id)  # 로그인으로 이관돼 지워졌으면 None
+    for token in (bearer, guest_token):
+        guest_id = decode_guest_token(token) if token else None
+        if guest_id is not None:
+            return await session.get(AppUser, guest_id)  # 로그인으로 이관돼 지워졌으면 None
+    return None
 
 
 async def get_principal(user: Annotated[AppUser | None, Depends(get_principal_optional)]) -> AppUser:
