@@ -26,13 +26,11 @@ class InputStep1Screen extends ConsumerStatefulWidget {
 const _maxPeriodMonths = 60;
 
 class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
-  // 목돈·월저축액은 만원 단위로 입력받는다(0원 상태는 금액이 커서 콤마가 길어지니
-  // 편의상 만원 단위, 백엔드엔 원 단위로 환산해서 보낸다).
   late final _lumpSumController = TextEditingController(
-    text: _initialText(ref.read(onboardingProvider).lumpSum ~/ 10000),
+    text: _initialText(ref.read(onboardingProvider).lumpSum),
   );
   late final _monthlySavingController = TextEditingController(
-    text: _initialText(ref.read(onboardingProvider).monthlySaving ~/ 10000),
+    text: _initialText(ref.read(onboardingProvider).monthlySaving),
   );
   late final _periodMonthsController = TextEditingController(
     text: _initialText(ref.read(onboardingProvider).periodMonths),
@@ -87,21 +85,17 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
               _AmountField(
                 label: '목돈',
                 description: '한번에 최대 얼마까지 맡길 수 있으신가요?',
-                hintText: '00',
-                suffixText: '만원',
+                suffixText: '원',
                 controller: _lumpSumController,
-                onChanged: (v) =>
-                    notifier.updateLumpSum(_parseAmount(v) * 10000),
+                onChanged: (v) => notifier.updateLumpSum(_parseAmount(v)),
               ),
               const SizedBox(height: 28),
               _AmountField(
                 label: '월저축액',
                 description: '매달 얼마씩 꾸준하게 저축할 계획이신가요?',
-                hintText: '00',
-                suffixText: '만원',
+                suffixText: '원',
                 controller: _monthlySavingController,
-                onChanged: (v) =>
-                    notifier.updateMonthlySaving(_parseAmount(v) * 10000),
+                onChanged: (v) => notifier.updateMonthlySaving(_parseAmount(v)),
               ),
               const SizedBox(height: 28),
               _AmountField(
@@ -156,7 +150,6 @@ class _AmountField extends StatelessWidget {
   final String label;
   final String description;
   final String suffixText;
-  final String? hintText;
   final String? errorText;
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
@@ -165,7 +158,6 @@ class _AmountField extends StatelessWidget {
     required this.label,
     required this.description,
     required this.suffixText,
-    this.hintText,
     this.errorText,
     required this.controller,
     required this.onChanged,
@@ -208,7 +200,6 @@ class _AmountField extends StatelessWidget {
             color: AppColors.darkGray,
           ),
           decoration: InputDecoration(
-            hintText: hintText,
             // suffixText는 라벨이 플로팅될 때(포커스/입력값 있음)만 보이므로,
             // 빈 상태에서도 단위가 항상 보이도록 suffixIcon을 대신 쓴다.
             suffixIcon: Padding(
