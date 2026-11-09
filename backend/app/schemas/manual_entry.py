@@ -7,7 +7,9 @@ from pydantic import BaseModel, Field, field_validator
 
 class ManualEntryCreate(BaseModel):
     entry_date: date
-    institution_name: str = Field(min_length=1, max_length=100, description="FE 기관 선택지 이름 그대로")
+    institution_name: str = Field(
+        min_length=1, max_length=100, description="FE 기관 선택지 이름. 신협·새마을금고는 지점 label"
+    )
     product_id: str | None = Field(default=None, description="GET /products 목록에서 골랐으면 그 product_id")
     product_name: str = Field(min_length=1, max_length=200, description="목록에서 골랐어도 이름을 같이 보낸다")
     amount: int = Field(gt=0, description="금액(원)")

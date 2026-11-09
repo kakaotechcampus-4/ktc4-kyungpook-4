@@ -1,6 +1,6 @@
 /// `GET /api/v1/products?institution=...&product_type=...` 응답 한 건.
-/// 신협·새마을금고는 product_id·금리가 null로 온다(지점마다 달라서
-/// 하나로 특정할 수 없음) - 그 경우 직접 입력으로 유도한다.
+/// 신협·새마을금고는 지점(branch)을 같이 보내야 product_id·금리가 온다.
+/// 지점 없이 조회하면 이름으로 묶여 null로 온다.
 class ProductSummary {
   final String? productId;
   final String productName;
@@ -52,6 +52,23 @@ class ProductSearchResult {
       items: (json['items'] as List<dynamic>)
           .map((e) => ProductSummary.fromJson(e as Map<String, dynamic>))
           .toList(),
+    );
+  }
+}
+
+/// `GET /api/v1/products/branches?institution=새마을금고` 응답 한 건.
+/// [label]은 "가창새마을금고 본점 (대구 달성군)"처럼 지역이 붙어 있어
+/// 그대로 보여주고 검색하면 된다.
+class BranchSummary {
+  final String institutionCode;
+  final String label;
+
+  const BranchSummary({required this.institutionCode, required this.label});
+
+  factory BranchSummary.fromJson(Map<String, dynamic> json) {
+    return BranchSummary(
+      institutionCode: json['institution_code'] as String,
+      label: json['label'] as String,
     );
   }
 }
