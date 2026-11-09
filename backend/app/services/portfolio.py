@@ -32,6 +32,7 @@ from ktc4_ai.summary import _enrich_options, generate_summary
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import clock
 from app.models.institution import Institution
 from app.models.portfolio import UserHolding, UserHoldingCondition, UserPortfolio
 from app.models.product import Product, ProductCondition, ProductOption
@@ -437,7 +438,7 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
     held = set(await get_held_bank_codes(session, profile))
     banks = _BankInfo(profile.main_bank_code, held | ({profile.main_bank_code} if profile.main_bank_code else set()))
     # 정렬에 쓰는 기대 세율만 본다. 실제 한도 차감은 세금 계산 단계에서 티어마다 새로 한다
-    tax = _tax_context(profile, date.today())
+    tax = _tax_context(profile, clock.today())
     etc_answers = await get_etc_answers(session, profile)
     use_deposit = profile.capital > 0 and deposit_period is not None
     use_installment = profile.monthly_saving > 0 and installment_period is not None
@@ -505,7 +506,7 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
             choices.append(
                 (TierAllocations(base_installments[0].option.period_months, [], base_installments), inst_note)
             )
-        picked = _pick_single_kind(choices, lambda: _tax_context(profile, date.today()))
+        picked = _pick_single_kind(choices, lambda: _tax_context(profile, clock.today()))
         if picked:
             baseline, baseline_note = picked
     return PortfolioPlan(tiers, baseline, baseline_note)
@@ -597,7 +598,7 @@ async def recommend_options(
     with_reason=False 면 Summary 를 부르지 않고 reason 을 None 으로 둔다. Summary 가 한 번에 약 26초라
     결과 화면은 숫자를 먼저 그리고, 이유는 POST /portfolios/reasons 로 따로 받는다.
     """
-    today = date.today()
+    today = clock.today()
     raw_options = []
     for tier_name, allocations in plan.tiers.items():
         # 티어는 서로 다른 안이라 감면 한도도 티어마다 새로 시작한다
@@ -701,7 +702,7 @@ async def close_active_portfolios(session: AsyncSession, user_id: int) -> None:
 async def persist_portfolio(
     session: AsyncSession, profile: UserProfile, tier_name: str, allocations: TierAllocations
 ) -> UserPortfolio:
-    today = date.today()
+    today = clock.today()
     maturity_date = _add_months(today, allocations.period_months)
 
     portfolio = UserPortfolio(
@@ -745,7 +746,7 @@ async def get_calendar_events(session: AsyncSession, portfolio_id: int) -> list[
     stmt = select(UserHolding).where(UserHolding.portfolio_id == portfolio_id, UserHolding.status == "유지중")
     holdings = (await session.execute(stmt)).scalars().all()
 
-    today = date.today()
+    today = clock.today()
     events: list[CalendarEventOut] = []
     for holding in holdings:
         if holding.monthly_amount is not None:
