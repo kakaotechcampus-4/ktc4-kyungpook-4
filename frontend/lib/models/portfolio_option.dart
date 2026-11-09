@@ -1,4 +1,4 @@
-import '../services/portfolio_field_mocks.dart';
+import '../utils/currency_formatter.dart';
 
 enum PortfolioTier { stable, simple, balanced, max }
 
@@ -30,57 +30,66 @@ extension PortfolioTierLabel on PortfolioTier {
 class PortfolioProduct {
   final String institutionName;
   final String productName;
+
+  /// 예금 | 적금. allocatedAmount 가 원금인지 월 납입액인지 이걸로 구분한다.
+  final String productType;
   final int termMonths;
   final double interestRate;
   final int allocatedAmount;
   final int afterTaxInterest;
 
-  /// "2,000만원 · 연 3.40% · 비과세" 처럼, 금액/한도 조건을 설명하는 줄.
+  /// "1,000,000원 예치 · 연 3.4%" / "월 500,000원 납입 · 연 4.9%" 처럼,
+  /// productType 에 따라 원금/월 납입액 여부를 구분해 보여주는 줄.
   final String amountDescription;
 
-  /// "만기 2027-09-15 [확인됨]" 처럼, 확인된 우대조건/만기를 설명하는 줄.
+  /// applied_conditions 를 사람이 읽을 문장으로 조합한 줄 (우대조건이 없으면 안내 문구).
   final String conditionDescription;
-
-  /// 상품 공식 안내 페이지 링크.
-  final String detailUrl;
 
   const PortfolioProduct({
     required this.institutionName,
     required this.productName,
+    required this.productType,
     required this.termMonths,
     required this.interestRate,
     required this.allocatedAmount,
     required this.afterTaxInterest,
     required this.amountDescription,
     required this.conditionDescription,
-    required this.detailUrl,
   });
 
-  // 백엔드 응답에 amountDescription/conditionDescription/detailUrl 이 아직 없어
-  // PortfolioFieldMocks 로 채운다 (백엔드 스키마에 필드가 추가되면 그 파일을
-  // 지우고 여기서 실제 값을 매핑하면 된다).
   factory PortfolioProduct.fromJson(Map<String, dynamic> json) {
-    final institutionName = json['institution_name'] as String;
-    final productName = json['product_name'] as String;
+    final productType = json['product_type'] as String;
     final allocatedAmount = json['allocated_amount'] as int;
     final interestRate = (json['interest_rate'] as num).toDouble();
+    final amountLabel = productType == '적금'
+        ? '월 ${CurrencyFormatter.won(allocatedAmount)} 납입'
+        : '${CurrencyFormatter.won(allocatedAmount)} 예치';
     return PortfolioProduct(
-      institutionName: institutionName,
-      productName: productName,
+      institutionName: json['institution_name'] as String,
+      productName: json['product_name'] as String,
+      productType: productType,
       termMonths: json['term_months'] as int,
       interestRate: interestRate,
       allocatedAmount: allocatedAmount,
       afterTaxInterest: json['after_tax_interest'] as int,
-      amountDescription: PortfolioFieldMocks.productAmountDescription(
-        allocatedAmount: allocatedAmount,
-        interestRate: interestRate,
-      ),
-      conditionDescription: PortfolioFieldMocks.productConditionDescription(),
-      detailUrl: PortfolioFieldMocks.productDetailUrl(
-        institutionName: institutionName,
-        productName: productName,
+      amountDescription: '$amountLabel · 연 $interestRate%',
+      conditionDescription: _conditionDescription(
+        json['applied_conditions'] as List<dynamic>,
       ),
     );
+  }
+
+  static String _conditionDescription(List<dynamic> appliedConditions) {
+    if (appliedConditions.isEmpty) return '적용된 우대조건 없음';
+    return appliedConditions.map((raw) {
+      final condition = raw as Map<String, dynamic>;
+      final thresholdValue = condition['threshold_value'] as int?;
+      final thresholdUnit = condition['threshold_unit'] as String?;
+      final threshold = thresholdValue != null ? '$thresholdValue$thresholdUnit 이상 ' : '';
+      final status = (condition['already_met'] as bool) ? '충족' : '미충족';
+      return '${condition['condition_type']} $threshold'
+          '+${condition['bonus_rate']}%p ($status)';
+    }).join(', ');
   }
 }
 
@@ -96,8 +105,9 @@ class PortfolioOption {
   /// 단일안(주거래은행 단일 상품) 대비 세후 이자 차액. 주거래은행을 몰라 단일안을
   /// 계산할 수 없으면(baseline 이 null) 이것도 null.
   final int? extraVsBaseline;
+
+  /// 이 안을 실행하려면 새로 가입해야 하는 기관 수 (상품 개수가 아니라 기관 기준 중복 제거된 값).
   final int newAccountCount;
-  final int branchVisitCount;
 
   const PortfolioOption({
     required this.tier,
@@ -106,11 +116,8 @@ class PortfolioOption {
     required this.reason,
     required this.extraVsBaseline,
     required this.newAccountCount,
-    required this.branchVisitCount,
   });
 
-  // 백엔드 응답에 newAccountCount/branchVisitCount 가 아직 없어 PortfolioFieldMocks 로
-  // 채운다 (위 fromJson과 동일한 이유).
   factory PortfolioOption.fromJson(Map<String, dynamic> json) {
     final products = (json['products'] as List<dynamic>)
         .map((p) => PortfolioProduct.fromJson(p as Map<String, dynamic>))
@@ -121,8 +128,7 @@ class PortfolioOption {
       afterTaxTotal: json['after_tax_total'] as int,
       reason: json['reason'] as String?,
       extraVsBaseline: (json['extra_vs_baseline'] as num?)?.toInt(),
-      newAccountCount: PortfolioFieldMocks.optionNewAccountCount(products.length),
-      branchVisitCount: PortfolioFieldMocks.optionBranchVisitCount(),
+      newAccountCount: json['new_bank_count'] as int,
     );
   }
 }
