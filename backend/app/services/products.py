@@ -11,16 +11,48 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.batch import BatchRun
 from app.models.institution import Institution
 from app.models.product import Product, ProductOption
-from app.schemas.product import ProductListItem, ProductListOut
+from app.schemas.product import BranchItem, BranchListOut, ProductListItem, ProductListOut
 from app.services.onboarding import BANK_CODES
 
-# 선택지 하나가 기관 하나로 정해지지 않는 경우. 조합이 1,800곳이라 상품을 이름으로 묶는다
+# 선택지 하나가 기관 하나로 정해지지 않는 경우. 조합이 2,000곳이라 지점(branch)을 고르지 않으면 상품을 이름으로 묶는다
 COOP_LABELS = {"신협": "신협", "새마을금고": "새마을금고"}  # 선택지 -> institution_type
 
 
-async def list_products(session: AsyncSession, institution: str, product_type: str | None) -> ProductListOut:
+def branch_label(institution: str, name: str, region: str | None) -> str:
+    # 신협은 이름이 지명뿐이고("순천") 지역이 비어 있다. 새마을금고는 이름에 '새마을금고'가 들어 있다
+    label = name if institution in name else f"{name}{institution}"
+    return f"{label} ({region})" if region else label
+
+
+async def list_branches(session: AsyncSession, institution: str) -> BranchListOut:
+    """신협·새마을금고 지점 전부 (상품이 있는 곳만). 지역 → 이름 순."""
+    has_product = select(Product.product_id).where(Product.institution_code == Institution.institution_code).exists()
+    rows = (
+        await session.execute(
+            select(Institution.institution_code, Institution.name, Institution.region)
+            .where(Institution.institution_type == COOP_LABELS[institution], has_product)
+            .order_by(Institution.region.nulls_last(), Institution.name)
+        )
+    ).all()
+    items = [
+        BranchItem(institution_code=code, name=name, region=region, label=branch_label(institution, name, region))
+        for code, name, region in rows
+    ]
+    return BranchListOut(institution=institution, items=items)
+
+
+async def list_products(
+    session: AsyncSession, institution: str, product_type: str | None, branch: str | None = None
+) -> ProductListOut:
     grouped = institution in COOP_LABELS
     code = BANK_CODES.get(institution)
+    if grouped and branch is not None:  # 지점을 골랐으면 그 지점 상품을 은행처럼 금리와 함께 준다
+        branch_type = await session.scalar(
+            select(Institution.institution_type).where(Institution.institution_code == branch)
+        )
+        if branch_type != COOP_LABELS[institution]:  # 없는 지점이거나 다른 기관 종류
+            return ProductListOut(institution=institution, grouped_by_name=False, items=[])
+        grouped, code = False, branch
     if not grouped and code is None:  # 공시 데이터에 없는 기관 - FE 는 직접 입력으로
         return ProductListOut(institution=institution, grouped_by_name=False, items=[])
 

@@ -41,6 +41,9 @@ class ProductEntryForm extends StatefulWidget {
 }
 
 class _ProductEntryFormState extends State<ProductEntryForm> {
+  /// 조합이 지점마다 따로라, 지점을 골라야 그 지점 상품이 금리와 함께 뜨는 기관.
+  static const _coopInstitutions = {'새마을금고', '신협'};
+
   late DateTime _date = widget.initialDate;
   String _institutionName = '';
   final _productNameController = TextEditingController();
@@ -53,6 +56,13 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
   bool _isLoadingProducts = false;
   String? _selectedProductId;
   String? _selectedProductName;
+
+  List<BranchSummary> _branches = const [];
+  List<String> _branchLabels = const [];
+  bool _isLoadingBranches = false;
+  BranchSummary? _branch;
+
+  bool get _isCoop => _coopInstitutions.contains(_institutionName);
 
   @override
   void initState() {
@@ -80,15 +90,59 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
   Future<void> _onInstitutionSelected(String institution) async {
     setState(() {
       _institutionName = institution;
-      _products = const [];
-      _selectedProductId = null;
-      _selectedProductName = null;
-      _productNameController.clear();
-      _isLoadingProducts = true;
+      _branches = const [];
+      _branchLabels = const [];
+      _branch = null;
+      _clearProducts();
     });
+    if (_isCoop) {
+      await _loadBranches(institution);
+    } else {
+      await _loadProducts(institution);
+    }
+  }
+
+  Future<void> _onBranchSelected(String label) async {
+    final branch = _branches.firstWhere((b) => b.label == label);
+    setState(() {
+      _branch = branch;
+      _clearProducts();
+    });
+    await _loadProducts(_institutionName, branch: branch);
+  }
+
+  void _clearProducts() {
+    _products = const [];
+    _selectedProductId = null;
+    _selectedProductName = null;
+    _productNameController.clear();
+  }
+
+  Future<void> _loadBranches(String institution) async {
+    setState(() => _isLoadingBranches = true);
     try {
-      final result = await ApiClient.instance.searchProducts(institution: institution);
-      if (!mounted) return;
+      final branches = await ApiClient.instance.fetchBranches(institution);
+      if (!mounted || _institutionName != institution) return;
+      setState(() {
+        _branches = branches;
+        _branchLabels = branches.map((b) => b.label).toList();
+      });
+    } catch (_) {
+      // 지점 목록을 못 받아도 상품명 직접 입력으로 계속 쓸 수 있다.
+    } finally {
+      if (mounted) setState(() => _isLoadingBranches = false);
+    }
+  }
+
+  Future<void> _loadProducts(String institution, {BranchSummary? branch}) async {
+    setState(() => _isLoadingProducts = true);
+    try {
+      final result = await ApiClient.instance.searchProducts(
+        institution: institution,
+        branch: branch?.institutionCode,
+      );
+      // 기다리는 사이 기관·지점을 바꿨으면 이전 응답은 버린다.
+      if (!mounted || _institutionName != institution || _branch != branch) return;
       setState(() => _products = result.items);
     } catch (_) {
       // 상품 목록 조회가 실패해도 직접 입력으로 계속 쓸 수 있어야 하니
@@ -148,7 +202,8 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
     try {
       await widget.onSubmit(
         date: _date,
-        institutionName: _institutionName,
+        // 신협·새마을금고는 지점까지 남긴다 (예: 가창새마을금고 본점 (대구 달성군))
+        institutionName: _branch?.label ?? _institutionName,
         productId: _selectedProductId,
         productName: _productNameController.text.trim(),
         amount: int.tryParse(_amountController.text) ?? 0,
@@ -211,6 +266,18 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
           selectedValues: _institutionName.isEmpty ? const [] : [_institutionName],
           onSelect: _onInstitutionSelected,
         ),
+        if (_isCoop) ...[
+          const SizedBox(height: 20),
+          const _FieldLabel('지점'),
+          const SizedBox(height: 8),
+          SearchableSelectField(
+            hintText: _isLoadingBranches ? '지점을 불러오는 중...' : '지점을 선택해주세요 (예: 대구 검색)',
+            options: _branchLabels,
+            selectedValues: _branch == null ? const [] : [_branch!.label],
+            enabled: !_isLoadingBranches,
+            onSelect: _onBranchSelected,
+          ),
+        ],
         const SizedBox(height: 20),
         const _FieldLabel('상품명'),
         const SizedBox(height: 8),
@@ -221,7 +288,11 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
           readOnly: _products.isNotEmpty,
           onTap: _products.isEmpty ? null : _openProductPicker,
           decoration: _fieldDecoration(
-            hintText: _institutionName.isEmpty ? '기관을 먼저 선택해주세요' : '예: 자유적금',
+            hintText: _institutionName.isEmpty
+                ? '기관을 먼저 선택해주세요'
+                : _isCoop && _branch == null
+                    ? '지점을 고르거나 직접 입력해주세요'
+                    : '예: 자유적금',
             suffixIcon: _isLoadingProducts
                 ? const Padding(
                     padding: EdgeInsets.all(14),
