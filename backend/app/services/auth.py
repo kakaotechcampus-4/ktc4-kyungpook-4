@@ -22,6 +22,8 @@ from app.services.oauth import SocialUser
 from app.services.portfolio import close_active_portfolios
 
 STATE_TTL_SECONDS = 600  # 소셜사 로그인 화면에서 머무를 수 있는 시간
+# 교체된 refresh 토큰을 이 시간 동안은 받아준다. 동시에 나간 refresh 요청이 로그아웃되지 않게 하기 위해서다
+REFRESH_GRACE_SECONDS = 30
 DEFAULT_NICKNAME = "사용자"  # 소셜사가 닉네임을 안 주면 (app_user.nickname 은 NOT NULL)
 _NICKNAME_MAX = 50
 
@@ -32,6 +34,10 @@ def _state_key(state: str) -> str:
 
 def _refresh_key(token: str) -> str:
     return f"auth:refresh:{hash_token(token)}"
+
+
+def _rotated_key(token: str) -> str:
+    return f"auth:refresh-rotated:{hash_token(token)}"
 
 
 def safe_next(next_path: str | None) -> str:
@@ -132,11 +138,22 @@ async def issue_refresh(redis: Redis, user_id: int) -> str:
     return token
 
 
-async def rotate_refresh(redis: Redis, token: str) -> tuple[int, str] | None:
-    """쓴 refresh 토큰은 지우고 새로 발급한다. 이미 쓴 토큰을 다시 내면 None."""
-    user_id = await redis.getdel(_refresh_key(token))
+async def rotate_refresh(redis: Redis, token: str) -> tuple[int, str | None] | None:
+    """refresh 토큰을 새로 바꾼다. (user_id, 새 refresh) 를 주고, 유효하지 않으면 None.
+
+    access 가 만료되면 여러 요청이 동시에 같은 refresh 토큰으로 들어온다 (탭 여러 개, 이미 보낸 요청).
+    쓰자마자 지우면 첫 요청만 성공하고 나머지는 실패해 로그아웃되므로:
+    - 교체는 SET NX 로 한 요청만 한다 (원자적). 그 요청만 새 refresh 를 받고, 옛 토큰 수명은 유예 시간으로 줄인다
+    - 나머지는 옛 토큰이 살아 있는 유예 시간 동안 새 refresh 없이 (user_id, None) 을 받는다 → access 만 재발급.
+      브라우저는 교체한 요청의 응답이 준 새 refresh 를 이미 갖고 있어서 그대로 두면 된다
+    - 유예 시간이 지나면 옛 토큰은 만료돼 None
+    """
+    user_id = await redis.get(_refresh_key(token))
     if user_id is None:
         return None
+    if not await redis.set(_rotated_key(token), 1, nx=True, ex=REFRESH_GRACE_SECONDS):
+        return int(user_id), None
+    await redis.expire(_refresh_key(token), REFRESH_GRACE_SECONDS)
     return int(user_id), await issue_refresh(redis, int(user_id))
 
 
