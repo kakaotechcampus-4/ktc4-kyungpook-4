@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../providers/auth_provider.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
@@ -80,7 +81,7 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
                 onStepTap: (step) => context.go(AppRoutes.inputStep(step)),
               ),
               const SizedBox(height: 48),
-              _buildHeader(),
+              _buildHeader(ref.watch(userDisplayNameProvider)),
               const SizedBox(height: 40),
               _AmountField(
                 label: '목돈',
@@ -123,22 +124,22 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String name) {
     return RichText(
       textAlign: TextAlign.center,
-      text: const TextSpan(
-        style: TextStyle(fontSize: 16, height: 1.5, color: AppColors.darkGray),
+      text: TextSpan(
+        style: const TextStyle(fontSize: 16, height: 1.5, color: AppColors.darkGray),
         children: [
           TextSpan(
-            text: 'OO님',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            text: '$name님',
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          TextSpan(text: '을 위한 '),
-          TextSpan(
+          const TextSpan(text: '을 위한 '),
+          const TextSpan(
             text: '정확한 상품 추천',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          TextSpan(text: '을 위해\n아래 항목들을 입력해주세요.'),
+          const TextSpan(text: '을 위해\n아래 항목들을 입력해주세요.'),
         ],
       ),
     );

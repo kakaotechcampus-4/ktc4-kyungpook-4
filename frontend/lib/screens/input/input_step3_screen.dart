@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../models/onboarding_input.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
@@ -411,13 +412,14 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
         );
 
       case _Stage.closing:
+        final name = ref.watch(userDisplayNameProvider);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const BotChatTurn(
+            BotChatTurn(
               content: Text(
                 '됐어요!\n필요한 내용은 다 들었어요.\n'
-                '이제 OO님께 맞는 포트폴리오를\n준비해볼게요!',
+                '이제 $name님께 맞는 포트폴리오를\n준비해볼게요!',
                 style: _botTextStyle,
               ),
             ),
