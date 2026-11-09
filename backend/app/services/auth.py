@@ -4,8 +4,11 @@ Redis 에는 날아가도 되는 것만 둔다. state 가 날아가면 로그인
 refresh 토큰이 날아가면 다시 로그인하면 된다. 계정 자체는 항상 PostgreSQL 에 있다.
 """
 
+import base64
+import hashlib
 import json
 import secrets
+from dataclasses import dataclass
 
 from redis.asyncio import Redis
 from sqlalchemy import delete, select, update
@@ -22,6 +25,7 @@ from app.services.oauth import SocialUser
 from app.services.portfolio import close_active_portfolios
 
 STATE_TTL_SECONDS = 600  # 소셜사 로그인 화면에서 머무를 수 있는 시간
+APP_CODE_TTL_SECONDS = 60  # 앱이 딥링크로 받은 일회용 코드를 토큰으로 바꿔야 하는 시간
 # 교체된 refresh 토큰을 이 시간 동안은 받아준다. 동시에 나간 refresh 요청이 로그아웃되지 않게 하기 위해서다
 REFRESH_GRACE_SECONDS = 30
 DEFAULT_NICKNAME = "사용자"  # 소셜사가 닉네임을 안 주면 (app_user.nickname 은 NOT NULL)
@@ -40,6 +44,17 @@ def _rotated_key(token: str) -> str:
     return f"auth:refresh-rotated:{hash_token(token)}"
 
 
+def _app_code_key(code: str) -> str:
+    return f"auth:appcode:{hash_token(code)}"
+
+
+@dataclass(frozen=True)
+class LoginState:
+    next_path: str  # 웹: 로그인 후 돌아갈 FE 경로
+    client: str = "web"  # web | app
+    code_challenge: str | None = None  # 앱만. PKCE S256 - 일회용 코드를 가로채도 못 쓰게 한다
+
+
 def safe_next(next_path: str | None) -> str:
     """로그인 후 돌아갈 FE 경로. 우리 앱 안의 경로만 허용한다 (오픈 리다이렉트 방지)."""
     if not next_path or not next_path.startswith("/") or next_path.startswith("//") or "\\" in next_path:
@@ -47,22 +62,51 @@ def safe_next(next_path: str | None) -> str:
     return next_path
 
 
-async def create_state(redis: Redis, provider: str, next_path: str) -> str:
-    """CSRF 방지용 state. 콜백에서 한 번만 쓸 수 있다."""
+async def create_state(
+    redis: Redis, provider: str, next_path: str, *, client: str = "web", code_challenge: str | None = None
+) -> str:
+    """CSRF 방지용 state. 콜백에서 한 번만 쓸 수 있다. 앱 로그인이면 PKCE challenge 도 같이 둔다."""
     state = secrets.token_urlsafe(32)
-    await redis.set(_state_key(state), json.dumps({"provider": provider, "next": next_path}), ex=STATE_TTL_SECONDS)
+    data = {"provider": provider, "next": next_path, "client": client, "code_challenge": code_challenge}
+    await redis.set(_state_key(state), json.dumps(data), ex=STATE_TTL_SECONDS)
     return state
 
 
-async def consume_state(redis: Redis, state: str, provider: str) -> str | None:
-    """유효하면 돌아갈 경로, 없거나·만료됐거나·다른 provider 것이면 None. 확인과 동시에 지운다."""
+async def consume_state(redis: Redis, state: str, provider: str) -> LoginState | None:
+    """유효하면 로그인 시작 정보, 없거나·만료됐거나·다른 provider 것이면 None. 확인과 동시에 지운다."""
     raw = await redis.getdel(_state_key(state))
     if raw is None:
         return None
     data = json.loads(raw)
     if data.get("provider") != provider:
         return None
-    return safe_next(data.get("next"))
+    # client 가 없는 state 는 이 기능 전에 만든 웹 로그인이다
+    return LoginState(safe_next(data.get("next")), data.get("client") or "web", data.get("code_challenge"))
+
+
+def pkce_challenge(verifier: str) -> str:
+    """RFC 7636 S256: BASE64URL(SHA256(verifier)), '=' 패딩 없이."""
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+async def create_app_code(redis: Redis, user_id: int, code_challenge: str) -> str:
+    """앱 로그인 콜백에서 딥링크로 넘길 일회용 코드. 토큰을 주소에 싣지 않기 위해 한 번 더 바꾼다."""
+    code = secrets.token_urlsafe(32)
+    data = json.dumps({"user_id": user_id, "code_challenge": code_challenge})
+    await redis.set(_app_code_key(code), data, ex=APP_CODE_TTL_SECONDS)
+    return code
+
+
+async def consume_app_code(redis: Redis, code: str, code_verifier: str) -> int | None:
+    """맞으면 user_id. 없거나·만료됐거나·verifier 가 틀리면 None. 틀려도 코드는 지운다(재시도 공격 차단)."""
+    raw = await redis.getdel(_app_code_key(code))
+    if raw is None:
+        return None
+    data = json.loads(raw)
+    if not secrets.compare_digest(pkce_challenge(code_verifier), data["code_challenge"]):
+        return None
+    return int(data["user_id"])
 
 
 async def find_or_create_user(session: AsyncSession, social: SocialUser) -> int:
@@ -134,27 +178,36 @@ async def _find_user_id(session: AsyncSession, social: SocialUser) -> int | None
 
 async def issue_refresh(redis: Redis, user_id: int) -> str:
     token = new_refresh_token()
-    await redis.set(_refresh_key(token), user_id, ex=settings.REFRESH_TOKEN_DAYS * 86400)
+    await _store_refresh(redis, token, user_id)
     return token
 
 
-async def rotate_refresh(redis: Redis, token: str) -> tuple[int, str | None] | None:
+async def _store_refresh(redis: Redis, token: str, user_id: int | str) -> None:
+    await redis.set(_refresh_key(token), user_id, ex=settings.REFRESH_TOKEN_DAYS * 86400)
+
+
+async def rotate_refresh(redis: Redis, token: str) -> tuple[int, str] | None:
     """refresh 토큰을 새로 바꾼다. (user_id, 새 refresh) 를 주고, 유효하지 않으면 None.
 
     access 가 만료되면 여러 요청이 동시에 같은 refresh 토큰으로 들어온다 (탭 여러 개, 이미 보낸 요청).
     쓰자마자 지우면 첫 요청만 성공하고 나머지는 실패해 로그아웃되므로:
-    - 교체는 SET NX 로 한 요청만 한다 (원자적). 그 요청만 새 refresh 를 받고, 옛 토큰 수명은 유예 시간으로 줄인다
-    - 나머지는 옛 토큰이 살아 있는 유예 시간 동안 새 refresh 없이 (user_id, None) 을 받는다 → access 만 재발급.
-      브라우저는 교체한 요청의 응답이 준 새 refresh 를 이미 갖고 있어서 그대로 두면 된다
+    - 교체는 SET NX 로 한 요청만 한다 (원자적). 새 refresh 를 옛 토큰 자리에 적어 두고,
+      옛 토큰 수명은 유예 시간으로 줄인다
+    - 유예 시간 동안 같은 옛 토큰으로 온 요청은 그 새 refresh 를 그대로 받는다. 웹은 같은 쿠키를 다시 굽게 되고,
+      앱은 어느 응답을 저장해도 같은 토큰이라 어긋나지 않는다
     - 유예 시간이 지나면 옛 토큰은 만료돼 None
+    새 refresh 원문은 유예 시간 동안만 Redis 에 남는다. 해시만 두면 늦게 온 요청에 돌려줄 수 없어서다.
     """
     user_id = await redis.get(_refresh_key(token))
     if user_id is None:
         return None
-    if not await redis.set(_rotated_key(token), 1, nx=True, ex=REFRESH_GRACE_SECONDS):
-        return int(user_id), None
-    await redis.expire(_refresh_key(token), REFRESH_GRACE_SECONDS)
-    return int(user_id), await issue_refresh(redis, int(user_id))
+    new_token = new_refresh_token()
+    if await redis.set(_rotated_key(token), new_token, nx=True, ex=REFRESH_GRACE_SECONDS):
+        await _store_refresh(redis, new_token, user_id)
+        await redis.expire(_refresh_key(token), REFRESH_GRACE_SECONDS)
+        return int(user_id), new_token
+    rotated = await redis.get(_rotated_key(token))  # 다른 요청이 이미 교체함
+    return (int(user_id), rotated) if rotated is not None else None
 
 
 async def revoke_refresh(redis: Redis, token: str) -> None:

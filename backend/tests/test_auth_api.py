@@ -250,7 +250,7 @@ def _set_cookie_names(res) -> set[str]:
 
 async def test_concurrent_refresh_does_not_log_out(client, monkeypatch):
     """access 만료 직후 여러 요청이 같은 refresh 토큰으로 동시에 refresh 해도 전부 성공한다.
-    교체(새 refresh 발급)는 한 요청만 하고, 나머지는 access 만 새로 받는다."""
+    교체(새 refresh 발급)는 한 요청만 하고, 나머지는 그 새 refresh 를 그대로 받는다."""
     fake_provider(monkeypatch, social())
     await login(client)
     old_refresh = client.cookies.get("refresh_token")
@@ -260,8 +260,9 @@ async def test_concurrent_refresh_does_not_log_out(client, monkeypatch):
         *[client.post("/api/v1/auth/refresh", headers={"Cookie": f"refresh_token={old_refresh}"}) for _ in range(5)]
     )
     assert [r.status_code for r in responses] == [204] * 5
-    assert all("access_token" in _set_cookie_names(r) for r in responses)
-    assert sum("refresh_token" in _set_cookie_names(r) for r in responses) == 1
+    assert all(_set_cookie_names(r) == {"access_token", "refresh_token"} for r in responses)
+    new_refreshes = {r.cookies.get("refresh_token") for r in responses}
+    assert len(new_refreshes) == 1 and old_refresh not in new_refreshes
 
 
 async def test_old_refresh_works_only_during_grace(client, monkeypatch):
@@ -270,12 +271,13 @@ async def test_old_refresh_works_only_during_grace(client, monkeypatch):
     await login(client)
     old_refresh = client.cookies.get("refresh_token")
     await client.post("/api/v1/auth/refresh")  # 교체
+    new_refresh = client.cookies.get("refresh_token")
     client.cookies.clear()
     stale = {"Cookie": f"refresh_token={old_refresh}"}
 
     late = await client.post("/api/v1/auth/refresh", headers=stale)  # 늦게 도착한 요청
     assert late.status_code == 204
-    assert _set_cookie_names(late) == {"access_token"}  # 새 refresh 는 주지 않는다
+    assert late.cookies.get("refresh_token") == new_refresh  # 교체할 때 만든 것과 같은 refresh 를 준다
 
     await asyncio.sleep(1.1)
     expired = await client.post("/api/v1/auth/refresh", headers=stale)

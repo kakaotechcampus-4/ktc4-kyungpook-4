@@ -62,8 +62,10 @@ docker compose up -d --build --remove-orphans
 # 이미 떠 있는 Caddy는 여전히 "예전 릴리스 디렉토리"를 보고 있다는 뜻이다. 그 디렉토리가
 # 6번 정리 단계에서 지워지면 Caddy 입장에서 /srv가 통째로 사라져 정적 파일이 전부 404가 된다.
 # 그래서 web만 따로 강제 재생성해서 매번 최신 링크로 다시 마운트시킨다.
-log "web(Caddy) 재마운트"
-docker compose up -d --force-recreate web
+# backend 도 같다. FE 만 바뀐 배포에선 이미지가 그대로라 재생성되지 않고, AI 산출물 마운트(/data/erd)가
+# 지워진 예전 릴리스를 가리켜 4번 적재가 FileNotFoundError 로 실패한다 (2026-11-09 #84 배포).
+log "web(Caddy)·backend 재마운트"
+docker compose up -d --force-recreate --no-deps web backend
 
 # 도메인을 붙이면 Caddy 는 그 이름으로 온 요청에만 응답하므로, 확인은 백엔드에 직접 한다.
 health() {
