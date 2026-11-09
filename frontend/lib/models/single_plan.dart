@@ -1,3 +1,6 @@
+/// "단일형"이 어떤 기준인지 한 줄 설명. 포트폴리오 tier 설명들과 나란히 보여준다.
+const singlePlanDescription = '주거래은행 상품 하나에 전액을 몰아넣었을 때예요';
+
 /// 주거래은행 단일 상품에 전액을 넣었을 때의 비교 기준값.
 class SinglePlan {
   final String institutionName;

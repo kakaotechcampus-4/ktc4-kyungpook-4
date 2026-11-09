@@ -10,6 +10,15 @@ extension PortfolioTierLabel on PortfolioTier {
         PortfolioTier.max => '최대형',
       };
 
+  /// 이 안이 어떤 기준으로 만들어졌는지 한 줄로 설명. 사용자가 포트폴리오별
+  /// 차이를 이해할 수 있게 결과 화면에 보여준다.
+  String get description => switch (this) {
+        PortfolioTier.stable => '1금융권 상품만으로 구성했어요 (신규 가입 등 다른 조건은 고려하지 않아요)',
+        PortfolioTier.simple => '지금 이미 충족한 조건만으로 받을 수 있는 최대 실수령액이에요',
+        PortfolioTier.balanced => '새 은행 가입·자동이체 등록처럼 약간의 행동 변화로 받을 수 있는 최대 실수령액이에요',
+        PortfolioTier.max => '카드 실적 채우기, 보험 가입 등 모든 우대조건을 달성했다고 가정한 최대 실수령액이에요',
+      };
+
   /// 백엔드 API 가 쓰는 한글 tier 값. (POST /portfolios 의 tier 파라미터 등)
   String get apiValue => switch (this) {
         PortfolioTier.stable => '안정형',
