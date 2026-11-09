@@ -115,8 +115,11 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                 title: '주 거래은행이 어디인가요?',
                 description: '(단일 선택)',
                 child: SearchableSelectField(
-                  hintText: '은행을 선택해주세요',
-                  options: bankOptions,
+                  hintText: input.currentBanks.isEmpty
+                      ? '먼저 보유 중인 은행을 선택해주세요'
+                      : '은행을 선택해주세요',
+                  options: input.currentBanks,
+                  enabled: input.currentBanks.isNotEmpty,
                   selectedValues:
                       input.mainBank.isEmpty ? const [] : [input.mainBank],
                   onSelect: (bank) {
