@@ -82,7 +82,9 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
               ),
               const SizedBox(height: 48),
               _buildHeader(ref.watch(userDisplayNameProvider)),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
+              const _DepositSavingsHint(),
+              const SizedBox(height: 32),
               _AmountField(
                 label: '목돈',
                 description: '한번에 최대 얼마까지 맡길 수 있으신가요?',
@@ -140,6 +142,36 @@ class _InputStep1ScreenState extends ConsumerState<InputStep1Screen> {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const TextSpan(text: '을 위해\n아래 항목들을 입력해주세요.'),
+        ],
+      ),
+    );
+  }
+}
+
+/// 처음 쓰는 사람은 목돈/월저축액이 왜 둘 다 필요한지 헷갈릴 수 있어,
+/// 목돈은 예금을 월저축액은 적금을 찾는 데 쓰인다는 걸 짧게 짚어준다.
+class _DepositSavingsHint extends StatelessWidget {
+  const _DepositSavingsHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.lavenderPale,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, size: 16, color: AppColors.labelPurple),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '목돈은 예금 상품을, 월저축액은 적금 상품을 찾는 데 활용돼요.',
+              style: TextStyle(fontSize: 12, color: AppColors.darkGray, height: 1.4),
+            ),
+          ),
         ],
       ),
     );
