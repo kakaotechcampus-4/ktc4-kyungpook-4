@@ -2,15 +2,19 @@
 주간 데이터 파이프라인 오케스트레이터.
 
 실행 순서:
-  1. 금감원 데이터 수집      (fetch_all_products.py)          ┐
-  2. 신협 데이터 수집        (fetch_cu_rate_compare.py)       ├ 소스별 독립 실행 + 재시도
-  3. 새마을금고 지점 목록    (fetch_kfcc_branches.py)         │ 실패해도 다음 소스 계속 진행
-  4. 새마을금고 금리         (fetch_kfcc_rates.py)            │ (1시간 넘게 걸려 재시도 없이 1번만)
-  5. 새마을금고 중앙 조건    (fetch_kfcc_central_conditions.py)┘
-  6. 판매 종료 감지          (fetch 성공 소스만 대상으로 missing_counts.json 갱신)
-  7. AI 우대조건 추출        (extract_conditions_ai.py - 변경분만 자동 처리)
-  8. ERD 산출물 빌드         (build_erd_tables.py)
-  9. 급감 검사              (check_erd_drop.py - 판단만 한다. 커밋 여부는 워크플로가 정한다)
+  1. 금감원 데이터 수집      (fetch_all_products.py)          ┐ 소스별 독립 실행 + 재시도
+  2. 신협 데이터 수집        (fetch_cu_rate_compare.py)       ┘ 실패해도 다음 소스 계속 진행
+  3. 판매 종료 감지          (fetch 성공 소스만 대상으로 missing_counts.json 갱신)
+  4. AI 우대조건 추출        (extract_conditions_ai.py - 변경분만 자동 처리)
+  5. ERD 산출물 빌드         (build_erd_tables.py)
+  6. 급감 검사              (check_erd_drop.py - 판단만 한다. 커밋 여부는 워크플로가 정한다)
+
+[새마을금고 - 고정 데이터, 매주 수집 안 함]
+kfcc.co.kr 이 GitHub Actions·AWS 등 서버 IP 의 자동 수집을 막아서 주간 수집에서 뺐다.
+tests/fixtures 의 kfcc_branches.json / kfcc_rates.jsonl / kfcc_central_conditions_raw.jsonl
+(로컬에서 직접 수집해 서버에 올린 마지막 수집본)을 그대로 읽어 ERD 를 만든다. 이 세 파일이 없으면 ERD 빌드가 실패한다.
+판매 종료 판단은 새마을금고에 대해 항상 보류한다(수집을 안 하므로 사라졌는지 알 수 없다).
+수집 스크립트(fetch_kfcc_*.py)는 남겨 두었다. 다시 받아야 하면 로컬에서 지점 -> 금리 -> 중앙조건 순서로 직접 실행한다.
 
 사용법 (ai/ 폴더에서 실행):
   python scripts/run_pipeline.py                  # 전체 실행
@@ -225,45 +229,21 @@ def main() -> None:
 
     print("=== 파이프라인 시작 ===")
 
-    fetch_results: dict[str, bool] = {"금감원": True, "신협": True, "새마을금고": True}
-    # 새마을금고 금리(+지점 목록) 성공 여부. 판매 종료 판단은 중앙조건 기준이라 fetch_results 와 따로 둔다
-    kfcc_rates_ok = True
+    # 매주 수집하는 소스만 둔다. 새마을금고는 고정 데이터라 여기 없고, 그래서 판매 종료 판단도 항상 보류된다
+    fetch_results: dict[str, bool] = {"금감원": True, "신협": True}
+    frozen_sources = ["새마을금고"]
 
     if not args.skip_fetch:
         fetch_results["금감원"] = _run_with_retry(
-            "1/5 금감원", [py, str(SCRIPTS / "fetch_all_products.py")]
+            "1/2 금감원", [py, str(SCRIPTS / "fetch_all_products.py")]
         )
         fetch_results["신협"] = _run_with_retry(
-            "2/5 신협", [py, str(SCRIPTS / "fetch_cu_rate_compare.py")]
+            "2/2 신협", [py, str(SCRIPTS / "fetch_cu_rate_compare.py")]
         )
-
-        branches_ok = _run_with_retry(
-            "3/5 새마을금고 지점", [py, str(SCRIPTS / "fetch_kfcc_branches.py")]
-        )
-        if branches_ok:
-            # 지점 1천여 곳이라 1시간 넘게 걸린다. 실패 지점 재시도는 스크립트 안에서 하므로 전체 재실행은 하지 않는다
-            # (사이트가 막힌 주에 3번 돌면 몇 시간을 헛쓴다). 실패하면 지점 목록·금리 모두 지난 수집본 유지
-            kfcc_rates_ok = _run_with_retry(
-                "4/5 새마을금고 금리",
-                [py, str(SCRIPTS / "fetch_kfcc_rates.py")],
-                attempts=1,
-            )
-            central_ok = _run_with_retry(
-                "5/5 새마을금고 중앙조건",
-                [py, str(SCRIPTS / "fetch_kfcc_central_conditions.py")],
-            )
-            # 중앙조건이 AI 추출에 직접 사용되므로 성공 여부 기준
-            fetch_results["새마을금고"] = central_ok
-        else:
-            print("[새마을금고] 지점 목록 수집 실패 - 금리/중앙조건 fetch 스킵")
-            fetch_results["새마을금고"] = False
-            kfcc_rates_ok = False
 
     failed_sources = [s for s, ok in fetch_results.items() if not ok]
     successful_sources = {s for s, ok in fetch_results.items() if ok}
-    if not kfcc_rates_ok and "새마을금고" not in failed_sources:
-        # 로그에만 남긴다 (중앙조건이 성공했으면 판매 종료 판단은 그대로 한다)
-        failed_sources.append("새마을금고 금리")
+    print(f"\n[고정 데이터] {frozen_sources} - 수집 안 함, tests/fixtures 의 마지막 수집본 사용 (판매 종료 판단 보류)")
     if failed_sources:
         print(f"\n⚠️  수집 실패 소스: {failed_sources} (이전 데이터 유지, missing count 판단 보류)")
 
@@ -301,6 +281,7 @@ def main() -> None:
         f"SUCCESS\n"
         f"실행일: {date.today()}\n"
         f"수집 실패 소스: {failed_sources if failed_sources else '없음'}\n"
+        f"고정 데이터(수집 안 함): {', '.join(frozen_sources)}\n"
         f"신규: {new_count}건\n"
         f"판매종료: {len(discontinued)}건\n"
         f"급감 검사: {'급감 - ' + ', '.join(drop_items) if drop_items else '통과'}\n",
