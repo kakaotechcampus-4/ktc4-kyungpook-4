@@ -5,6 +5,7 @@ import '../data/bank_options.dart';
 import '../models/product_summary.dart';
 import '../services/api_client.dart';
 import '../theme/app_colors.dart';
+import '../utils/thousands_separator_input_formatter.dart';
 import 'primary_button.dart';
 import 'searchable_select_field.dart';
 
@@ -194,7 +195,7 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
       _showMissingFieldMessage('상품명을 입력해주세요.');
       return;
     }
-    if ((int.tryParse(_amountController.text) ?? 0) <= 0) {
+    if ((int.tryParse(_amountController.text.replaceAll(',', '')) ?? 0) <= 0) {
       _showMissingFieldMessage('금액을 입력해주세요.');
       return;
     }
@@ -206,7 +207,7 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
         institutionName: _branch?.label ?? _institutionName,
         productId: _selectedProductId,
         productName: _productNameController.text.trim(),
-        amount: int.tryParse(_amountController.text) ?? 0,
+        amount: int.tryParse(_amountController.text.replaceAll(',', '')) ?? 0,
         memo: _memoController.text.trim(),
       );
     } finally {
@@ -316,7 +317,10 @@ class _ProductEntryFormState extends State<ProductEntryForm> {
         TextField(
           controller: _amountController,
           keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            ThousandsSeparatorInputFormatter(),
+          ],
           decoration: _fieldDecoration(hintText: '0', suffixText: '원'),
         ),
         const SizedBox(height: 20),
