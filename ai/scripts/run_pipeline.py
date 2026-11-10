@@ -12,9 +12,10 @@
 [새마을금고 - 고정 데이터, 매주 수집 안 함]
 kfcc.co.kr 이 GitHub Actions·AWS 등 서버 IP 의 자동 수집을 막아서 주간 수집에서 뺐다.
 tests/fixtures 의 kfcc_branches.json / kfcc_rates.jsonl / kfcc_central_conditions_raw.jsonl
-(로컬에서 직접 수집해 서버에 올린 마지막 수집본)을 그대로 읽어 ERD 를 만든다. 이 세 파일이 없으면 ERD 빌드가 실패한다.
+(로컬에서 직접 수집한 마지막 수집본)을 그대로 읽어 ERD 를 만든다. tests/fixtures 는 gitignore 지만
+이 세 파일만 예외로 git 에 커밋해 두었다(ai/.gitignore). 이 세 파일이 없으면 ERD 빌드가 실패한다.
 판매 종료 판단은 새마을금고에 대해 항상 보류한다(수집을 안 하므로 사라졌는지 알 수 없다).
-수집 스크립트(fetch_kfcc_*.py)는 남겨 두었다. 다시 받아야 하면 로컬에서 지점 -> 금리 -> 중앙조건 순서로 직접 실행한다.
+수집 스크립트(fetch_kfcc_*.py)는 남겨 두었다. 다시 받아야 하면 로컬에서 지점 -> 금리 -> 중앙조건 순서로 직접 실행하고 세 파일을 커밋한다.
 
 사용법 (ai/ 폴더에서 실행):
   python scripts/run_pipeline.py                  # 전체 실행
