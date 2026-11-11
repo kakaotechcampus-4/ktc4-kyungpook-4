@@ -67,10 +67,11 @@ def _normalize(s: str) -> str:
 # 1) '기타' 조건 묶기 (AI 호출 없음)
 # ---------------------------------------------------------------------------
 def group_etc_conditions(conditions: list) -> list:
-    """'기타' 조건 중 우대폭(rate_bonus)이 있는 것만 골라, 원문이 같은 것끼리 묶는다.
+    """'기타' 조건 중 우대폭(rate_bonus)이 있는 것만 골라, 같은 group_key 안에서 원문이 같은 것끼리 묶는다.
 
-    conditions: [{"condition_id", "condition_type", "rate_bonus", "evidence_text"}, ...]
-                (BE의 ProductCondition 필드명 그대로)
+    conditions: [{"condition_id", "condition_type", "rate_bonus", "evidence_text", "group_key"(선택)}, ...]
+                (BE의 ProductCondition 필드명 그대로). group_key 는 BE가 기관 코드를 넣는다 -
+                원문이 같아도 조합(기관)이 다르면 답이 다를 수 있어서("개설 금고에 ○○ 통장 보유") 따로 묻는다.
     반환: [{"evidence_text": 원문, "condition_ids": [묶인 조건 ID들]}, ...]  - 처음 나온 순서 유지
     원문이 비어 있는 조건은 무엇을 물어볼지 알 수 없어서 뺀다."""
     groups: dict = {}
@@ -80,7 +81,7 @@ def group_etc_conditions(conditions: list) -> list:
         text = (cond.get("evidence_text") or "").strip()
         if not text:
             continue
-        key = _normalize(text)
+        key = (cond.get("group_key"), _normalize(text))
         if key not in groups:
             groups[key] = {"evidence_text": text, "condition_ids": []}
         if cond["condition_id"] not in groups[key]["condition_ids"]:
@@ -140,9 +141,11 @@ def build_etc_questions(conditions: list, max_workers: int = MAX_PARALLEL_QUESTI
     groups = group_etc_conditions(conditions)
     if not groups:
         return []
-    with ThreadPoolExecutor(max_workers=min(max_workers, len(groups))) as pool:
-        questions = list(pool.map(lambda g: _build_question_ai(g["evidence_text"]), groups))
-    return [{**group, "question": q} for group, q in zip(groups, questions)]
+    # 기관별로 나뉘어 같은 원문이 여러 번 나올 수 있다. 질문 문장은 원문마다 한 번만 만든다
+    texts = list(dict.fromkeys(g["evidence_text"] for g in groups))
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(texts))) as pool:
+        questions = dict(zip(texts, pool.map(_build_question_ai, texts)))
+    return [{**group, "question": questions[group["evidence_text"]]} for group in groups]
 
 
 # ---------------------------------------------------------------------------

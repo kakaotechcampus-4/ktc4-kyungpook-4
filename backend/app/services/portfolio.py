@@ -48,6 +48,17 @@ MAX_TIER = "최대형"
 STABLE_TIER = "안정형"
 
 DEPOSIT_PROTECTION_LIMIT = 100_000_000  # 예금자보호 한도. 기관별 원금 합계를 여기까지만 담는다
+
+
+def institution_display_name(name: str, institution_type: str) -> str:
+    """화면에 보여줄 기관 이름. 원본 법인명의 '주식회사'를 빼고('주식회사 카카오뱅크' -> '카카오뱅크'),
+    이름에 '신협'이 빠진 신협에는 붙인다('가락' -> '가락신협')."""
+    display = " ".join(name.replace("주식회사", " ").split())
+    if institution_type == "신협" and not display.endswith("신협"):
+        display += "신협"
+    return display
+
+
 COMPREHENSIVE_TAX_THRESHOLD = 20_000_000  # 금융소득종합과세 기준 (연간 이자·배당)
 FIRST_TIER_INSTITUTION_TYPE = "은행"  # 1금융권
 # 챗봇 '기타' 조건 답을 user_profile_extra.answer_value 에 저장하는 값
@@ -245,7 +256,10 @@ async def _baseline_candidates_for_bank(
         for cond in (await session.execute(cond_stmt)).scalars():
             conditions[cond.product_id].append(cond)
 
-    return [Candidate(p, o, name, itype, conditions[p.product_id]) for p, o, name, itype in rows], note
+    return [
+        Candidate(p, o, institution_display_name(name, itype), itype, conditions[p.product_id])
+        for p, o, name, itype in rows
+    ], note
 
 
 async def _matching_options(
@@ -277,7 +291,10 @@ async def _matching_options(
         for cond in (await session.execute(cond_stmt)).scalars():
             conditions[cond.product_id].append(cond)
 
-    return matched_period, [Candidate(p, o, name, itype, conditions[p.product_id]) for p, o, name, itype in rows]
+    return matched_period, [
+        Candidate(p, o, institution_display_name(name, itype), itype, conditions[p.product_id])
+        for p, o, name, itype in rows
+    ]
 
 
 def _effective_cap(product: Product, cap_field: str, period_months: int) -> int | None:

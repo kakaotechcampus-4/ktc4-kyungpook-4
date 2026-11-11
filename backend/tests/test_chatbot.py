@@ -11,7 +11,14 @@ from app.api.deps import get_principal
 from app.db.session import get_session
 from app.main import app
 from app.services import chatbot
-from app.services.chatbot import EtcAnswerResult, EtcQuestion, recommended_options, select_question_targets
+from app.services.chatbot import (
+    EtcAnswerResult,
+    EtcQuestion,
+    label_question,
+    recommended_options,
+    select_question_targets,
+)
+from app.services.portfolio import institution_display_name
 
 
 def _cond(cid, ctype="기타", bonus="0.30", product="P1", pmin=None, pmax=None):
@@ -65,6 +72,39 @@ def test_targets_skip_promo_rate():
     promo.evidence_text = "특판우대이율"
     conds = [promo, _cond("B")]
     assert [c.condition_id for c in select_question_targets(conds, {"P1": _option()}, set())] == ["B"]
+
+
+def test_institution_display_name():
+    assert institution_display_name("가락", "신협") == "가락신협"
+    assert institution_display_name("가락신협", "신협") == "가락신협"
+    assert institution_display_name("주식회사 카카오뱅크", "은행") == "카카오뱅크"
+    assert institution_display_name("농협은행주식회사", "은행") == "농협은행"
+    assert institution_display_name("토스뱅크 주식회사", "은행") == "토스뱅크"
+    assert institution_display_name("도봉새마을금고 본점", "새마을금고") == "도봉새마을금고 본점"
+
+
+def test_label_question_names_institution_and_product():
+    info = {"P1": ("I1", "가락신협", "A적금"), "P2": ("I1", "가락신협", "B적금")}
+    q = "장기거래고객에 해당하시나요?"
+    assert label_question(q, ["P1"], info) == "가락신협 'A적금'의 우대조건이에요.\n" + q
+    # 같은 기관의 상품 둘이 묶인 질문 (같은 상품의 조건이 여러 개여도 한 번만 센다)
+    assert label_question(q, ["P1", "P2", "P1"], info).startswith("가락신협 'A적금' 외 1개 상품의 우대조건이에요.\n")
+    assert label_question(q, ["UNKNOWN"], info) == q  # 이름을 못 찾으면 질문 그대로
+
+
+def test_same_text_is_asked_per_institution(monkeypatch):
+    # 원문이 같아도 기관이 다르면 따로 묻는다. 질문 문장(AI)은 원문마다 한 번만 만든다
+    calls = []
+    monkeypatch.setattr(condition_qa, "_build_question_ai", lambda text: calls.append(text) or f"Q:{text}")
+    text = "개설 금고에 화수분 통장을 보유한 경우"
+    conds = [
+        {"condition_id": "A1", "condition_type": "기타", "rate_bonus": 0.1, "evidence_text": text, "group_key": "G1"},
+        {"condition_id": "A2", "condition_type": "기타", "rate_bonus": 0.1, "evidence_text": text, "group_key": "G1"},
+        {"condition_id": "B1", "condition_type": "기타", "rate_bonus": 0.1, "evidence_text": text, "group_key": "G2"},
+    ]
+    groups = condition_qa.build_etc_questions(conds)
+    assert [g["condition_ids"] for g in groups] == [["A1", "A2"], ["B1"]]
+    assert calls == [text]
 
 
 def test_recommended_options_collects_all_tiers_but_not_baseline():
