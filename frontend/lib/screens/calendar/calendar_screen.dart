@@ -229,6 +229,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     key: ValueKey(_displayedMonth),
                     month: _displayedMonth,
                     highlightedDate: _selectedDate,
+                    markers: _buildMarkers(eventsAsync.value, manualEntriesAsync.value),
                     onDateSelected: (date) {
                       setState(() => _selectedDate = date);
                       _openEntrySheet(date);
@@ -236,6 +237,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ),
                 ),
               ),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: CalendarMarkerLegend(),
             ),
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 32, 20, 8),
@@ -258,6 +263,24 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         ),
       ),
     );
+  }
+
+  /// 달력 칸에 찍을 점. "다가오는 일정" 목록(2개월 이내)과 달리 기간 제한 없이
+  /// 불러온 일정 전부를 날짜별로 모은다. 아직 로딩 중이면 그 쪽은 빼고 그린다.
+  Map<DateTime, Set<CalendarMarker>> _buildMarkers(
+    List<CalendarEvent>? events,
+    List<ManualProductEntry>? manualEntries,
+  ) {
+    final markers = <DateTime, Set<CalendarMarker>>{};
+    void add(DateTime date, CalendarMarker marker) =>
+        markers.putIfAbsent(calendarDayKey(date), () => {}).add(marker);
+    for (final event in events ?? const <CalendarEvent>[]) {
+      add(event.date, event.isMaturity ? CalendarMarker.maturity : CalendarMarker.payment);
+    }
+    for (final entry in manualEntries ?? const <ManualProductEntry>[]) {
+      add(entry.date, CalendarMarker.manual);
+    }
+    return markers;
   }
 
   /// 서버 일정(upcomingEventsProvider)과 직접 기록(manualEntryProvider) 둘 다
