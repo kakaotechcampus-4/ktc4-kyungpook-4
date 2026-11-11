@@ -288,8 +288,16 @@ def _effective_cap(product: Product, cap_field: str, period_months: int) -> int 
     direct_cap = getattr(product, cap_field)
     caps = [c for c in (direct_cap,) if c is not None]
     if cap_field == "monthly_cap" and product.amount_cap:
-        caps.append(product.amount_cap // period_months)
+        # 총 한도를 개월 수로 나누면 41,666원 같은 금액이 나온다. 1,000원 단위로 내려 한도는 넘지 않게 한다
+        caps.append(_floor_won(product.amount_cap // period_months))
     return min(caps) if caps else None
+
+
+ALLOCATION_UNIT = 1_000  # 나눠 담을 때 금액 단위. 사람이 실제로 이체할 만한 금액으로 보이게
+
+
+def _floor_won(amount: int) -> int:
+    return amount // ALLOCATION_UNIT * ALLOCATION_UNIT
 
 
 @dataclass
@@ -373,7 +381,7 @@ def _allocate_greedy(
             continue
 
         months = option.period_months if cap_field == "monthly_cap" else 1
-        protection_room = (DEPOSIT_PROTECTION_LIMIT - state.principal_by_institution[code]) // months
+        protection_room = _floor_won((DEPOSIT_PROTECTION_LIMIT - state.principal_by_institution[code]) // months)
         cap = _effective_cap(product, cap_field, option.period_months)
         amount = min(remaining, protection_room, cap if cap else remaining)
         if amount <= 0:
@@ -767,39 +775,39 @@ async def persist_portfolio(
     return portfolio
 
 
+def _calendar_event(holding: UserHolding, on: date, kind: str, amount: int, round_number: int) -> CalendarEventOut:
+    return CalendarEventOut(
+        date=on,
+        institution_name=holding.institution,
+        product_name=holding.product_name,
+        installment_round=round_number,
+        event_type=kind,
+        amount=amount,
+    )
+
+
 async def get_calendar_events(session: AsyncSession, portfolio_id: int) -> list[CalendarEventOut]:
+    """오늘 이후의 납입·만기 일정. 적금은 가입일에 1회차를 내고 매달 같은 날 낸다 (로드맵 계산과 같은 기준)."""
     stmt = select(UserHolding).where(UserHolding.portfolio_id == portfolio_id, UserHolding.status == "유지중")
     holdings = (await session.execute(stmt)).scalars().all()
 
     today = clock.today()
     events: list[CalendarEventOut] = []
     for holding in holdings:
+        if holding.maturity_date is None:
+            continue
         if holding.monthly_amount is not None:
-            round_number = 1
-            payment_date = _add_months(holding.start_date, round_number)
-            while holding.maturity_date is None or payment_date <= holding.maturity_date:
-                if payment_date >= today:
-                    events.append(
-                        CalendarEventOut(
-                            date=payment_date,
-                            institution_name=holding.institution,
-                            product_name=holding.product_name,
-                            installment_round=round_number,
-                        )
-                    )
-                round_number += 1
-                payment_date = _add_months(holding.start_date, round_number)
-                if holding.maturity_date and payment_date > holding.maturity_date:
-                    break
-        elif holding.maturity_date and holding.maturity_date >= today:
-            events.append(
-                CalendarEventOut(
-                    date=holding.maturity_date,
-                    institution_name=holding.institution,
-                    product_name=holding.product_name,
-                    installment_round=0,
-                )
-            )
+            months = 0
+            while _add_months(holding.start_date, months) < holding.maturity_date:
+                paid_on = _add_months(holding.start_date, months)
+                if paid_on >= today:
+                    events.append(_calendar_event(holding, paid_on, "납입", holding.monthly_amount, months + 1))
+                months += 1
+            principal = holding.monthly_amount * months
+        else:
+            principal = holding.amount or 0
+        if holding.maturity_date >= today:
+            events.append(_calendar_event(holding, holding.maturity_date, "만기", principal, 0))
 
     events.sort(key=lambda e: e.date)
     return events

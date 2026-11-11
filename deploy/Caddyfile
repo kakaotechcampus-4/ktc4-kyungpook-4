@@ -15,6 +15,9 @@
 	}
 
 	handle {
+		# 배포 후에도 브라우저가 옛 main.dart.js 를 쓰지 않게, 매번 ETag 로 바뀌었는지 확인시킨다.
+		# (헤더가 없으면 브라우저가 Last-Modified 를 보고 임의로 캐시한다. 안 바뀌었으면 304 라 비용은 작다)
+		header Cache-Control "no-cache"
 		root * /srv
 		try_files {path} /index.html
 		file_server
