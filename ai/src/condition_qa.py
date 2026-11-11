@@ -35,6 +35,9 @@ ETC_TYPE = "기타"
 # 질문 문장 생성에서 AI 를 동시에 부르는 수. 질문마다 1번씩 부르므로 하나씩 하면 질문이 많을 때 느리고,
 # 너무 많이 동시에 보내면 API 프록시가 거부할 수 있다. 호출 지점은 그대로 하나(A)라 NFR-04 와 무관하다.
 MAX_PARALLEL_QUESTIONS = 5
+# 원문이 이 길이(띄어쓰기 제외) 이하면 조건 이름뿐인 경우가 많다("ESG 실천 우대금리", "주거래우대").
+# 금감원 공시에 설명이 더 없어 AI가 구체적인 질문을 못 만들므로 정해진 문장으로 묻는다 (AI 호출 없음).
+SHORT_TEXT_LEN = 14
 
 _client = None
 
@@ -111,8 +114,16 @@ def fallback_question(text: str) -> str:
     return f'다음 조건에 해당하시나요? "{text}"'
 
 
+def short_condition_question(text: str) -> str:
+    """짧은 조건의 정해진 질문. 뜻이 분명하면 예/아니요로, 모호하면 '모르겠어요'(-> 모름, 최대형만)로 답하게 한다."""
+    return f'은행 안내에는 "{text}"라고 나와 있어요. 해당하시나요? 잘 모르시면 "모르겠어요"라고 답해 주세요.'
+
+
 def _build_question_ai(text: str) -> str:
-    """원문을 보고 AI가 질문을 만든다. grounding_quote가 원문에 없거나 실패하면 fallback."""
+    """원문을 보고 AI가 질문을 만든다. grounding_quote가 원문에 없거나 실패하면 fallback.
+    원문이 짧으면(SHORT_TEXT_LEN) AI를 부르지 않고 정해진 문장을 쓴다."""
+    if len(_normalize(text)) <= SHORT_TEXT_LEN:
+        return short_condition_question(text)
     fallback = fallback_question(text)
     try:
         res = _get_client().chat.completions.create(
