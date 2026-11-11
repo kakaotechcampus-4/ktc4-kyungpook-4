@@ -141,7 +141,10 @@ def _get_client():
                 "OPENAI_API_KEY / OPENAI_BASE_URL이 .env에 설정 안 돼 있음 - Summary 호출을 "
                 "쓰려면 필요함."
             )
-        _client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1")
+        # 기본값은 요청당 최대 10분 대기 + 라이브러리 자동 재시도 2번이라, AI 서버가 멈추면 결과 화면의 이유가
+        # 끝없이 '생각하는 중'이 된다. 응답이 60초 멈추면 끊고, 재시도는 generate_summary(retries)에서만 한다.
+        # (평소 약 26초. 최악이어도 약 3분 뒤 계산값으로 만든 기본 문구가 나간다)
+        _client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1", timeout=60, max_retries=0)
     return _client
 
 
