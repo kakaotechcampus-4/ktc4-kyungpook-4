@@ -74,6 +74,34 @@ async def _issue_tokens(redis: Redis, user_id: int) -> TokenOut:
     )
 
 
+@router.get(
+    "/demo/login",
+    summary="[평가자용] 소셜 로그인 없이 체험 - secret 쿼리파라미터 필요",
+    description="DEMO_LOGIN_SECRET 이 서버에 설정돼 있고 secret 이 일치할 때만 동작한다 "
+    "(비어 있으면 항상 404, 기본 비활성). 고정된 데모 계정으로 로그인시키고(웹 쿠키), "
+    "게스트로 쌓아둔 기록이 있으면 그 계정으로 그대로 승계한다.",
+    responses={404: {"description": "DEMO_LOGIN_SECRET 미설정 또는 secret 불일치"}},
+)
+async def demo_login(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    redis: Annotated[Redis, Depends(get_redis)],
+    secret: str,
+    next_path: Annotated[str | None, Query(alias="next", description="로그인 후 돌아갈 FE 경로")] = None,
+    guest_token: Annotated[str | None, Cookie(alias=GUEST_COOKIE)] = None,
+) -> RedirectResponse:
+    if not settings.DEMO_LOGIN_SECRET or not secrets_module.compare_digest(secret, settings.DEMO_LOGIN_SECRET):
+        raise HTTPException(status_code=404)
+
+    user_id = await auth_service.find_or_create_demo_user(session)
+    response = _to_frontend(auth_service.safe_next(next_path))
+    set_auth_cookies(response, create_access_token(user_id), await auth_service.issue_refresh(redis, user_id))
+    guest_id = decode_guest_token(guest_token) if guest_token else None
+    if guest_id is not None:
+        await auth_service.adopt_guest(session, guest_id, user_id)
+        clear_guest_cookie(response)
+    return response
+
+
 @router.get("/{provider}/login", summary="소셜 로그인 시작 - 소셜사 로그인 화면으로 보낸다")
 async def login(
     provider: ProviderName,
@@ -136,34 +164,6 @@ async def callback(
     response = _to_frontend(login_state.next_path)
     set_auth_cookies(response, create_access_token(user_id), await auth_service.issue_refresh(redis, user_id))
     # 로그인 전에 게스트로 만든 기록은 이 계정으로 옮긴다
-    guest_id = decode_guest_token(guest_token) if guest_token else None
-    if guest_id is not None:
-        await auth_service.adopt_guest(session, guest_id, user_id)
-        clear_guest_cookie(response)
-    return response
-
-
-@router.get(
-    "/demo/login",
-    summary="[평가자용] 소셜 로그인 없이 체험 - secret 쿼리파라미터 필요",
-    description="DEMO_LOGIN_SECRET 이 서버에 설정돼 있고 secret 이 일치할 때만 동작한다 "
-    "(비어 있으면 항상 404, 기본 비활성). 고정된 데모 계정으로 로그인시키고(웹 쿠키), "
-    "게스트로 쌓아둔 기록이 있으면 그 계정으로 그대로 승계한다.",
-    responses={404: {"description": "DEMO_LOGIN_SECRET 미설정 또는 secret 불일치"}},
-)
-async def demo_login(
-    session: Annotated[AsyncSession, Depends(get_session)],
-    redis: Annotated[Redis, Depends(get_redis)],
-    secret: str,
-    next_path: Annotated[str | None, Query(alias="next", description="로그인 후 돌아갈 FE 경로")] = None,
-    guest_token: Annotated[str | None, Cookie(alias=GUEST_COOKIE)] = None,
-) -> RedirectResponse:
-    if not settings.DEMO_LOGIN_SECRET or not secrets_module.compare_digest(secret, settings.DEMO_LOGIN_SECRET):
-        raise HTTPException(status_code=404)
-
-    user_id = await auth_service.find_or_create_demo_user(session)
-    response = _to_frontend(auth_service.safe_next(next_path))
-    set_auth_cookies(response, create_access_token(user_id), await auth_service.issue_refresh(redis, user_id))
     guest_id = decode_guest_token(guest_token) if guest_token else None
     if guest_id is not None:
         await auth_service.adopt_guest(session, guest_id, user_id)
