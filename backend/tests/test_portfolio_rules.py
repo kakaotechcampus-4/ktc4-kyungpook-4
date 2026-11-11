@@ -276,6 +276,18 @@ def test_overflow_spreads_to_next_product_instead_of_breaking_protection():
     assert [a.amount for a in allocs] == [DEPOSIT_PROTECTION_LIMIT, 50_000_000]
 
 
+def test_installment_not_dropped_when_deposits_fill_protection():
+    # 예금이 보유 은행들의 예금자보호 한도(1억)를 다 채워도 적금이 사라지지 않는다 - 한도를 넘더라도 담는다
+    tax = TaxContext.for_profile(2026, None, None, None)
+    spec, state = SPEC["단순형"], _TierState()
+    deposits = [_cand("BANK-A", "4.00", pid="DA"), _cand("BANK-B", "3.90", pid="DB")]
+    _allocate_greedy(300_000_000, _rank(deposits, spec, _profile(), BANKS, tax), "amount_cap", spec, BANKS, state)
+    # BANK-N 은 새 은행이라 금리가 더 높아도 단순형에서는 쓰지 않는다
+    savings = [_cand("BANK-N", "5.00", pid="SN"), _cand("BANK-A", "4.50", pid="SA")]
+    allocs = _allocate_greedy(500_000, _rank(savings, spec, _profile(), BANKS, tax), "monthly_cap", spec, BANKS, state)
+    assert [(a.product.product_id, a.amount) for a in allocs] == [("SA", 500_000)]
+
+
 def test_coop_excluded_when_membership_refused():
     cands = [_cand("CU-1", "5.00", itype="신협"), _cand("BANK-N1", "3.00")]
     refused = _alloc(10_000_000, cands, "최대형", BANKS, profile=_profile(accepts_membership=False))
