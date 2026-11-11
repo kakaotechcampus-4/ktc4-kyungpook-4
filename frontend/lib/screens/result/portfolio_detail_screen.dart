@@ -98,6 +98,13 @@ class PortfolioDetailScreen extends ConsumerWidget {
                           '주거래은행 정보가 없어 단일안 비교를 표시할 수 없습니다.',
                           style: TextStyle(fontSize: 14, color: Colors.black54),
                         ),
+                      if (singlePlan?.exceedsProtection ?? false) ...[
+                        const SizedBox(height: 6),
+                        const Text(
+                          '한 은행에 1억원을 넘게 넣어 초과분은 예금자보호를 받지 못해요',
+                          style: TextStyle(fontSize: 12, color: Colors.orange),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -133,11 +140,45 @@ class PortfolioDetailScreen extends ConsumerWidget {
                           color: AppColors.accent,
                         ),
                       ),
+                      if (option.extraVsSimple != null && option.extraVsSimple! > 0) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '단순형 대비 + ${CurrencyFormatter.won(option.extraVsSimple!)}',
+                          style: const TextStyle(fontSize: 13, color: AppColors.accent),
+                        ),
+                      ],
                       const SizedBox(height: 10),
                       Text(
                         '계좌 개설 ${option.newAccountCount}개',
                         style: const TextStyle(fontSize: 13, color: Colors.black54),
                       ),
+                      if (option.taxSavingWon > 0) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '신협·새마을금고 세금 감면으로 ${CurrencyFormatter.won(option.taxSavingWon)} 절약',
+                          style: const TextStyle(fontSize: 13, color: Colors.black54),
+                        ),
+                      ],
+                      if (option.requiredActions.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        const Text(
+                          '우대금리를 받으려면 해야 할 일',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        for (final action in option.requiredActions)
+                          Text(
+                            '• $action',
+                            style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.5),
+                          ),
+                      ],
+                      if (option.overComprehensiveTax) ...[
+                        const SizedBox(height: 10),
+                        const Text(
+                          '이자가 연 2천만원을 넘어 금융소득종합과세 대상이 될 수 있어요',
+                          style: TextStyle(fontSize: 12, color: Colors.orange),
+                        ),
+                      ],
                       const SizedBox(height: 20),
                       for (var i = 0; i < option.products.length; i++)
                         Padding(
