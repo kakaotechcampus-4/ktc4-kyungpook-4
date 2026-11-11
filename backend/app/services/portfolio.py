@@ -288,16 +288,8 @@ def _effective_cap(product: Product, cap_field: str, period_months: int) -> int 
     direct_cap = getattr(product, cap_field)
     caps = [c for c in (direct_cap,) if c is not None]
     if cap_field == "monthly_cap" and product.amount_cap:
-        # 총 한도를 개월 수로 나누면 41,666원 같은 금액이 나온다. 1,000원 단위로 내려 한도는 넘지 않게 한다
-        caps.append(_floor_won(product.amount_cap // period_months))
+        caps.append(product.amount_cap // period_months)
     return min(caps) if caps else None
-
-
-ALLOCATION_UNIT = 1_000  # 나눠 담을 때 금액 단위. 사람이 실제로 이체할 만한 금액으로 보이게
-
-
-def _floor_won(amount: int) -> int:
-    return amount // ALLOCATION_UNIT * ALLOCATION_UNIT
 
 
 @dataclass
@@ -381,7 +373,7 @@ def _allocate_greedy(
             continue
 
         months = option.period_months if cap_field == "monthly_cap" else 1
-        protection_room = _floor_won((DEPOSIT_PROTECTION_LIMIT - state.principal_by_institution[code]) // months)
+        protection_room = (DEPOSIT_PROTECTION_LIMIT - state.principal_by_institution[code]) // months
         cap = _effective_cap(product, cap_field, option.period_months)
         amount = min(remaining, protection_room, cap if cap else remaining)
         if amount <= 0:
