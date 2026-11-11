@@ -27,5 +27,8 @@ class RoadmapOut(BaseModel):
     active_total: int = Field(
         description="진행중인 안에 넣은 원금 + 번 이자(세후, 원). 만기 상품도 포함해 줄지 않는다. 목표 경로의 현재 위치"
     )
-    goal_amount: int | None = Field(description="진행중인 안의 목표 금액(원) - 목돈 + 월 저축액 x 기간. 없으면 null")
-    goal_date: date | None = Field(description="진행중인 안의 목표일(만기일). 없으면 null")
+    goal_amount: int | None = Field(
+        description="진행중인 안의 목표 금액(원) - 만기까지 실제로 넣는 원금 + 세후 이자. "
+        "active_total 이 마지막 만기일에 여기에 닿는다. 없으면 null"
+    )
+    goal_date: date | None = Field(description="진행중인 안의 목표일 - 가입 상품 중 가장 늦은 만기일. 없으면 null")

@@ -4,6 +4,10 @@
 - 만기가 지난 상품: 만기까지의 이자 전부. 추천 화면과 같은 공식이라 그때 보여준 금액과 같다
 - 만기 전 상품: 오늘까지 날짜만큼 쌓인 이자. 적금은 회차마다 낸 날부터 센다
 - 그만둔 안(user_portfolio.closed_at): 그만둔 날까지
+
+목표(goal_amount)는 진행중 안을 만기까지 유지했을 때 받는 돈 = 실제로 넣는 원금 + 만기 세후 이자.
+가입 상품에서 매번 다시 계산한다 - 경로 위 현재 위치(active_total, 원금+이자)와 같은 기준이라
+마지막 만기일에 정확히 목표에 닿고, 결과 화면에서 고른 안의 숫자와도 맞는다.
 """
 
 from dataclasses import dataclass
@@ -104,9 +108,11 @@ async def build_roadmap(session: AsyncSession, user: AppUser, today: date) -> Ro
         )
     ).all()
 
-    total = current = current_principal = active_total = 0
+    total = current = current_principal = active_total = goal_amount = 0
+    goal_date: date | None = None
     active = None
     taxes = {}  # 포트폴리오마다 조합 감면 한도를 따로 쓴다
+    goal_tax = None  # 목표(만기 기준) 계산용. 감면 한도를 깎는 상태라 위의 것과 따로 둔다
     for portfolio, profile, holding, institution_code in rows:
         if portfolio.portfolio_id not in taxes:
             taxes[portfolio.portfolio_id] = _tax_context(profile, holding.start_date)
@@ -121,6 +127,13 @@ async def build_roadmap(session: AsyncSession, user: AppUser, today: date) -> Ro
             if holding.maturity_date is None or holding.maturity_date > today:
                 current += after_tax.after_tax
                 current_principal += a.paid_principal
+            if holding.maturity_date is not None:
+                if goal_tax is None:
+                    goal_tax = _tax_context(profile, holding.start_date)
+                full = accrued(holding, holding.maturity_date)
+                tax = goal_tax.after_tax(institution_code or "", full.interest, full.total_principal)
+                goal_amount += full.total_principal + tax.after_tax
+                goal_date = max(goal_date or holding.maturity_date, holding.maturity_date)
 
     return RoadmapNumbers(
         started_at=started_at,
@@ -130,6 +143,6 @@ async def build_roadmap(session: AsyncSession, user: AppUser, today: date) -> Ro
         current_principal=current_principal,
         active_portfolio_id=active.portfolio_id if active else None,
         active_total=active_total,
-        goal_amount=active.goal_amount if active else None,
-        goal_date=active.goal_date if active else None,
+        goal_amount=(goal_amount or None) if active else None,
+        goal_date=goal_date if active else None,
     )

@@ -300,7 +300,8 @@ async def test_roadmap_numbers(maker):
     await add_portfolio(maker, uid, pid, status="완료", closed_at=datetime(2026, 5, 1, tzinfo=UTC), **old)
     # 진행중 안: 이미 만기된 예금 + 진행중 적금
     active = {"amount": 1_000_000, "start_date": date(2026, 1, 1), "maturity_date": date(2026, 4, 1)}
-    active_id = await add_portfolio(maker, uid, pid, goal=(11_200_000, date(2027, 5, 1)), **active)
+    # 저장된 목표(입력값 기준의 예전 값)는 무시하고 가입 상품에서 다시 계산해야 한다
+    active_id = await add_portfolio(maker, uid, pid, goal=(11_200_000, date(2027, 6, 1)), **active)
     running = {"monthly_amount": 100_000, "start_date": date(2026, 5, 1), "maturity_date": date(2027, 5, 1)}
     async with maker() as session:
         session.add(
@@ -333,7 +334,10 @@ async def test_roadmap_numbers(maker):
     assert numbers.active_portfolio_id == active_id
     # 목표 경로 위치는 만기된 예금(원금+이자)도 계속 센다 - 만기됐다고 아바타가 뒤로 가지 않는다
     assert numbers.active_total == 1_000_000 + matured + 300_000 + saving
-    assert (numbers.goal_amount, numbers.goal_date) == (11_200_000, date(2027, 5, 1))
+    # 목표 = 만기까지 넣는 원금 + 만기 세후 이자. 목표일 = 가장 늦은 만기일
+    saving_at_maturity = after_tax(_installment_interest(100_000, RATE, 12))
+    assert numbers.goal_amount == 1_000_000 + matured + 1_200_000 + saving_at_maturity
+    assert numbers.goal_date == date(2027, 5, 1)
 
 
 async def test_my_calendar_follows_account_not_browser(clients, maker, monkeypatch):
@@ -392,7 +396,9 @@ async def test_active_total_does_not_drop_at_maturity(maker):
         after = await build_roadmap(session, u, date(2026, 7, 2))
     assert after.active_total >= before.active_total
     assert (before.current_principal, after.current_principal) == (1_000_000, 0)
-    assert after.goal_amount is None  # 목표가 없는 안이면 null
+    # 만기가 지나면 경로 위치가 목표에 정확히 닿는다 (같은 원금·이자 기준)
+    assert after.active_total == after.goal_amount
+    assert after.goal_date == date(2026, 7, 1)
 
 
 async def test_calendar_matches_roadmap_payment_days(maker, monkeypatch):
@@ -432,6 +438,59 @@ async def test_calendar_matches_roadmap_payment_days(maker, monkeypatch):
         (date(2026, 4, 30), "만기", 0, 300_000, "테스트 상품"),
         (date(2026, 4, 30), "만기", 0, 1_000_000, "예금"),
     ]
+
+
+async def test_goal_is_actual_principal_plus_interest(maker, monkeypatch):
+    """가입 확정 때 저장하는 목표 = 실제로 배분된 원금 + 만기 세후 이자 (입력한 목돈·기간이 아니라).
+    로드맵이 다시 계산한 목표와 같고, 마지막 만기일이 지나면 경로 위치가 목표에 정확히 닿는다."""
+    today = date(2026, 1, 1)
+    monkeypatch.setattr(clock, "today", lambda: today)
+    async with maker() as session:
+        user = AppUser(nickname="목표")
+        session.add(user)
+        await session.flush()
+        # 60개월·1억을 입력했지만 실제로는 한도 때문에 일부만, 더 짧은 기간 상품에 배분됐다
+        profile = UserProfile(user_id=user.user_id, capital=100_000_000, monthly_saving=500_000, period_months=60)
+        session.add(profile)
+        await session.commit()
+
+    def alloc(amount: int, months: int, name: str):
+        return SimpleNamespace(
+            product=SimpleNamespace(institution_code="BANK-1", product_name=name, product_type="예금"),
+            option=SimpleNamespace(option_id=None, period_months=months, base_rate=RATE, max_rate=RATE),
+            institution_name="테스트은행",
+            amount=amount,
+            effective_rate=RATE,
+            applied=[],
+        )
+
+    allocations = SimpleNamespace(
+        period_months=36,
+        deposit_allocs=[alloc(30_000_000, 12, "예금")],
+        installment_allocs=[alloc(300_000, 36, "적금")],
+    )
+    async with maker() as session:
+        profile = await session.get(UserProfile, profile.profile_id)
+        portfolio = await portfolio_service.persist_portfolio(session, profile, "균형형", allocations)
+
+    def after_tax(interest: Decimal) -> int:
+        return int((interest * (1 - Decimal("0.154"))).to_integral_value())
+
+    expected = (
+        30_000_000
+        + after_tax(_deposit_interest(30_000_000, RATE, 12))
+        + 300_000 * 36
+        + after_tax(_installment_interest(300_000, RATE, 36))
+    )
+    assert portfolio.goal_amount == expected
+    assert portfolio.goal_date == date(2029, 1, 1)  # 가장 늦은 만기(36개월), 입력한 60개월이 아니다
+
+    async with maker() as session:
+        u = await session.get(AppUser, user.user_id)
+        numbers = await build_roadmap(session, u, date(2026, 6, 1))
+        done = await build_roadmap(session, u, date(2029, 1, 2))
+    assert (numbers.goal_amount, numbers.goal_date) == (expected, date(2029, 1, 1))
+    assert done.active_total == done.goal_amount
 
 
 def test_kst_date_handles_utc_midnight():
