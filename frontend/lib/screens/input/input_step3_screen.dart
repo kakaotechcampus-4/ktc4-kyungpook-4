@@ -195,8 +195,7 @@ class _InputStep3ScreenState extends ConsumerState<InputStep3Screen> {
               content: Text(
                 '거의 다 왔어요!\n마지막으로 세금 부분만 확인할게요.\n\n'
                 '상호금융($bankLabel 등)은 3,000만원까지\n'
-                '이자 세금이 15.4% → 1.4%로 낮아져요.\n'
-                '현재 금액이면 대략 OO만원 차이입니다.\n\n'
+                '이자 세금이 15.4% → 1.4%로 낮아져요.\n\n'
                 '아까 $bankLabel 계좌가 있다고 하셨는데,\n'
                 '혹시 조합원으로 가입되어 있으실까요?\n\n'
                 '(계좌만 만든 경우는 조합원이 아닐 수 있어요.\n'

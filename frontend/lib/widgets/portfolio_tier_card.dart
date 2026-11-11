@@ -61,7 +61,7 @@ class PortfolioTierCard extends ConsumerWidget {
               const SizedBox(height: 10),
               Text(
                 option.extraVsBaseline != null
-                    ? '단일안 대비 + ${CurrencyFormatter.won(option.extraVsBaseline!)}'
+                    ? '단일안 대비 ${CurrencyFormatter.signedWon(option.extraVsBaseline!)}'
                     : '단일안과 비교할 주거래은행 정보가 없어요',
                 style: const TextStyle(
                   fontSize: 15,
@@ -74,6 +74,14 @@ class PortfolioTierCard extends ConsumerWidget {
                 '계좌 개설 ${option.newAccountCount}개',
                 style: const TextStyle(fontSize: 13, color: Colors.black54),
               ),
+              if (option.institutionsOverProtectionLimit.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  '${option.institutionsOverProtectionLimit.join(', ')}에 1억원을 넘게 넣어 '
+                  '초과분은 예금자보호를 받지 못해요',
+                  style: const TextStyle(fontSize: 12, color: Colors.orange),
+                ),
+              ],
               if (isSelected) ...[
                 const SizedBox(height: 20),
                 for (var i = 0; i < option.products.length; i++)
