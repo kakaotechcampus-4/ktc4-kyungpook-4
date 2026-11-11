@@ -50,7 +50,9 @@ def _get_client():
 
         if not OPENAI_API_KEY or not OPENAI_BASE_URL:
             raise RuntimeError("OPENAI_API_KEY / OPENAI_BASE_URL이 .env에 설정 안 돼 있음")
-        _client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1")
+        # 기본값(요청당 최대 10분 + 자동 재시도 2번)이면 AI 서버가 멈출 때 챗봇이 계속 기다린다.
+        # 30초에 끊는다 - 질문은 원문을 보여주는 fallback, 답 해석은 '모름'이 된다.
+        _client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1", timeout=30, max_retries=0)
     return _client
 
 
@@ -101,6 +103,11 @@ _QUESTION_GEN_PROMPT = (
     "규칙:\n"
     "- 예/아니오로 답할 수 있는 질문 형태로 만들어.\n"
     "- 원문에 없는 내용을 지어내지 마. 원문의 의미를 벗어나지 마.\n"
+    "- 사용자는 아직 이 상품에 가입하지 않았어. 가입할 때나 가입한 뒤에 하는 일(서약·동의, 미션, 이체·결제 실적, "
+    "만기까지 유지 등)이면 앞으로 할 수 있는지 미래형으로 물어 (예: '가입할 때 서약에 동의하실 수 있나요?', "
+    "'만기까지 퀴즈 미션을 완료하실 수 있나요?'). '하셨나요?'처럼 과거형으로 묻지 마. "
+    "이미 가진 자격·상태(보유한 상품, 회원 여부, 가구 형태 등)면 현재형으로 물어 "
+    "(예: '주택청약종합저축을 갖고 계신가요?').\n"
     "- grounding_quote: 이 질문을 만든 근거가 되는 원문 속 문구를 한 글자도 바꾸지 "
     "않고 그대로(띄어쓰기 포함) 옮겨 적어. 최소 10자 이상.\n\n"
     "반드시 아래 JSON 형식으로만 응답해. 코드블록(```) 없이, 설명 문장 없이, "
