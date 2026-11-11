@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/calendar_provider.dart';
 import '../../providers/manual_entry_provider.dart';
 import '../../router/app_router.dart';
+import '../../theme/app_colors.dart';
 import '../../services/auth_client.dart';
 import '../../widgets/manual_entry_tile.dart';
 import '../../widgets/month_calendar_grid.dart';
@@ -343,6 +344,37 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
         ),
     ]..sort((a, b) => a.date.compareTo(b.date));
-    return [for (final item in items) item.tile];
+
+    // 이번 달 일정과 다음 달 이후 일정을 소제목으로 나눈다. 한쪽이 비면 그 소제목은 안 보인다.
+    final startOfNextMonth = DateTime(today.year, today.month + 1);
+    final thisMonth = items.where((i) => i.date.isBefore(startOfNextMonth)).toList();
+    final later = items.where((i) => !i.date.isBefore(startOfNextMonth)).toList();
+    return [
+      if (thisMonth.isNotEmpty) ...[
+        _scheduleGroupHeader('이번 달 (${today.month}월)'),
+        for (final item in thisMonth) item.tile,
+      ],
+      if (later.isNotEmpty) ...[
+        _scheduleGroupHeader('다음 달 이후'),
+        for (final item in later) item.tile,
+      ],
+    ];
+  }
+
+  Widget _scheduleGroupHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.gray,
+          ),
+        ),
+      ),
+    );
   }
 }
