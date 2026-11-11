@@ -87,11 +87,23 @@ class AppliedCondition:
         }
 
 
+# 은행이 조건 없이 금리만 적어 둔 판촉 금리 (예: "특판우대이율 : 0.60%", "3~5개월 특판우대이율").
+# 판매 중인 특판 상품에 가입하면 붙는 금리라 사용자가 따로 채울 조건이 없다. 그래서 이미 충족한 것으로 보고
+# 챗봇도 묻지 않는다. 기간이 정해진 특판은 evaluate 에서 _applies_to_period 가 먼저 거른다.
+PROMO_KEYWORD = "특판"
+
+
+def is_promo_rate(cond: ProductCondition) -> bool:
+    return cond.condition_type == "기타" and PROMO_KEYWORD in (getattr(cond, "evidence_text", None) or "")
+
+
 def _already_met(cond: ProductCondition, is_main_bank: bool, is_new_institution: bool) -> bool:
     if cond.condition_type == "주거래은행":
         return is_main_bank
     if cond.condition_type == "신규고객":
         return is_new_institution
+    if is_promo_rate(cond):
+        return True
     return False
 
 
