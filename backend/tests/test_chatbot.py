@@ -223,6 +223,18 @@ def test_answers_api_rejects_non_etc_condition(client, monkeypatch):
 # --- 답 해석 (ktc4_ai.condition_qa.parse_answer) -------------------------------
 
 
+def test_short_condition_uses_fixed_question_without_ai(monkeypatch):
+    # 원문이 조건 이름뿐이면(금감원 공시에 설명 없음) AI 대신 정해진 문장으로 묻는다
+    def no_ai():
+        raise AssertionError("짧은 조건은 AI 를 부르지 않는다")
+
+    monkeypatch.setattr(condition_qa, "_get_client", no_ai)
+    assert condition_qa._build_question_ai("ESG 실천 우대금리") == (
+        '은행 안내에는 "ESG 실천 우대금리"라고 나와 있어요. 해당하시나요? 잘 모르시면 "모르겠어요"라고 답해 주세요.'
+    )
+    assert condition_qa.parse_answer("모르겠어요") is None  # 안내대로 답하면 '모름' -> 최대형에서만 가정
+
+
 def test_parse_answer_keywords_without_ai(monkeypatch):
     calls = []
     monkeypatch.setattr(condition_qa, "_parse_answer_ai", lambda raw: calls.append(raw))
