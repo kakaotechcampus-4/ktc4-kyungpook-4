@@ -150,6 +150,26 @@ def _tax_context(profile: UserProfile, join_date: date) -> TaxContext:
     )
 
 
+def age_on(birth: date | None, today: date) -> int | None:
+    """만 나이. 생년월일이 없으면 None."""
+    if birth is None:
+        return None
+    return today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+
+
+def age_eligible(cands: list[Candidate], age: int | None) -> list[Candidate]:
+    """가입 가능 나이(product.min_age/max_age) 밖의 상품(아동·청년·시니어 전용 등)을 뺀다.
+    나이를 모르거나 상품에 나이 제한이 없으면 그대로 둔다."""
+    if age is None:
+        return cands
+    return [
+        c
+        for c in cands
+        if (c.product.min_age is None or age >= c.product.min_age)
+        and (c.product.max_age is None or age <= c.product.max_age)
+    ]
+
+
 async def _closest_period(
     session: AsyncSession, product_type: str, period_months: int, institution_type: str | None = None
 ) -> int | None:
@@ -434,6 +454,10 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
         session, "적금", profile.period_months, institution_type=FIRST_TIER_INSTITUTION_TYPE
     )
     bank_period = bank_dep_period or bank_inst_period or period
+    # 가입 가능 나이 밖의 상품은 후보에서 뺀다. 생년월일이 없으면 거르지 않는다
+    age = age_on(profile.birth_date, clock.today())
+    deposits, installments = age_eligible(deposits, age), age_eligible(installments, age)
+    bank_deposits, bank_installments = age_eligible(bank_deposits, age), age_eligible(bank_installments, age)
 
     held = set(await get_held_bank_codes(session, profile))
     banks = _BankInfo(profile.main_bank_code, held | ({profile.main_bank_code} if profile.main_bank_code else set()))
@@ -497,6 +521,7 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
             if use_installment
             else ([], None)
         )
+        dep_cands, inst_cands = age_eligible(dep_cands, age), age_eligible(inst_cands, age)
         base_deposits = _best_single(profile.capital, dep_cands, profile, banks, tax, etc_answers)
         base_installments = _best_single(profile.monthly_saving, inst_cands, profile, banks, tax, etc_answers)
         choices = []
