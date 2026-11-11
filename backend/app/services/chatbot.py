@@ -29,7 +29,8 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.product import ProductCondition, ProductOption
+from app.models.institution import Institution
+from app.models.product import Product, ProductCondition, ProductOption
 from app.models.profile import UserProfile, UserProfileExtra
 from app.services.conditions import _applies_to_period, is_promo_rate
 from app.services.portfolio import (
@@ -38,6 +39,7 @@ from app.services.portfolio import (
     ETC_ANSWER_UNSURE,
     PortfolioPlan,
     build_tiers,
+    institution_display_name,
 )
 
 ETC_TYPE = "기타"
@@ -121,6 +123,37 @@ def _to_ai_input(cond: ProductCondition) -> dict:
     }
 
 
+def label_question(question: str, product_ids: list[str], info: dict[str, tuple[str, str, str]]) -> str:
+    """질문 앞에 어느 기관·상품의 우대조건인지 안내 한 줄을 붙인다.
+    질문은 기관별로 묶이므로 기관은 하나다. 같은 기관의 여러 상품이 묶이면 '외 N개 상품'으로 쓴다.
+    info: product_id -> (기관 코드, 기관 표시명, 상품명). 이름을 못 찾으면 질문 그대로."""
+    pids = [pid for pid in dict.fromkeys(product_ids) if pid in info]
+    if not pids:
+        return question
+    _, inst, name = info[pids[0]]
+    more = f" 외 {len(pids) - 1}개 상품" if len(pids) > 1 else ""
+    return f"{inst} '{name}'{more}의 우대조건이에요.\n{question}"
+
+
+async def _product_info(session: AsyncSession, product_ids: set[str]) -> dict[str, tuple[str, str, str]]:
+    """product_id -> (기관 코드, 기관 표시명, 상품명)."""
+    stmt = (
+        select(
+            Product.product_id,
+            Product.product_name,
+            Institution.institution_code,
+            Institution.name,
+            Institution.institution_type,
+        )
+        .join(Institution, Institution.institution_code == Product.institution_code)
+        .where(Product.product_id.in_(product_ids))
+    )
+    return {
+        pid: (code, institution_display_name(inst, itype), pname)
+        for pid, pname, code, inst, itype in (await session.execute(stmt)).all()
+    }
+
+
 async def build_questions(session: AsyncSession, profile: UserProfile) -> list[EtcQuestion]:
     """지금 추천 결과에 들어간 상품의 '기타' 조건 중 아직 묻지 않은 것으로 질문을 만든다."""
     options = recommended_options(await build_tiers(session, profile))
@@ -138,8 +171,23 @@ async def build_questions(session: AsyncSession, profile: UserProfile) -> list[E
     if not targets:
         return []
     # 질문 문장 생성은 동기 함수(AI 호출, 내부에서 동시에 여러 개)라 이벤트 루프를 막지 않게 스레드로 돌린다
-    groups = await asyncio.to_thread(build_etc_questions, [_to_ai_input(c) for c in targets])
-    return [EtcQuestion(g["question"], g["evidence_text"], g["condition_ids"]) for g in groups]
+    info = await _product_info(session, {c.product_id for c in targets})
+    # 원문이 같아도 조합(기관)이 다르면 답이 다를 수 있어 기관별로 따로 묻는다. 기관을 못 찾으면 상품별로
+    ai_inputs = [
+        {**_to_ai_input(c), "group_key": info[c.product_id][0] if c.product_id in info else c.product_id}
+        for c in targets
+    ]
+    groups = await asyncio.to_thread(build_etc_questions, ai_inputs)
+    # 질문만 보면 어느 상품 조건인지 몰라서('장기거래고객에 해당하시나요?') 기관·상품 이름을 앞에 붙인다
+    product_of = {c.condition_id: c.product_id for c in targets}
+    return [
+        EtcQuestion(
+            label_question(g["question"], [product_of[cid] for cid in g["condition_ids"]], info),
+            g["evidence_text"],
+            g["condition_ids"],
+        )
+        for g in groups
+    ]
 
 
 async def _parse_all(raw_answers: list[str]) -> list[bool | None]:
