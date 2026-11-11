@@ -286,6 +286,12 @@ class _RoadmapPath extends StatelessWidget {
     final progress =
         goalAmountWon == 0 ? 0.0 : (currentAmountWon / goalAmountWon).clamp(0.0, 1.0);
 
+    final nextMilestoneIndex = _fractions.indexWhere((f) => f > progress);
+    final nextMilestoneAmount = nextMilestoneIndex == -1
+        ? goalAmountWon
+        : (goalAmountWon * _fractions[nextMilestoneIndex]).round();
+    final remainingToNext = (nextMilestoneAmount - currentAmountWon).clamp(0, nextMilestoneAmount);
+
     return Container(
       width: double.infinity,
       decoration: const BoxDecoration(
@@ -295,36 +301,54 @@ class _RoadmapPath extends StatelessWidget {
           colors: [AppColors.skyLavender, AppColors.lavender, AppColors.accent],
         ),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = Size(constraints.maxWidth, constraints.maxHeight);
-          final points = _anchors.map((a) => Offset(a.dx * size.width, a.dy * size.height)).toList();
-          final avatarPoint = _pointAtProgress(points, progress);
-          final nextMilestoneIndex = _fractions.indexWhere((f) => f > progress);
-          final nextMilestoneAmount = nextMilestoneIndex == -1
-              ? goalAmountWon
-              : (goalAmountWon * _fractions[nextMilestoneIndex]).round();
-          final rawRemainingToNext = nextMilestoneAmount - currentAmountWon;
-          final remainingToNext = rawRemainingToNext < 0 ? 0 : rawRemainingToNext;
+      child: Column(
+        children: [
+          // "다음 구간까지"는 경로 위(모아 옆)에 띄우면 모아·목표 말풍선과 겹쳐서 위에 고정한다
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: _Bubble(
+              text: nextMilestoneIndex == -1
+                  ? '목표에 도착했어요!'
+                  : '다음 구간까지 ${CurrencyFormatter.won(remainingToNext)}',
+            ),
+          ),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final size = Size(constraints.maxWidth, constraints.maxHeight);
+                final points =
+                    _anchors.map((a) => Offset(a.dx * size.width, a.dy * size.height)).toList();
+                final avatarPoint = _pointAtProgress(points, progress);
+                final avatarRect = Rect.fromCenter(
+                  center: avatarPoint,
+                  width: _avatarSize + 8,
+                  height: _avatarSize + 8,
+                );
 
-          return Stack(
-            children: [
-              CustomPaint(size: size, painter: _PathPainter(points)),
-              for (var i = 1; i < points.length; i++)
-                _buildMilestoneBubble(points[i], goalAmountWon * _fractions[i]),
-              Positioned(
-                left: avatarPoint.dx - 22,
-                top: avatarPoint.dy - 44,
-                child: _buildNextBubble(remainingToNext),
-              ),
-              Positioned(
-                left: avatarPoint.dx - 22,
-                top: avatarPoint.dy - 22,
-                child: _buildAvatar(),
-              ),
-            ],
-          );
-        },
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    CustomPaint(size: size, painter: _PathPainter(points)),
+                    for (var i = 1; i < points.length; i++) ...[
+                      _buildMilestoneDot(points[i]),
+                      _buildMilestoneBubble(
+                        points[i],
+                        goalAmountWon * _fractions[i],
+                        size,
+                        avatarRect,
+                      ),
+                    ],
+                    Positioned(
+                      left: avatarPoint.dx - _avatarSize / 2,
+                      top: avatarPoint.dy - _avatarSize / 2,
+                      child: _buildAvatar(),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -341,22 +365,51 @@ class _RoadmapPath extends StatelessWidget {
     return points.last;
   }
 
-  Widget _buildMilestoneBubble(Offset point, num amount) {
+  static const _avatarSize = 44.0;
+  static const _labelWidth = 128.0;
+  static const _labelHeight = 30.0;
+  static const _labelGap = 26.0; // 지점 중심에서 말풍선까지 - 모아(반지름 22)가 지점에 있어도 안 닿게
+
+  Widget _buildMilestoneDot(Offset point) {
     return Positioned(
-      left: point.dx - 55,
-      top: point.dy - 16,
+      left: point.dx - 5,
+      top: point.dy - 5,
+      child: Container(
+        width: 10,
+        height: 10,
+        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+      ),
+    );
+  }
+
+  /// 목표 말풍선 자리: 지점 위 → 아래 → 모아 반대쪽 옆 순으로, 모아와 안 겹치고 화면 안에 들어오는 첫 자리.
+  /// 좌우는 화면 안으로 끌어온다.
+  Widget _buildMilestoneBubble(Offset point, num amount, Size size, Rect avatarRect) {
+    double clampX(double x) => x.clamp(4.0, size.width - _labelWidth - 4);
+    Rect at(double left, double top) => Rect.fromLTWH(clampX(left), top, _labelWidth, _labelHeight);
+    final centeredLeft = point.dx - _labelWidth / 2;
+    final sideLeft = avatarRect.center.dx < point.dx
+        ? point.dx + _labelGap
+        : point.dx - _labelGap - _labelWidth;
+    final candidates = [
+      at(centeredLeft, point.dy - _labelGap - _labelHeight),
+      at(centeredLeft, point.dy + _labelGap),
+      at(sideLeft, point.dy - _labelHeight / 2),
+    ];
+    bool fits(Rect r) => r.top >= 0 && r.bottom <= size.height && !r.overlaps(avatarRect);
+    final rect = candidates.firstWhere(fits, orElse: () => candidates.last);
+    return Positioned(
+      left: rect.left,
+      top: rect.top,
+      width: _labelWidth,
       child: _Bubble(text: '목표 ${CurrencyFormatter.won(amount.round())}'),
     );
   }
 
-  Widget _buildNextBubble(int remainingToNext) {
-    return _Bubble(text: '다음 구간까지\n${CurrencyFormatter.won(remainingToNext)}');
-  }
-
   Widget _buildAvatar() {
     return Container(
-      width: 44,
-      height: 44,
+      width: _avatarSize,
+      height: _avatarSize,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
