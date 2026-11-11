@@ -89,6 +89,21 @@ def test_etc_condition_without_answers_is_max_only():
     assert [a.condition.condition_id for a in _eval(conds, Scope.MAX)[1]] == ["A"]
 
 
+def _promo(cid, pmin=None, pmax=None):
+    cond = _cond("기타", bonus="0.60", pmin=pmin, pmax=pmax, cid=cid)
+    cond.evidence_text = "특판우대이율"
+    return cond
+
+
+def test_promo_rate_counts_from_simple_only_in_its_period():
+    # 특판우대이율은 가입하면 붙는 판촉 금리 - 단순형부터 '이미 충족'. 기간이 정해진 특판은 그 기간에만 붙는다
+    conds = [_promo("ALL"), _promo("3-5", pmin=3, pmax=5)]
+    _, applied = _eval(conds, Scope.SIMPLE, option=_option(period=12))
+    assert [(a.condition.condition_id, a.already_met) for a in applied] == [("ALL", True)]
+    _, applied = _eval(conds, Scope.SIMPLE, option=_option(period=3))
+    assert {a.condition.condition_id for a in applied} == {"ALL", "3-5"}
+
+
 def test_simple_counts_only_facts():
     conds = [_cond("주거래은행"), _cond("신규고객"), _cond("자동이체"), _cond("급여이체")]
     rate, applied = _eval(conds, Scope.SIMPLE, main=True, new=True)

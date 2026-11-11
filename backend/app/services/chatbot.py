@@ -31,7 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.product import ProductCondition, ProductOption
 from app.models.profile import UserProfile, UserProfileExtra
-from app.services.conditions import _applies_to_period
+from app.services.conditions import _applies_to_period, is_promo_rate
 from app.services.portfolio import (
     ETC_ANSWER_MET,
     ETC_ANSWER_NOT_MET,
@@ -93,7 +93,8 @@ def select_question_targets(
     conditions: list[ProductCondition], options: dict[str, ProductOption], answered_ids: set[str]
 ) -> list[ProductCondition]:
     """물어볼 조건: '기타' + 우대폭 있음 + 아직 답하지 않음 + 배분된 옵션에서 결과를 바꿀 수 있음
-    (그 기간에 적용되고, 최고금리가 기본금리보다 높아 우대금리가 붙을 여지가 있음)."""
+    (그 기간에 적용되고, 최고금리가 기본금리보다 높아 우대금리가 붙을 여지가 있음).
+    특판우대이율은 조건이 아니라 판촉 금리라 이미 충족으로 계산하므로 묻지 않는다 (conditions.is_promo_rate)."""
     targets = []
     for c in conditions:
         option = options.get(c.product_id)
@@ -102,6 +103,7 @@ def select_question_targets(
             and c.condition_type == ETC_TYPE
             and c.rate_bonus is not None
             and c.condition_id not in answered_ids
+            and not is_promo_rate(c)
             and option.max_rate > option.base_rate
             and _applies_to_period(c, option.period_months)
         ):
