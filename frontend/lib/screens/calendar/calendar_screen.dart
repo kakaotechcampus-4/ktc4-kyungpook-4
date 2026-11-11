@@ -9,6 +9,7 @@ import '../../providers/calendar_provider.dart';
 import '../../providers/manual_entry_provider.dart';
 import '../../router/app_router.dart';
 import '../../theme/app_colors.dart';
+import '../../services/api_client.dart';
 import '../../services/auth_client.dart';
 import '../../widgets/manual_entry_tile.dart';
 import '../../widgets/month_calendar_grid.dart';
@@ -128,6 +129,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     await AuthClient.instance.logout();
     ref.invalidate(currentUserProvider);
     if (mounted) context.go(AppRoutes.login);
+  }
+
+  /// 이미 확정한(진행 중인) 포트폴리오가 있으면 재추천 안내로, 없으면 처음 사용자용 튜토리얼로.
+  /// 진행 중인 안 여부는 로드맵 응답의 active_portfolio_id 로 판단한다. 조회에 실패하면 튜토리얼.
+  Future<void> _startRecommendation() async {
+    bool hasActivePortfolio;
+    try {
+      // roadmapProvider 는 autoDispose 라 read 로 기다리면 도중에 버려질 수 있어 직접 부른다
+      final stats = await ApiClient.instance.fetchRoadmap();
+      hasActivePortfolio = stats?.activePortfolioId != null;
+    } catch (_) {
+      hasActivePortfolio = false;
+    }
+    if (!mounted) return;
+    context.push(hasActivePortfolio ? AppRoutes.recommendAgain : AppRoutes.tutorial);
   }
 
   Future<void> _deleteManualEntry(int entryId) async {
@@ -259,7 +275,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
           child: PrimaryButton(
             label: '안정형 포트폴리오 추천 받기',
-            onPressed: () => context.push(AppRoutes.tutorial),
+            onPressed: _startRecommendation,
           ),
         ),
       ),

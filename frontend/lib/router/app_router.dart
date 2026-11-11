@@ -6,6 +6,7 @@ import '../screens/input/input_step1_screen.dart';
 import '../screens/input/input_step2_screen.dart';
 import '../screens/input/input_step3_screen.dart';
 import '../screens/loading/loading_screen.dart';
+import '../screens/recommend_again/recommend_again_screen.dart';
 import '../screens/login/login_screen.dart';
 import '../screens/result/portfolio_detail_screen.dart';
 import '../screens/result/result_screen.dart';
@@ -28,6 +29,7 @@ class AppRoutes {
   static const result = '/result';
   static const roadmap = '/roadmap';
   static const resultDetail = '/result/detail';
+  static const recommendAgain = '/recommend-again';
 
   static String inputStep(int step) => '/input/$step';
 }
@@ -82,6 +84,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.resultDetail,
       builder: (context, state) => const PortfolioDetailScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.recommendAgain,
+      builder: (context, state) => const RecommendAgainScreen(),
     ),
   ],
 );
