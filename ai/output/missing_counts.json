@@ -1,32 +1,32 @@
 {
   "deposit_savingsbank_sample.json:0010350:240031": {
-    "count": 3,
+    "count": 4,
     "first_missing": "2026-10-28",
-    "last_checked": "2026-11-10"
+    "last_checked": "2026-11-11"
   },
   "deposit_sample.json:0010019:TD11300036000": {
-    "count": 3,
+    "count": 4,
     "first_missing": "2026-10-28",
-    "last_checked": "2026-11-10"
+    "last_checked": "2026-11-11"
   },
   "deposit_savingsbank_sample.json:0010350:240023": {
-    "count": 3,
+    "count": 4,
     "first_missing": "2026-10-28",
-    "last_checked": "2026-11-10"
+    "last_checked": "2026-11-11"
   },
   "cu_rate_compare.jsonl:07126:1715_스마트폰": {
-    "count": 2,
+    "count": 3,
     "first_missing": "2026-11-03",
-    "last_checked": "2026-11-10"
+    "last_checked": "2026-11-11"
   },
   "cu_rate_compare.jsonl:06108:1715_스마트폰": {
-    "count": 2,
+    "count": 3,
     "first_missing": "2026-11-03",
-    "last_checked": "2026-11-10"
+    "last_checked": "2026-11-11"
   },
   "cu_rate_compare.jsonl:10144:1714_영업점": {
-    "count": 1,
+    "count": 2,
     "first_missing": "2026-11-10",
-    "last_checked": "2026-11-10"
+    "last_checked": "2026-11-11"
   }
 }
