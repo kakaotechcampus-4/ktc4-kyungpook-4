@@ -122,6 +122,12 @@ def product_id_of(raw_product_id: str, product_name: str) -> str:
     return f"{base}-{digest}"
 
 
+def display_name(product_name: str) -> str:
+    """공시 상품명에 섞인 줄바꿈·연속 공백을 한 칸으로. ('J정기예금\\n(만기지급식)' -> 'J정기예금 (만기지급식)')
+    product_id 해시는 원문으로 계산한다. 바꾸면 기존 상품 키가 달라져 가입 내역과의 링크가 끊긴다."""
+    return " ".join(product_name.split())
+
+
 def option_id_of(product_id: str, period: int, rate_type: str, reserve_type: str, channel: str) -> str:
     """UNIQUE(product_id, 기간, 이자방식, 적립방식, 채널) 과 같은 조합으로 만든다.
 
@@ -226,7 +232,7 @@ def build_rows(src: dict[str, list[dict]], report: Report) -> dict[str, list[dic
             {
                 "product_id": pid,
                 "institution_code": head["institution_code"],
-                "product_name": head["product_name"],
+                "product_name": display_name(head["product_name"]),
                 "product_type": product_type,
                 "amount_min": head.get("amount_min"),
                 "amount_cap": head.get("amount_cap"),
