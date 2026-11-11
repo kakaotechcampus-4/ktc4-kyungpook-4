@@ -16,6 +16,7 @@ from sqlalchemy import create_engine, select, text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 import app.models  # noqa: F401  - Base.metadata 를 채운다
+from app.core import clock
 from app.core.clock import kst_date
 from app.core.config import settings
 from app.db.base import Base
@@ -369,7 +370,7 @@ async def test_my_calendar_follows_account_not_browser(clients, maker, monkeypat
 
     await login(b)  # 다른 브라우저, 같은 계정
     events = (await b.get("/api/v1/users/me/calendar")).json()
-    assert len(events) == 6
+    assert len(events) == 7  # 납입 6회(가입일이 1회차) + 만기
     assert events == (await a.get("/api/v1/users/me/calendar")).json()
 
 
@@ -392,6 +393,45 @@ async def test_active_total_does_not_drop_at_maturity(maker):
     assert after.active_total >= before.active_total
     assert (before.current_principal, after.current_principal) == (1_000_000, 0)
     assert after.goal_amount is None  # 목표가 없는 안이면 null
+
+
+async def test_calendar_matches_roadmap_payment_days(maker, monkeypatch):
+    """적금 1회차는 가입일(로드맵 계산과 같은 기준). 만기 일정은 적금·예금 모두 있고 금액이 붙는다."""
+    today = date(2026, 1, 31)
+    monkeypatch.setattr(clock, "today", lambda: today)
+    async with maker() as session:
+        user = AppUser(nickname="캘린더")
+        session.add(user)
+        await session.flush()
+        profile = UserProfile(user_id=user.user_id, capital=1_000_000, monthly_saving=100_000, period_months=3)
+        session.add(profile)
+        await session.commit()
+    saving = {"monthly_amount": 100_000, "start_date": today, "maturity_date": date(2026, 4, 30)}
+    pid = await add_portfolio(maker, user.user_id, profile.profile_id, **saving)
+    async with maker() as session:
+        session.add(
+            UserHolding(
+                portfolio_id=pid,
+                institution="예금은행",
+                product_name="예금",
+                base_rate=RATE,
+                effective_rate=RATE,
+                max_rate=RATE,
+                amount=1_000_000,
+                start_date=today,
+                maturity_date=date(2026, 4, 30),
+            )
+        )
+        await session.commit()
+        events = await portfolio_service.get_calendar_events(session, pid)
+
+    assert [(e.date, e.event_type, e.installment_round, e.amount, e.product_name) for e in events] == [
+        (date(2026, 1, 31), "납입", 1, 100_000, "테스트 상품"),
+        (date(2026, 2, 28), "납입", 2, 100_000, "테스트 상품"),  # 말일 보정
+        (date(2026, 3, 31), "납입", 3, 100_000, "테스트 상품"),
+        (date(2026, 4, 30), "만기", 0, 300_000, "테스트 상품"),
+        (date(2026, 4, 30), "만기", 0, 1_000_000, "예금"),
+    ]
 
 
 def test_kst_date_handles_utc_midnight():

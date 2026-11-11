@@ -150,6 +150,26 @@ def _tax_context(profile: UserProfile, join_date: date) -> TaxContext:
     )
 
 
+def age_on(birth: date | None, today: date) -> int | None:
+    """만 나이. 생년월일이 없으면 None."""
+    if birth is None:
+        return None
+    return today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+
+
+def age_eligible(cands: list[Candidate], age: int | None) -> list[Candidate]:
+    """가입 가능 나이(product.min_age/max_age) 밖의 상품(아동·청년·시니어 전용 등)을 뺀다.
+    나이를 모르거나 상품에 나이 제한이 없으면 그대로 둔다."""
+    if age is None:
+        return cands
+    return [
+        c
+        for c in cands
+        if (c.product.min_age is None or age >= c.product.min_age)
+        and (c.product.max_age is None or age <= c.product.max_age)
+    ]
+
+
 async def _closest_period(
     session: AsyncSession, product_type: str, period_months: int, institution_type: str | None = None
 ) -> int | None:
@@ -434,6 +454,10 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
         session, "적금", profile.period_months, institution_type=FIRST_TIER_INSTITUTION_TYPE
     )
     bank_period = bank_dep_period or bank_inst_period or period
+    # 가입 가능 나이 밖의 상품은 후보에서 뺀다. 생년월일이 없으면 거르지 않는다
+    age = age_on(profile.birth_date, clock.today())
+    deposits, installments = age_eligible(deposits, age), age_eligible(installments, age)
+    bank_deposits, bank_installments = age_eligible(bank_deposits, age), age_eligible(bank_installments, age)
 
     held = set(await get_held_bank_codes(session, profile))
     banks = _BankInfo(profile.main_bank_code, held | ({profile.main_bank_code} if profile.main_bank_code else set()))
@@ -497,6 +521,7 @@ async def build_tiers(session: AsyncSession, profile: UserProfile) -> PortfolioP
             if use_installment
             else ([], None)
         )
+        dep_cands, inst_cands = age_eligible(dep_cands, age), age_eligible(inst_cands, age)
         base_deposits = _best_single(profile.capital, dep_cands, profile, banks, tax, etc_answers)
         base_installments = _best_single(profile.monthly_saving, inst_cands, profile, banks, tax, etc_answers)
         choices = []
@@ -742,39 +767,39 @@ async def persist_portfolio(
     return portfolio
 
 
+def _calendar_event(holding: UserHolding, on: date, kind: str, amount: int, round_number: int) -> CalendarEventOut:
+    return CalendarEventOut(
+        date=on,
+        institution_name=holding.institution,
+        product_name=holding.product_name,
+        installment_round=round_number,
+        event_type=kind,
+        amount=amount,
+    )
+
+
 async def get_calendar_events(session: AsyncSession, portfolio_id: int) -> list[CalendarEventOut]:
+    """오늘 이후의 납입·만기 일정. 적금은 가입일에 1회차를 내고 매달 같은 날 낸다 (로드맵 계산과 같은 기준)."""
     stmt = select(UserHolding).where(UserHolding.portfolio_id == portfolio_id, UserHolding.status == "유지중")
     holdings = (await session.execute(stmt)).scalars().all()
 
     today = clock.today()
     events: list[CalendarEventOut] = []
     for holding in holdings:
+        if holding.maturity_date is None:
+            continue
         if holding.monthly_amount is not None:
-            round_number = 1
-            payment_date = _add_months(holding.start_date, round_number)
-            while holding.maturity_date is None or payment_date <= holding.maturity_date:
-                if payment_date >= today:
-                    events.append(
-                        CalendarEventOut(
-                            date=payment_date,
-                            institution_name=holding.institution,
-                            product_name=holding.product_name,
-                            installment_round=round_number,
-                        )
-                    )
-                round_number += 1
-                payment_date = _add_months(holding.start_date, round_number)
-                if holding.maturity_date and payment_date > holding.maturity_date:
-                    break
-        elif holding.maturity_date and holding.maturity_date >= today:
-            events.append(
-                CalendarEventOut(
-                    date=holding.maturity_date,
-                    institution_name=holding.institution,
-                    product_name=holding.product_name,
-                    installment_round=0,
-                )
-            )
+            months = 0
+            while _add_months(holding.start_date, months) < holding.maturity_date:
+                paid_on = _add_months(holding.start_date, months)
+                if paid_on >= today:
+                    events.append(_calendar_event(holding, paid_on, "납입", holding.monthly_amount, months + 1))
+                months += 1
+            principal = holding.monthly_amount * months
+        else:
+            principal = holding.amount or 0
+        if holding.maturity_date >= today:
+            events.append(_calendar_event(holding, holding.maturity_date, "만기", principal, 0))
 
     events.sort(key=lambda e: e.date)
     return events

@@ -15,6 +15,8 @@ from app.services.portfolio import (
     _BankInfo,
     _rank,
     _TierState,
+    age_eligible,
+    age_on,
     etc_answer_map,
 )
 from app.services.tax import TaxContext
@@ -87,6 +89,39 @@ def test_etc_condition_without_answers_is_max_only():
     conds = [_cond("기타", cid="A")]
     assert _eval(conds, Scope.BALANCED)[1] == []
     assert [a.condition.condition_id for a in _eval(conds, Scope.MAX)[1]] == ["A"]
+
+
+def _promo(cid, pmin=None, pmax=None):
+    cond = _cond("기타", bonus="0.60", pmin=pmin, pmax=pmax, cid=cid)
+    cond.evidence_text = "특판우대이율"
+    return cond
+
+
+def test_promo_rate_counts_from_simple_only_in_its_period():
+    # 특판우대이율은 가입하면 붙는 판촉 금리 - 단순형부터 '이미 충족'. 기간이 정해진 특판은 그 기간에만 붙는다
+    conds = [_promo("ALL"), _promo("3-5", pmin=3, pmax=5)]
+    _, applied = _eval(conds, Scope.SIMPLE, option=_option(period=12))
+    assert [(a.condition.condition_id, a.already_met) for a in applied] == [("ALL", True)]
+    _, applied = _eval(conds, Scope.SIMPLE, option=_option(period=3))
+    assert {a.condition.condition_id for a in applied} == {"ALL", "3-5"}
+
+
+def test_age_on_counts_birthday():
+    from datetime import date
+
+    assert age_on(date(2000, 11, 12), date(2026, 11, 11)) == 25  # 생일 전날
+    assert age_on(date(2000, 11, 11), date(2026, 11, 11)) == 26  # 생일 당일
+    assert age_on(None, date(2026, 11, 11)) is None
+
+
+def test_age_eligible_drops_products_outside_join_age():
+    def cand(pid, lo=None, hi=None):
+        return SimpleNamespace(product=SimpleNamespace(product_id=pid, min_age=lo, max_age=hi))
+
+    cands = [cand("ANY"), cand("KIDS", hi=18), cand("YOUTH", 19, 34), cand("SENIOR", lo=50)]
+    assert [c.product.product_id for c in age_eligible(cands, 26)] == ["ANY", "YOUTH"]
+    assert [c.product.product_id for c in age_eligible(cands, 55)] == ["ANY", "SENIOR"]
+    assert age_eligible(cands, None) == cands  # 생년월일이 없으면 거르지 않는다
 
 
 def test_simple_counts_only_facts():

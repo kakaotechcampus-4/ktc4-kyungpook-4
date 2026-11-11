@@ -2,6 +2,11 @@ logs/
 .env
 tests/fixtures/*
 !tests/fixtures/.gitkeep
+# 새마을금고는 서버 IP 차단으로 매주 수집하지 않고, 마지막 수동 수집본을 git 으로 관리한다
+# (scripts/run_pipeline.py 의 '새마을금고 - 고정 데이터' 설명 참고)
+!tests/fixtures/kfcc_branches.json
+!tests/fixtures/kfcc_rates.jsonl
+!tests/fixtures/kfcc_central_conditions_raw.jsonl
 
 # pip install -e 로 패키지 설치할 때 생기는 빌드 산출물
 build/

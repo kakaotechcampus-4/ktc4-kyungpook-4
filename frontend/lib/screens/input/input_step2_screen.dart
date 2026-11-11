@@ -100,23 +100,40 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
   }
 
   /// 질문 [questionIndex](0-based)가 이번에 처음 답변 완료됐다면 다음 질문으로 스크롤한다.
-  void _revealNext(int questionIndex) {
+  ///
+  /// [afterKeyboard]: 은행 검색창·생년월일처럼 키보드를 쓰는 질문. 폰에서는 키보드가
+  /// 닫히면서 화면 높이가 바뀌는 중에 스크롤 위치를 계산하면 어긋나서 거의 안 움직이므로,
+  /// 키보드가 다 닫힌 뒤에 스크롤한다.
+  void _revealNext(int questionIndex, {bool afterKeyboard = false}) {
     if (!_revealed.add(questionIndex)) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final nextIndex = questionIndex + 1;
-      if (nextIndex >= _questionKeys.length) return;
-      final ctx = _questionKeys[nextIndex].currentContext;
-      if (ctx == null) return;
-      Scrollable.ensureVisible(
-        ctx,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
-        alignment: 0,
-        // 다음 질문이 이미 화면에 보이면 그대로 두고, 안 보일 때만 최소한으로
-        // 끌어올린다 - 매번 맨 위로 강제 스냅시키면 화면이 확 튀는 느낌이 든다.
-        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
-      );
+    final nextIndex = questionIndex + 1;
+    if (nextIndex >= _questionKeys.length) return;
+    final delay = afterKeyboard ? const Duration(milliseconds: 400) : Duration.zero;
+    Future.delayed(delay, () {
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToQuestion(nextIndex));
     });
+  }
+
+  void _scrollToQuestion(int index) {
+    final ctx = _questionKeys[index].currentContext;
+    if (ctx == null) return;
+    final box = ctx.findRenderObject() as RenderBox?;
+    final viewport = Scrollable.maybeOf(ctx)?.context.findRenderObject() as RenderBox?;
+    if (box == null || viewport == null) return;
+
+    // 다음 질문이 이미 화면에 다 보이면 그대로 둔다 - 매번 강제로 움직이면 화면이 튀는 느낌이 든다.
+    final top = box.localToGlobal(Offset.zero, ancestor: viewport).dy;
+    if (top >= 0 && top + box.size.height <= viewport.size.height) return;
+
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+      // 맨 아래 가장자리에 딱 붙이면 폰에서는 브라우저 하단 바에 가려 안 내려간 것처럼
+      // 보인다. 화면 가운데보다 조금 위에 두어 방금 답한 질문도 같이 보이게 한다.
+      alignment: 0.4,
+    );
   }
 
   @override
@@ -166,7 +183,7 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                       input.mainBank.isEmpty ? const [] : [input.mainBank],
                   onSelect: (bank) {
                     notifier.updateMainBank(bank);
-                    _revealNext(1);
+                    _revealNext(1, afterKeyboard: true);
                   },
                 ),
               ),
@@ -222,7 +239,7 @@ class _InputStep2ScreenState extends ConsumerState<InputStep2Screen> {
                                 // 실제 존재하지 않는 날짜(13월, 2월 30일 등)면
                                 // 다음 질문을 미리 펼치지 않는다.
                                 if (ref.read(onboardingProvider).isBirthDateValid) {
-                                  _revealNext(2);
+                                  _revealNext(2, afterKeyboard: true);
                                 }
                               }
                             },
