@@ -59,6 +59,14 @@ def test_targets_respect_period_and_recommended_products():
     assert [c.condition_id for c in select_question_targets(conds, {"P1": _option(period=12)}, set())] == ["B"]
 
 
+def test_targets_skip_promo_rate():
+    # 특판우대이율은 조건이 아니라 판촉 금리 - 이미 충족으로 계산하므로 묻지 않는다
+    promo = _cond("A")
+    promo.evidence_text = "특판우대이율"
+    conds = [promo, _cond("B")]
+    assert [c.condition_id for c in select_question_targets(conds, {"P1": _option()}, set())] == ["B"]
+
+
 def test_recommended_options_collects_all_tiers_but_not_baseline():
     def alloc(pid):
         return SimpleNamespace(product=SimpleNamespace(product_id=pid), option=_option())

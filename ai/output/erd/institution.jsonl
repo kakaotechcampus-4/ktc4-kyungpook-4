@@ -105,7 +105,6 @@
 {"institution_code": "CU-10174", "name": "문화교육원", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-10039", "name": "미리벌", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-03218", "name": "미소", "institution_type": "신협", "region": null, "is_active": true}
-{"institution_code": "CU-03007", "name": "미추홀", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-05053", "name": "미호", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-10002", "name": "밀양", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-03143", "name": "백암", "institution_type": "신협", "region": null, "is_active": true}
@@ -386,7 +385,6 @@
 {"institution_code": "CU-09078", "name": "대구한일", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-09257", "name": "대구희망", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-01292", "name": "대명", "institution_type": "신협", "region": null, "is_active": true}
-{"institution_code": "CU-06165", "name": "대사", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-03029", "name": "대성", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-01283", "name": "대아", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-04075", "name": "대원", "institution_type": "신협", "region": null, "is_active": true}
@@ -445,6 +443,7 @@
 {"institution_code": "CU-01208", "name": "묵동", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-06016", "name": "문창", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-03190", "name": "미래", "institution_type": "신협", "region": null, "is_active": true}
+{"institution_code": "CU-03007", "name": "미추홀", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-03022", "name": "믿음", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08007", "name": "밀알", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-06047", "name": "반도", "institution_type": "신협", "region": null, "is_active": true}
@@ -816,10 +815,12 @@
 {"institution_code": "CU-09039", "name": "감포", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-08150", "name": "광주개인택시", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-09153", "name": "구룡포", "institution_type": "신협", "region": null, "is_active": true}
+{"institution_code": "CU-06165", "name": "대사", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-06025", "name": "대전드림", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-04068", "name": "대화", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-05010", "name": "덕촌", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-01066", "name": "두산", "institution_type": "신협", "region": null, "is_active": true}
+{"institution_code": "CU-01081", "name": "방이", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-02109", "name": "부산시중앙", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-01293", "name": "서울변호사", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-02014", "name": "성모", "institution_type": "신협", "region": null, "is_active": true}
@@ -835,13 +836,11 @@
 {"institution_code": "CU-04121", "name": "강원랜드", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-03149", "name": "경기광주", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-01027", "name": "김포교통", "institution_type": "신협", "region": null, "is_active": true}
-{"institution_code": "CU-01081", "name": "방이", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-02093", "name": "부산원광", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-01040", "name": "삼양식품", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-06064", "name": "새마을고려", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-06172", "name": "수자원공사", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-04065", "name": "진부", "institution_type": "신협", "region": null, "is_active": true}
-{"institution_code": "CU-02055", "name": "철도노조부산지부", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-09207", "name": "춘양", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-05112", "name": "충연", "institution_type": "신협", "region": null, "is_active": true}
 {"institution_code": "CU-01321", "name": "한국전력기술", "institution_type": "신협", "region": null, "is_active": true}
@@ -1079,11 +1078,10 @@
 {"institution_code": "KFCC-2227-001", "name": "희망새마을금고 본점", "institution_type": "새마을금고", "region": "인천 제물포구", "is_active": true}
 {"institution_code": "KFCC-2261-001", "name": "화도진새마을금고 본점", "institution_type": "새마을금고", "region": "인천 제물포구", "is_active": true}
 {"institution_code": "KFCC-2262-001", "name": "송북새마을금고 본점", "institution_type": "새마을금고", "region": "인천 제물포구", "is_active": true}
-{"institution_code": "KFCC-6251-004", "name": "HD현대중공업새마을금고 HD건설기계인천", "institution_type": "새마을금고", "region": "인천 제물포구", "is_active": true}
+{"institution_code": "KFCC-6251-004", "name": "HD현대중공업새마을금고 인천캠퍼스", "institution_type": "새마을금고", "region": "인천 제물포구", "is_active": true}
 {"institution_code": "KFCC-2234-001", "name": "제물포새마을금고 본점", "institution_type": "새마을금고", "region": "인천 미추홀구", "is_active": true}
 {"institution_code": "KFCC-2235-001", "name": "용일새마을금고 본점", "institution_type": "새마을금고", "region": "인천 미추홀구", "is_active": true}
 {"institution_code": "KFCC-2237-001", "name": "새인천새마을금고 본점", "institution_type": "새마을금고", "region": "인천 미추홀구", "is_active": true}
-{"institution_code": "KFCC-2238-001", "name": "한마음새마을금고 본점", "institution_type": "새마을금고", "region": "인천 미추홀구", "is_active": true}
 {"institution_code": "KFCC-2239-001", "name": "학익새마을금고 본점", "institution_type": "새마을금고", "region": "인천 미추홀구", "is_active": true}
 {"institution_code": "KFCC-2240-001", "name": "온누리새마을금고 본점", "institution_type": "새마을금고", "region": "인천 미추홀구", "is_active": true}
 {"institution_code": "KFCC-2241-001", "name": "도화1동새마을금고 본점", "institution_type": "새마을금고", "region": "인천 미추홀구", "is_active": true}
@@ -2095,7 +2093,7 @@
 {"institution_code": "SB-0010359", "name": "키움예스저축은행", "institution_type": "저축은행", "region": null, "is_active": true}
 {"institution_code": "SB-0010363", "name": "더케이저축은행", "institution_type": "저축은행", "region": null, "is_active": true}
 {"institution_code": "SB-0010366", "name": "조은저축은행", "institution_type": "저축은행", "region": null, "is_active": true}
-{"institution_code": "SB-0010370", "name": "SBI저축은행", "institution_type": "저축은행", "region": null, "is_active": true}
+{"institution_code": "SB-0010370", "name": "교보SBI저축은행", "institution_type": "저축은행", "region": null, "is_active": true}
 {"institution_code": "SB-0010378", "name": "바로저축은행", "institution_type": "저축은행", "region": null, "is_active": true}
 {"institution_code": "SB-0010388", "name": "다올저축은행", "institution_type": "저축은행", "region": null, "is_active": true}
 {"institution_code": "SB-0010389", "name": "유안타저축은행", "institution_type": "저축은행", "region": null, "is_active": true}

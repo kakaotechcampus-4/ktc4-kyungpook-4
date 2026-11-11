@@ -39,12 +39,42 @@ AI_CACHE_PATH = Path(__file__).resolve().parent.parent / "output" / "ai_conditio
 PCT_RE = re.compile(r"(\d+(?:\.\d+)?)")
 TERM_RE = re.compile(r"(\d+)")
 
+# 가입대상 문장의 나이 ("만 19세 이상", "만 18세이하", "만 50세 이상 만 70세 미만", "만19세~만34세")
+AGE_RE = re.compile(r"(?:만\s*)?(\d{1,2})\s*세\s*(이상|부터|이하|미만|초과|까지)")
+AGE_RANGE_RE = re.compile(r"(?:만\s*)?(\d{1,2})\s*세?\s*[~∼-]\s*(?:만\s*)?(\d{1,2})\s*세")
+# 나이가 가입자 본인이 아니거나(자녀·부모) 여러 자격 중 하나일 때(수급자 등) - 잘못 거르지 않게 제한을 걸지 않는다
+AGE_SKIP_RE = re.compile(r"자녀|부모|수급|차상위|가구")
+
 
 def parse_pct(s):
     if s is None:
         return None
     m = PCT_RE.search(str(s))
     return float(m.group(1)) if m else None
+
+
+def parse_join_age(text):
+    """가입대상 문장 -> (min_age, max_age). 나이가 없거나 해석이 애매하면 (None, None) = 제한 없음."""
+    t = " ".join((text or "").split())
+    if not t or AGE_SKIP_RE.search(t):
+        return None, None
+    lo = hi = None
+    for m in AGE_RE.finditer(t):
+        n, word = int(m.group(1)), m.group(2)
+        if word in ("이상", "부터"):
+            lo = n if lo is None else max(lo, n)
+        elif word == "초과":
+            lo = n + 1
+        elif word in ("이하", "까지"):
+            hi = n if hi is None else min(hi, n)
+        elif word == "미만":
+            hi = n - 1
+    m = AGE_RANGE_RE.search(t)
+    if m:
+        lo, hi = int(m.group(1)), int(m.group(2))
+    if lo is not None and hi is not None and lo > hi:
+        return None, None
+    return lo, hi
 
 
 def parse_term_months(s):
@@ -234,8 +264,8 @@ def process_cu(ai_cache):
                 join_channel=join_channel,
                 membership_required=membership_required,
                 new_customer_only=None,
-                min_age=None,
-                max_age=None,
+                min_age=parse_join_age(rec.get("joinSubjMemo"))[0],
+                max_age=parse_join_age(rec.get("joinSubjMemo"))[1],
                 parse_status="PARSED",
                 snapshot_date=snapshot_date,
                 sale_end_date=None,
@@ -361,11 +391,30 @@ def kfcc_max_bonus(condition_index, product_title, period_months):
     return ungrouped + sum(grouped.values())
 
 
+def load_kfcc_age_index():
+    """중앙 카탈로그 상품명 -> 가입대상 나이 (min_age, max_age). 지점 금리표에는 가입대상이 없어서
+    우대조건과 같은 방식(상품명)으로 중앙 카탈로그의 "가입대상" 문장을 붙인다."""
+    path = FIXTURES / "kfcc_central_conditions_raw.jsonl"
+    index = {}
+    if not path.exists():
+        return index
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            m = re.search(r"가입대상\n([^\n]*)", row.get("spcl_cnd_raw") or "")
+            if m and row.get("product_name"):
+                index[row["product_name"]] = parse_join_age(m.group(1))
+    return index
+
+
 def process_kfcc(ai_cache):
     branch_idx = load_kfcc_branch_index()
     records = _load_kfcc_records()
     fallback_div_cd = _build_kfcc_fallback_div_cd(records, branch_idx)
     condition_index = load_kfcc_condition_index(ai_cache)
+    age_index = load_kfcc_age_index()
     n_records = 0
     n_conditions = 0
     missing_branch = []
@@ -426,8 +475,8 @@ def process_kfcc(ai_cache):
                         join_channel=join_channel,
                         membership_required=None,
                         new_customer_only=None,
-                        min_age=None,
-                        max_age=None,
+                        min_age=age_index.get(product_title, (None, None))[0],
+                        max_age=age_index.get(product_title, (None, None))[1],
                         parse_status="PARSED",
                         snapshot_date=None,
                         sale_end_date=None,
@@ -657,8 +706,8 @@ def process_finlife(filename: str, institution_type: str, product_type_tag: str,
                 join_channel=join_channel,
                 membership_required=None,
                 new_customer_only=None,
-                min_age=None,
-                max_age=None,
+                min_age=parse_join_age(base.get("join_member"))[0],
+                max_age=parse_join_age(base.get("join_member"))[1],
                 parse_status="PARSED",
                 snapshot_date=snapshot_date,
                 sale_end_date=sale_end_date,

@@ -28,16 +28,33 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   late DateTime _displayedMonth =
       DateTime(DateTime.now().year, DateTime.now().month);
 
+  /// 달이 바뀔 때 새 달력이 들어오는 방향. 다음 달이면 오른쪽에서, 이전 달이면 왼쪽에서.
+  bool _slideFromRight = true;
+
   void _goToPreviousMonth() {
     setState(() {
+      _slideFromRight = false;
       _displayedMonth = DateTime(_displayedMonth.year, _displayedMonth.month - 1);
     });
   }
 
   void _goToNextMonth() {
     setState(() {
+      _slideFromRight = true;
       _displayedMonth = DateTime(_displayedMonth.year, _displayedMonth.month + 1);
     });
+  }
+
+  /// 달력을 좌우로 밀어서 달을 넘긴다. 왼쪽으로 밀면 다음 달, 오른쪽으로 밀면 이전 달.
+  /// 살짝 스친 정도는 무시한다.
+  void _onCalendarSwipe(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (velocity.abs() < 200) return;
+    if (velocity < 0) {
+      _goToNextMonth();
+    } else {
+      _goToPreviousMonth();
+    }
   }
 
   Future<void> _openMonthYearPicker() async {
@@ -45,7 +62,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       context: context,
       initialMonth: _displayedMonth,
     );
-    if (picked != null) setState(() => _displayedMonth = picked);
+    if (picked == null) return;
+    setState(() {
+      _slideFromRight = picked.isAfter(_displayedMonth);
+      _displayedMonth = picked;
+    });
   }
 
   void _openEntrySheet(DateTime date) {
@@ -187,13 +208,34 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            MonthCalendarGrid(
-              month: _displayedMonth,
-              highlightedDate: _selectedDate,
-              onDateSelected: (date) {
-                setState(() => _selectedDate = date);
-                _openEntrySheet(date);
-              },
+            GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragEnd: _onCalendarSwipe,
+              child: ClipRect(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  transitionBuilder: (child, animation) {
+                    // 들어오는 달력만 미끄러져 들어오고, 나가는 달력은 바로 사라진다
+                    // (둘이 겹쳐 움직이면 날짜가 섞여 보인다).
+                    final isIncoming = child.key == ValueKey(_displayedMonth);
+                    if (!isIncoming) return const SizedBox.shrink();
+                    final offset = Tween<Offset>(
+                      begin: Offset(_slideFromRight ? 1 : -1, 0),
+                      end: Offset.zero,
+                    ).chain(CurveTween(curve: Curves.easeOutCubic));
+                    return SlideTransition(position: animation.drive(offset), child: child);
+                  },
+                  child: MonthCalendarGrid(
+                    key: ValueKey(_displayedMonth),
+                    month: _displayedMonth,
+                    highlightedDate: _selectedDate,
+                    onDateSelected: (date) {
+                      setState(() => _selectedDate = date);
+                      _openEntrySheet(date);
+                    },
+                  ),
+                ),
+              ),
             ),
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 32, 20, 8),
