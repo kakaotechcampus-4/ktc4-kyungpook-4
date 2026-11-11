@@ -118,6 +118,18 @@ class PortfolioOption {
   /// 이 안을 실행하려면 새로 가입해야 하는 기관 수 (상품 개수가 아니라 기관 기준 중복 제거된 값).
   final int newAccountCount;
 
+  /// 단순형 대비 세후 이자 차액. 균형형·최대형에만 오고 나머지는 null.
+  final int? extraVsSimple;
+
+  /// 우대금리를 받으려고 새로 해야 하는 일 (서버 문구 그대로).
+  final List<String> requiredActions;
+
+  /// 조합 예탁금 감면으로 일반과세(15.4%)보다 줄어든 세금(원).
+  final int taxSavingWon;
+
+  /// 일반과세 이자가 연 2천만원을 넘어 금융소득종합과세 대상이 될 수 있음.
+  final bool overComprehensiveTax;
+
   const PortfolioOption({
     required this.tier,
     required this.products,
@@ -125,6 +137,10 @@ class PortfolioOption {
     required this.reason,
     required this.extraVsBaseline,
     required this.newAccountCount,
+    this.extraVsSimple,
+    this.requiredActions = const [],
+    this.taxSavingWon = 0,
+    this.overComprehensiveTax = false,
   });
 
   factory PortfolioOption.fromJson(Map<String, dynamic> json) {
@@ -138,6 +154,12 @@ class PortfolioOption {
       reason: json['reason'] as String?,
       extraVsBaseline: (json['extra_vs_baseline'] as num?)?.toInt(),
       newAccountCount: json['new_bank_count'] as int,
+      extraVsSimple: (json['extra_vs_simple'] as num?)?.toInt(),
+      requiredActions: (json['required_actions'] as List<dynamic>? ?? const [])
+          .map((e) => e as String)
+          .toList(),
+      taxSavingWon: (json['tax_saving_won'] as num?)?.toInt() ?? 0,
+      overComprehensiveTax: json['over_comprehensive_tax'] as bool? ?? false,
     );
   }
 }

@@ -14,6 +14,9 @@ class SinglePlan {
   final int afterTaxInterest;
   final String? periodNote;
 
+  /// 한 은행에 원금 1억원 초과 - 초과분은 예금자보호를 받지 못한다.
+  final bool exceedsProtection;
+
   const SinglePlan({
     required this.institutionName,
     required this.productName,
@@ -23,6 +26,7 @@ class SinglePlan {
     required this.annualRatePercent,
     required this.afterTaxInterest,
     this.periodNote,
+    this.exceedsProtection = false,
   });
 
   factory SinglePlan.fromJson(Map<String, dynamic> json) {
@@ -38,6 +42,7 @@ class SinglePlan {
       annualRatePercent: (first?['interest_rate'] as num?)?.toDouble() ?? 0.0,
       afterTaxInterest: (json['after_tax_total'] as num?)?.toInt() ?? 0,
       periodNote: json['period_note'] as String?,
+      exceedsProtection: json['exceeds_protection'] as bool? ?? false,
     );
   }
 }

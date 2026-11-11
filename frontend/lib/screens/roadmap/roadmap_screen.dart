@@ -163,6 +163,8 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
     );
   }
 
+  String _formatDate(DateTime d) => '${d.year}년 ${d.month}월 ${d.day}일';
+
   Widget _buildStatsPanel(RoadmapStats stats) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
@@ -175,33 +177,53 @@ class _RoadmapScreenState extends ConsumerState<RoadmapScreen> {
       ),
       child: Column(
         children: [
+          // 폰 폭에서 금액 네 개를 한 줄에 놓으면 잘려서 2x2 로 둔다.
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _StatColumn(
-                icon: Icons.calendar_today_outlined,
-                label: '경과 개월',
-                value: '${stats.elapsedMonths}개월',
+              Expanded(
+                child: _StatColumn(
+                  icon: Icons.calendar_today_outlined,
+                  label: '경과 개월',
+                  value: '${stats.elapsedMonths}개월',
+                ),
               ),
-              _StatColumn(
-                icon: Icons.savings_outlined,
-                label: '총 이자',
-                value: CurrencyFormatter.won(stats.totalInterest),
-              ),
-              _StatColumn(
-                icon: Icons.trending_up,
-                label: '현재 이자',
-                value: CurrencyFormatter.won(stats.currentInterest),
+              Expanded(
+                child: _StatColumn(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: '넣은 원금',
+                  value: CurrencyFormatter.won(stats.currentPrincipal),
+                ),
               ),
             ],
           ),
-          if (stats.goalDate != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              '목표일 ${stats.goalDate!.year}년 ${stats.goalDate!.month}월 ${stats.goalDate!.day}일',
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
-          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _StatColumn(
+                  icon: Icons.savings_outlined,
+                  label: '총 이자',
+                  value: CurrencyFormatter.won(stats.totalInterest),
+                ),
+              ),
+              Expanded(
+                child: _StatColumn(
+                  icon: Icons.trending_up,
+                  label: '현재 이자',
+                  value: CurrencyFormatter.won(stats.currentInterest),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            [
+              '시작일 ${_formatDate(stats.startedAt)}',
+              if (stats.goalDate != null) '목표일 ${_formatDate(stats.goalDate!)}',
+            ].join('  ·  '),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 16),
           Text(
             stats.activePortfolioId == null

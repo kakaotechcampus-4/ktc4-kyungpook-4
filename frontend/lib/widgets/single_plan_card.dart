@@ -60,6 +60,13 @@ class SinglePlanCard extends StatelessWidget {
             '(${plan.annualRatePercent.toStringAsFixed(1)}%를 공표한 기간 후 실제로 받는 금액입니다.)',
             style: const TextStyle(fontSize: 12, color: AppColors.gray),
           ),
+          if (plan.exceedsProtection) ...[
+            const SizedBox(height: 8),
+            const Text(
+              '한 은행에 1억원을 넘게 넣어 초과분은 예금자보호를 받지 못해요',
+              style: TextStyle(fontSize: 12, color: Colors.orange),
+            ),
+          ],
           if (plan.periodNote != null) ...[
             const SizedBox(height: 8),
             Text(
