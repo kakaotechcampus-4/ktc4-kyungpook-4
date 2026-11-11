@@ -19,6 +19,8 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: '안정형',
+      // 웹에서 브라우저 상단(theme-color) 색으로 쓰인다. 안 주면 테마 primary(라벤더)가 들어간다
+      color: Colors.white,
       theme: AppTheme.light,
       routerConfig: appRouter,
     );
