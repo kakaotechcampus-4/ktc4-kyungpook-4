@@ -15,6 +15,8 @@ from app.services.portfolio import (
     _BankInfo,
     _rank,
     _TierState,
+    age_eligible,
+    age_on,
     etc_answer_map,
 )
 from app.services.tax import TaxContext
@@ -102,6 +104,24 @@ def test_promo_rate_counts_from_simple_only_in_its_period():
     assert [(a.condition.condition_id, a.already_met) for a in applied] == [("ALL", True)]
     _, applied = _eval(conds, Scope.SIMPLE, option=_option(period=3))
     assert {a.condition.condition_id for a in applied} == {"ALL", "3-5"}
+
+
+def test_age_on_counts_birthday():
+    from datetime import date
+
+    assert age_on(date(2000, 11, 12), date(2026, 11, 11)) == 25  # 생일 전날
+    assert age_on(date(2000, 11, 11), date(2026, 11, 11)) == 26  # 생일 당일
+    assert age_on(None, date(2026, 11, 11)) is None
+
+
+def test_age_eligible_drops_products_outside_join_age():
+    def cand(pid, lo=None, hi=None):
+        return SimpleNamespace(product=SimpleNamespace(product_id=pid, min_age=lo, max_age=hi))
+
+    cands = [cand("ANY"), cand("KIDS", hi=18), cand("YOUTH", 19, 34), cand("SENIOR", lo=50)]
+    assert [c.product.product_id for c in age_eligible(cands, 26)] == ["ANY", "YOUTH"]
+    assert [c.product.product_id for c in age_eligible(cands, 55)] == ["ANY", "SENIOR"]
+    assert age_eligible(cands, None) == cands  # 생년월일이 없으면 거르지 않는다
 
 
 def test_simple_counts_only_facts():
