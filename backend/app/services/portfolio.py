@@ -728,14 +728,11 @@ async def persist_portfolio(
     session: AsyncSession, profile: UserProfile, tier_name: str, allocations: TierAllocations
 ) -> UserPortfolio:
     today = clock.today()
-    maturity_date = _add_months(today, allocations.period_months)
 
     portfolio = UserPortfolio(
         user_id=profile.user_id,
         profile_id=profile.profile_id,
         portfolio_type=tier_name,
-        goal_amount=(profile.capital + profile.monthly_saving * profile.period_months) or None,
-        goal_date=maturity_date,
         status="진행중",
     )
     session.add(portfolio)
@@ -762,6 +759,15 @@ async def persist_portfolio(
             )
 
     portfolio.after_tax_total = numbers.after_tax_total
+    # 목표 = 만기까지 실제로 넣는 원금 + 세후 이자 (로드맵 roadmap.build_roadmap 과 같은 기준).
+    # 입력한 목돈·기간이 아니라 배분·매칭 결과로 잡아야, 한도로 못 넣은 돈이나 더 짧게 매칭된
+    # 기간 때문에 만기일에도 목표에 못 닿는 일이 없다.
+    principal = sum(a.amount for a in allocations.deposit_allocs) + sum(
+        a.amount * a.option.period_months for a in allocations.installment_allocs
+    )
+    portfolio.goal_amount = (principal + numbers.after_tax_total) or None
+    all_allocs = allocations.deposit_allocs + allocations.installment_allocs
+    portfolio.goal_date = max((_add_months(today, a.option.period_months) for a in all_allocs), default=None)
     await session.commit()
     await session.refresh(portfolio)
     return portfolio
