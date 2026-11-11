@@ -12,6 +12,7 @@ from app.db.session import get_session
 from app.models.user import AppUser, SocialAccount
 from app.schemas.calendar import CalendarEventOut
 from app.schemas.user import RoadmapOut, UserMeOut
+from app.services import auth as auth_service
 from app.services import portfolio as portfolio_service
 from app.services.roadmap import build_roadmap
 
@@ -41,7 +42,8 @@ async def get_me(
         user_id=user.user_id,
         nickname=user.nickname,
         email=user.email,
-        is_guest=not providers,
+        # 데모 계정은 소셜 계정이 없지만 로그인한 사용자다
+        is_guest=not providers and user.email != auth_service.DEMO_USER_EMAIL,
         providers=providers,
     )
 

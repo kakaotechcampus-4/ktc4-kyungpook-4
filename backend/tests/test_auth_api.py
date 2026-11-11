@@ -295,6 +295,42 @@ async def test_refresh_without_cookie_is_401(client):
     assert (await client.post("/api/v1/auth/refresh")).status_code == 401
 
 
+# ── 데모 로그인 (평가자용) ──────────────────────────────────
+
+
+async def test_demo_login_404_when_secret_unset(client):
+    res = await client.get("/api/v1/auth/demo/login", params={"secret": "whatever"})
+    assert res.status_code == 404
+
+
+async def test_demo_login_404_on_wrong_secret(client, monkeypatch):
+    monkeypatch.setattr(settings, "DEMO_LOGIN_SECRET", "right-secret")
+    res = await client.get("/api/v1/auth/demo/login", params={"secret": "wrong-secret"})
+    assert res.status_code == 404
+    assert "access_token" not in client.cookies
+
+
+async def test_demo_login_sets_cookies_and_redirects(client, monkeypatch):
+    monkeypatch.setattr(settings, "DEMO_LOGIN_SECRET", "right-secret")
+    res = await client.get("/api/v1/auth/demo/login", params={"secret": "right-secret", "next": "/result"})
+    assert res.headers["location"] == f"{FRONT}/#/result"
+    assert client.cookies.get("access_token")
+    assert client.cookies.get("refresh_token")
+    body = (await me(client)).json()
+    assert body["nickname"] == "데모 평가자"
+    assert body["is_guest"] is False
+
+
+async def test_demo_login_reuses_same_account(client, monkeypatch):
+    monkeypatch.setattr(settings, "DEMO_LOGIN_SECRET", "right-secret")
+    await client.get("/api/v1/auth/demo/login", params={"secret": "right-secret"})
+    first = (await me(client)).json()["user_id"]
+
+    client.cookies.clear()
+    await client.get("/api/v1/auth/demo/login", params={"secret": "right-secret"})
+    assert (await me(client)).json()["user_id"] == first
+
+
 async def test_logout_revokes_refresh_and_clears_cookies(client, monkeypatch):
     fake_provider(monkeypatch, social())
     await login(client)

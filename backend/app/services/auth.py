@@ -31,6 +31,12 @@ REFRESH_GRACE_SECONDS = 30
 DEFAULT_NICKNAME = "사용자"  # 소셜사가 닉네임을 안 주면 (app_user.nickname 은 NOT NULL)
 _NICKNAME_MAX = 50
 
+# 평가자용 데모 로그인(api/v1/auth.py의 /auth/demo/login) 전용 고정 계정 식별자.
+# social_account 는 provider CHECK 제약(GOOGLE/KAKAO/NAVER)이 있어 쓸 수 없고,
+# 소셜 로그인 흐름과도 섞이면 안 되므로 이메일로만 식별한다.
+DEMO_USER_EMAIL = "demo@safebrother.internal"
+DEMO_NICKNAME = "데모 평가자"
+
 
 def _state_key(state: str) -> str:
     return f"auth:state:{state}"
@@ -140,6 +146,21 @@ async def find_or_create_user(session: AsyncSession, social: SocialUser) -> int:
         if user_id is None:
             raise
         return user_id
+    return user.user_id
+
+
+async def find_or_create_demo_user(session: AsyncSession) -> int:
+    """평가자용 데모 로그인 전용 고정 계정을 찾고, 없으면 만든다 (항상 같은 계정).
+
+    여러 요청이 동시에 처음 호출해 두 번 만들어져도(이메일에 UNIQUE 제약이 없다)
+    둘 다 똑같이 빈 데모 계정이라 문제가 되지 않는다.
+    """
+    user_id = await session.scalar(select(AppUser.user_id).where(AppUser.email == DEMO_USER_EMAIL).limit(1))
+    if user_id is not None:
+        return user_id
+    user = AppUser(nickname=DEMO_NICKNAME, email=DEMO_USER_EMAIL)
+    session.add(user)
+    await session.commit()
     return user.user_id
 
 

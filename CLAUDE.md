@@ -150,6 +150,10 @@ repo-root/
   - 소셜사 콘솔의 redirect URI 는 웹과 같다(서버 콜백). 앱 쪽 구현은 `feature/be-app-auth` PR 본문의 FE 가이드 참고
 - 서버 비밀값: `JWT_SECRET`(첫 배포 때 자동 생성), `GOOGLE_*`·`KAKAO_*`(비우면 그 로그인은 503)
 - 설정: `APP_REDIRECT_URI`(기본 `safebrother://auth`) — 요청값으로 받지 않고 설정으로만 정한다(코드 가로채기 방지)
+- **평가자용 데모 로그인**: `GET /auth/demo/login?secret=<DEMO_LOGIN_SECRET>` — 구글·카카오 로그인 없이
+  고정 데모 계정(`데모 평가자`)으로 웹 쿠키 로그인시킨다. 게스트로 쌓은 기록은 그대로 승계된다.
+  `DEMO_LOGIN_SECRET`이 비어 있으면(기본값) 항상 404 — 평가 기간에만 서버 `.env`에 값을 넣고 재배포,
+  끝나면 다시 비우고 재배포한다.
 
 ## 현재 백엔드 API (`app/api/v1/`, 전부 `/api/v1` 아래)
 
