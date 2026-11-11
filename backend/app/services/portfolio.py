@@ -48,6 +48,17 @@ MAX_TIER = "최대형"
 STABLE_TIER = "안정형"
 
 DEPOSIT_PROTECTION_LIMIT = 100_000_000  # 예금자보호 한도. 기관별 원금 합계를 여기까지만 담는다
+
+
+def institution_display_name(name: str, institution_type: str) -> str:
+    """화면에 보여줄 기관 이름. 원본 법인명의 '주식회사'를 빼고('주식회사 카카오뱅크' -> '카카오뱅크'),
+    이름에 '신협'이 빠진 신협에는 붙인다('가락' -> '가락신협')."""
+    display = " ".join(name.replace("주식회사", " ").split())
+    if institution_type == "신협" and not display.endswith("신협"):
+        display += "신협"
+    return display
+
+
 COMPREHENSIVE_TAX_THRESHOLD = 20_000_000  # 금융소득종합과세 기준 (연간 이자·배당)
 FIRST_TIER_INSTITUTION_TYPE = "은행"  # 1금융권
 # 챗봇 '기타' 조건 답을 user_profile_extra.answer_value 에 저장하는 값
@@ -245,7 +256,10 @@ async def _baseline_candidates_for_bank(
         for cond in (await session.execute(cond_stmt)).scalars():
             conditions[cond.product_id].append(cond)
 
-    return [Candidate(p, o, name, itype, conditions[p.product_id]) for p, o, name, itype in rows], note
+    return [
+        Candidate(p, o, institution_display_name(name, itype), itype, conditions[p.product_id])
+        for p, o, name, itype in rows
+    ], note
 
 
 async def _matching_options(
@@ -277,7 +291,10 @@ async def _matching_options(
         for cond in (await session.execute(cond_stmt)).scalars():
             conditions[cond.product_id].append(cond)
 
-    return matched_period, [Candidate(p, o, name, itype, conditions[p.product_id]) for p, o, name, itype in rows]
+    return matched_period, [
+        Candidate(p, o, institution_display_name(name, itype), itype, conditions[p.product_id])
+        for p, o, name, itype in rows
+    ]
 
 
 def _effective_cap(product: Product, cap_field: str, period_months: int) -> int | None:
@@ -342,6 +359,16 @@ class _TierState:
     principal_by_institution: dict[str, int] = field(default_factory=lambda: defaultdict(int))
 
 
+def _blocked_by_new_limit(code: str, spec: TierSpec, banks: _BankInfo, state: _TierState) -> bool:
+    """이 기관에 새로 가입해야 하는데 이 티어의 새 기관 수 제한을 이미 다 썼는지."""
+    return (
+        banks.is_new(code)
+        and code not in state.new_institutions
+        and spec.max_new_institutions is not None
+        and len(state.new_institutions) >= spec.max_new_institutions
+    )
+
+
 def _allocate_greedy(
     total: int,
     ranked: list[_Ranked],
@@ -364,12 +391,7 @@ def _allocate_greedy(
         code = product.institution_code
         if product.product_id in state.used_products:
             continue  # 같은 상품의 채널만 다른 옵션
-        if (
-            banks.is_new(code)
-            and code not in state.new_institutions
-            and spec.max_new_institutions is not None
-            and len(state.new_institutions) >= spec.max_new_institutions
-        ):
+        if _blocked_by_new_limit(code, spec, banks, state):
             continue
 
         months = option.period_months if cap_field == "monthly_cap" else 1
@@ -386,6 +408,24 @@ def _allocate_greedy(
         state.principal_by_institution[code] += amount * months
         if banks.is_new(code):
             state.new_institutions.add(code)
+    if remaining > 0 and not allocations:
+        # 하나도 못 담았다 (예: 예금이 기관별 예금자보호 한도를 다 채워 적금 자리가 없음). 돈이 통째로 빠지지 않게
+        # 새 기관 제한만 지키고 1위 상품에 한도를 넘겨서라도 담는다 - 아래 몰아넣기와 같은 원칙
+        for r in ranked:
+            product, option = r.candidate.product, r.candidate.option
+            code = product.institution_code
+            if product.product_id in state.used_products or _blocked_by_new_limit(code, spec, banks, state):
+                continue
+            allocations.append(
+                Allocation(product, option, r.candidate.institution_name, remaining, r.effective_rate, r.applied)
+            )
+            months = option.period_months if cap_field == "monthly_cap" else 1
+            state.used_products.add(product.product_id)
+            state.principal_by_institution[code] += remaining * months
+            if banks.is_new(code):
+                state.new_institutions.add(code)
+            remaining = 0
+            break
     if remaining > 0 and allocations:
         # 후보 상품들의 한도를 다 채우고도 남으면, 한도 초과라도 마지막 상품에 몰아넣는다
         allocations[-1].amount += remaining

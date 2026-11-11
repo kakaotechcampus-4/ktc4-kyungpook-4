@@ -8,6 +8,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/calendar_provider.dart';
 import '../../providers/manual_entry_provider.dart';
 import '../../router/app_router.dart';
+import '../../theme/app_colors.dart';
+import '../../services/api_client.dart';
 import '../../services/auth_client.dart';
 import '../../widgets/manual_entry_tile.dart';
 import '../../widgets/month_calendar_grid.dart';
@@ -129,6 +131,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (mounted) context.go(AppRoutes.login);
   }
 
+  /// 이미 확정한(진행 중인) 포트폴리오가 있으면 재추천 안내로, 없으면 처음 사용자용 튜토리얼로.
+  /// 진행 중인 안 여부는 로드맵 응답의 active_portfolio_id 로 판단한다. 조회에 실패하면 튜토리얼.
+  Future<void> _startRecommendation() async {
+    bool hasActivePortfolio;
+    try {
+      // roadmapProvider 는 autoDispose 라 read 로 기다리면 도중에 버려질 수 있어 직접 부른다
+      final stats = await ApiClient.instance.fetchRoadmap();
+      hasActivePortfolio = stats?.activePortfolioId != null;
+    } catch (_) {
+      hasActivePortfolio = false;
+    }
+    if (!mounted) return;
+    context.push(hasActivePortfolio ? AppRoutes.recommendAgain : AppRoutes.tutorial);
+  }
+
   Future<void> _deleteManualEntry(int entryId) async {
     try {
       await ref.read(manualEntryProvider.notifier).remove(entryId);
@@ -229,6 +246,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     key: ValueKey(_displayedMonth),
                     month: _displayedMonth,
                     highlightedDate: _selectedDate,
+                    markers: _buildMarkers(eventsAsync.value, manualEntriesAsync.value),
                     onDateSelected: (date) {
                       setState(() => _selectedDate = date);
                       _openEntrySheet(date);
@@ -236,6 +254,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ),
                 ),
               ),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: CalendarMarkerLegend(),
             ),
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 32, 20, 8),
@@ -253,11 +275,29 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
           child: PrimaryButton(
             label: '안정형 포트폴리오 추천 받기',
-            onPressed: () => context.push(AppRoutes.tutorial),
+            onPressed: _startRecommendation,
           ),
         ),
       ),
     );
+  }
+
+  /// 달력 칸에 찍을 점. "다가오는 일정" 목록(이번 달·다음 달)과 달리 기간 제한 없이
+  /// 불러온 일정 전부를 날짜별로 모은다. 아직 로딩 중이면 그 쪽은 빼고 그린다.
+  Map<DateTime, Set<CalendarMarker>> _buildMarkers(
+    List<CalendarEvent>? events,
+    List<ManualProductEntry>? manualEntries,
+  ) {
+    final markers = <DateTime, Set<CalendarMarker>>{};
+    void add(DateTime date, CalendarMarker marker) =>
+        markers.putIfAbsent(calendarDayKey(date), () => {}).add(marker);
+    for (final event in events ?? const <CalendarEvent>[]) {
+      add(event.date, event.isMaturity ? CalendarMarker.maturity : CalendarMarker.payment);
+    }
+    for (final entry in manualEntries ?? const <ManualProductEntry>[]) {
+      add(entry.date, CalendarMarker.manual);
+    }
+    return markers;
   }
 
   /// 서버 일정(upcomingEventsProvider)과 직접 기록(manualEntryProvider) 둘 다
@@ -294,7 +334,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   /// 서버에서 온 일정(확정 가입 상품)과 사용자가 직접 기록한 항목 중
-  /// 오늘부터 2개월 이내(오늘 포함) 것만 날짜순으로 합쳐서 타일 위젯 목록으로
+  /// 오늘부터 다음 달 말일까지(오늘 포함) 것만 날짜순으로 합쳐서 타일 위젯 목록으로
   /// 만든다. 지난 일정이나 너무 먼 미래의 일정은 "다가오는 일정"에 보일
   /// 이유가 없어서 여기서 걸러낸다.
   List<Widget> _buildScheduleTiles(
@@ -303,8 +343,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   ) {
     final today = DateTime.now();
     final startOfToday = DateTime(today.year, today.month, today.day);
-    // 2개월 뒤 같은 날짜의 다음날 0시 - 그 날짜까지는 일정의 시각과 무관하게 전부 포함한다.
-    final endExclusive = DateTime(today.year, today.month + 2, today.day + 1);
+    // 다다음 달 1일 0시 - 다음 달 말일까지는 일정의 시각과 무관하게 전부 포함한다.
+    final endExclusive = DateTime(today.year, today.month + 2);
     bool isUpcoming(DateTime date) =>
         !date.isBefore(startOfToday) && date.isBefore(endExclusive);
 
@@ -320,6 +360,37 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
         ),
     ]..sort((a, b) => a.date.compareTo(b.date));
-    return [for (final item in items) item.tile];
+
+    // 이번 달(위)과 다음 달(아래)을 소제목으로 나눈다. 한쪽이 비면 그 소제목은 안 보인다.
+    final startOfNextMonth = DateTime(today.year, today.month + 1);
+    final thisMonth = items.where((i) => i.date.isBefore(startOfNextMonth)).toList();
+    final nextMonth = items.where((i) => !i.date.isBefore(startOfNextMonth)).toList();
+    return [
+      if (thisMonth.isNotEmpty) ...[
+        _scheduleGroupHeader('이번 달 (${today.month}월)'),
+        for (final item in thisMonth) item.tile,
+      ],
+      if (nextMonth.isNotEmpty) ...[
+        _scheduleGroupHeader('다음 달 (${startOfNextMonth.month}월)'),
+        for (final item in nextMonth) item.tile,
+      ],
+    ];
+  }
+
+  Widget _scheduleGroupHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.gray,
+          ),
+        ),
+      ),
+    );
   }
 }

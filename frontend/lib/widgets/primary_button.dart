@@ -25,7 +25,7 @@ class PrimaryButton extends StatelessWidget {
         ),
       ),
       onPressed: onPressed,
-      child: Text(label),
+      child: Text(label, textAlign: TextAlign.center),
     );
   }
 }

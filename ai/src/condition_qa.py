@@ -35,6 +35,9 @@ ETC_TYPE = "기타"
 # 질문 문장 생성에서 AI 를 동시에 부르는 수. 질문마다 1번씩 부르므로 하나씩 하면 질문이 많을 때 느리고,
 # 너무 많이 동시에 보내면 API 프록시가 거부할 수 있다. 호출 지점은 그대로 하나(A)라 NFR-04 와 무관하다.
 MAX_PARALLEL_QUESTIONS = 5
+# 원문이 이 길이(띄어쓰기 제외) 이하면 조건 이름뿐인 경우가 많다("ESG 실천 우대금리", "주거래우대").
+# 금감원 공시에 설명이 더 없어 AI가 구체적인 질문을 못 만들므로 정해진 문장으로 묻는다 (AI 호출 없음).
+SHORT_TEXT_LEN = 14
 
 _client = None
 
@@ -47,7 +50,9 @@ def _get_client():
 
         if not OPENAI_API_KEY or not OPENAI_BASE_URL:
             raise RuntimeError("OPENAI_API_KEY / OPENAI_BASE_URL이 .env에 설정 안 돼 있음")
-        _client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1")
+        # 기본값(요청당 최대 10분 + 자동 재시도 2번)이면 AI 서버가 멈출 때 챗봇이 계속 기다린다.
+        # 30초에 끊는다 - 질문은 원문을 보여주는 fallback, 답 해석은 '모름'이 된다.
+        _client = OpenAI(api_key=OPENAI_API_KEY, base_url=f"{OPENAI_BASE_URL}/v1", timeout=30, max_retries=0)
     return _client
 
 
@@ -67,10 +72,11 @@ def _normalize(s: str) -> str:
 # 1) '기타' 조건 묶기 (AI 호출 없음)
 # ---------------------------------------------------------------------------
 def group_etc_conditions(conditions: list) -> list:
-    """'기타' 조건 중 우대폭(rate_bonus)이 있는 것만 골라, 원문이 같은 것끼리 묶는다.
+    """'기타' 조건 중 우대폭(rate_bonus)이 있는 것만 골라, 같은 group_key 안에서 원문이 같은 것끼리 묶는다.
 
-    conditions: [{"condition_id", "condition_type", "rate_bonus", "evidence_text"}, ...]
-                (BE의 ProductCondition 필드명 그대로)
+    conditions: [{"condition_id", "condition_type", "rate_bonus", "evidence_text", "group_key"(선택)}, ...]
+                (BE의 ProductCondition 필드명 그대로). group_key 는 BE가 기관 코드를 넣는다 -
+                원문이 같아도 조합(기관)이 다르면 답이 다를 수 있어서("개설 금고에 ○○ 통장 보유") 따로 묻는다.
     반환: [{"evidence_text": 원문, "condition_ids": [묶인 조건 ID들]}, ...]  - 처음 나온 순서 유지
     원문이 비어 있는 조건은 무엇을 물어볼지 알 수 없어서 뺀다."""
     groups: dict = {}
@@ -80,7 +86,7 @@ def group_etc_conditions(conditions: list) -> list:
         text = (cond.get("evidence_text") or "").strip()
         if not text:
             continue
-        key = _normalize(text)
+        key = (cond.get("group_key"), _normalize(text))
         if key not in groups:
             groups[key] = {"evidence_text": text, "condition_ids": []}
         if cond["condition_id"] not in groups[key]["condition_ids"]:
@@ -97,6 +103,11 @@ _QUESTION_GEN_PROMPT = (
     "규칙:\n"
     "- 예/아니오로 답할 수 있는 질문 형태로 만들어.\n"
     "- 원문에 없는 내용을 지어내지 마. 원문의 의미를 벗어나지 마.\n"
+    "- 사용자는 아직 이 상품에 가입하지 않았어. 가입할 때나 가입한 뒤에 하는 일(서약·동의, 미션, 이체·결제 실적, "
+    "만기까지 유지 등)이면 앞으로 할 수 있는지 미래형으로 물어 (예: '가입할 때 서약에 동의하실 수 있나요?', "
+    "'만기까지 퀴즈 미션을 완료하실 수 있나요?'). '하셨나요?'처럼 과거형으로 묻지 마. "
+    "이미 가진 자격·상태(보유한 상품, 회원 여부, 가구 형태 등)면 현재형으로 물어 "
+    "(예: '주택청약종합저축을 갖고 계신가요?').\n"
     "- grounding_quote: 이 질문을 만든 근거가 되는 원문 속 문구를 한 글자도 바꾸지 "
     "않고 그대로(띄어쓰기 포함) 옮겨 적어. 최소 10자 이상.\n\n"
     "반드시 아래 JSON 형식으로만 응답해. 코드블록(```) 없이, 설명 문장 없이, "
@@ -110,8 +121,16 @@ def fallback_question(text: str) -> str:
     return f'다음 조건에 해당하시나요? "{text}"'
 
 
+def short_condition_question(text: str) -> str:
+    """짧은 조건의 정해진 질문. 뜻이 분명하면 예/아니요로, 모호하면 '모르겠어요'(-> 모름, 최대형만)로 답하게 한다."""
+    return f'은행 안내에는 "{text}"라고 나와 있어요. 해당하시나요? 잘 모르시면 "모르겠어요"라고 답해 주세요.'
+
+
 def _build_question_ai(text: str) -> str:
-    """원문을 보고 AI가 질문을 만든다. grounding_quote가 원문에 없거나 실패하면 fallback."""
+    """원문을 보고 AI가 질문을 만든다. grounding_quote가 원문에 없거나 실패하면 fallback.
+    원문이 짧으면(SHORT_TEXT_LEN) AI를 부르지 않고 정해진 문장을 쓴다."""
+    if len(_normalize(text)) <= SHORT_TEXT_LEN:
+        return short_condition_question(text)
     fallback = fallback_question(text)
     try:
         res = _get_client().chat.completions.create(
@@ -140,9 +159,11 @@ def build_etc_questions(conditions: list, max_workers: int = MAX_PARALLEL_QUESTI
     groups = group_etc_conditions(conditions)
     if not groups:
         return []
-    with ThreadPoolExecutor(max_workers=min(max_workers, len(groups))) as pool:
-        questions = list(pool.map(lambda g: _build_question_ai(g["evidence_text"]), groups))
-    return [{**group, "question": q} for group, q in zip(groups, questions)]
+    # 기관별로 나뉘어 같은 원문이 여러 번 나올 수 있다. 질문 문장은 원문마다 한 번만 만든다
+    texts = list(dict.fromkeys(g["evidence_text"] for g in groups))
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(texts))) as pool:
+        questions = dict(zip(texts, pool.map(_build_question_ai, texts)))
+    return [{**group, "question": questions[group["evidence_text"]]} for group in groups]
 
 
 # ---------------------------------------------------------------------------

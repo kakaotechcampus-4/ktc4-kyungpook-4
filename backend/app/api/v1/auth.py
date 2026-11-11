@@ -10,9 +10,13 @@
   토큰을 딥링크 주소에 바로 싣지 않는 건 주소가 로그·다른 앱에 새어 나갈 수 있어서다. 일회용 코드는
   60초만 유효하고, verifier 없이는 쓸 수 없다.
   로그인 전 기록은 POST /auth/app/guest 로 받은 게스트 토큰으로 쌓고, 3번에서 계정으로 옮긴다.
+
+[평가자용] GET /auth/demo/login?secret=... 로 구글·카카오 없이 고정 데모 계정에 로그인할 수 있다.
+  DEMO_LOGIN_SECRET 이 서버에 설정돼 있을 때만 동작하며 평가 기간에만 켜두는 용도다.
 """
 
 import logging
+import secrets as secrets_module
 from typing import Annotated, Literal
 from urllib.parse import urlencode
 
@@ -68,6 +72,34 @@ async def _issue_tokens(redis: Redis, user_id: int) -> TokenOut:
         refresh_token=await auth_service.issue_refresh(redis, user_id),
         expires_in=settings.ACCESS_TOKEN_MINUTES * 60,
     )
+
+
+@router.get(
+    "/demo/login",
+    summary="[평가자용] 소셜 로그인 없이 체험 - secret 쿼리파라미터 필요",
+    description="DEMO_LOGIN_SECRET 이 서버에 설정돼 있고 secret 이 일치할 때만 동작한다 "
+    "(비어 있으면 항상 404, 기본 비활성). 고정된 데모 계정으로 로그인시키고(웹 쿠키), "
+    "게스트로 쌓아둔 기록이 있으면 그 계정으로 그대로 승계한다.",
+    responses={404: {"description": "DEMO_LOGIN_SECRET 미설정 또는 secret 불일치"}},
+)
+async def demo_login(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    redis: Annotated[Redis, Depends(get_redis)],
+    secret: str,
+    next_path: Annotated[str | None, Query(alias="next", description="로그인 후 돌아갈 FE 경로")] = None,
+    guest_token: Annotated[str | None, Cookie(alias=GUEST_COOKIE)] = None,
+) -> RedirectResponse:
+    if not settings.DEMO_LOGIN_SECRET or not secrets_module.compare_digest(secret, settings.DEMO_LOGIN_SECRET):
+        raise HTTPException(status_code=404)
+
+    user_id = await auth_service.find_or_create_demo_user(session)
+    response = _to_frontend(auth_service.safe_next(next_path))
+    set_auth_cookies(response, create_access_token(user_id), await auth_service.issue_refresh(redis, user_id))
+    guest_id = decode_guest_token(guest_token) if guest_token else None
+    if guest_id is not None:
+        await auth_service.adopt_guest(session, guest_id, user_id)
+        clear_guest_cookie(response)
+    return response
 
 
 @router.get("/{provider}/login", summary="소셜 로그인 시작 - 소셜사 로그인 화면으로 보낸다")

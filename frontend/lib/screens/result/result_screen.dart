@@ -23,6 +23,10 @@ class ResultScreen extends ConsumerWidget {
     final singlePlan = ref.watch(singlePlanProvider);
     final selectedTier = ref.watch(selectedTierProvider);
     final recommendation = ref.watch(recommendationProvider);
+    // 추천 이유(약 26초)는 autoDispose 라, 카드에서만 지켜보면 카드가 스크롤로 화면 밖에 나가거나
+    // 선택이 꺼질 때 진행 중인 요청을 버리고 다시 보일 때 처음부터 새로 요청한다.
+    // 결과 화면이 열려 있는 동안 요청을 붙잡아 두고, 들어오자마자 미리 받아오게 여기서도 지켜본다.
+    ref.watch(portfolioReasonsProvider);
 
     return Scaffold(
       body: SafeArea(

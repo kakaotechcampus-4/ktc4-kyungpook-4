@@ -51,6 +51,12 @@ class Settings(BaseSettings):
     KAKAO_CLIENT_ID: str = ""  # 카카오 REST API 키
     KAKAO_CLIENT_SECRET: str = ""
 
+    # 평가자가 구글·카카오 로그인 없이 "로그인된 화면"까지 체험할 수 있게 하는 우회 로그인의
+    # 비밀값. 비어 있으면 /auth/demo/login 은 항상 404 (기본 비활성). 평가 기간에만 서버
+    # .env 에 넣고 끝나면 다시 비운다. 아무 사용자나 쓸 수 있는 고정 데모 계정이므로 민감한
+    # 값을 넣지 않는다.
+    DEMO_LOGIN_SECRET: str = ""
+
     @property
     def cookie_secure(self) -> bool:
         """로컬(http)만 Secure 를 뺀다. 서버는 HTTPS 라 항상 붙인다."""
