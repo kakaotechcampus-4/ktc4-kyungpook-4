@@ -95,9 +95,8 @@ class PortfolioProduct {
       final thresholdValue = condition['threshold_value'] as int?;
       final thresholdUnit = condition['threshold_unit'] as String?;
       final threshold = thresholdValue != null ? '$thresholdValue$thresholdUnit 이상 ' : '';
-      final status = (condition['already_met'] as bool) ? '충족' : '미충족';
       return '${condition['condition_type']} $threshold'
-          '+${condition['bonus_rate']}%p ($status)';
+          '+${condition['bonus_rate']}%p';
     }).join(', ');
   }
 }
@@ -129,6 +128,24 @@ class PortfolioOption {
 
   /// 일반과세 이자가 연 2천만원을 넘어 금융소득종합과세 대상이 될 수 있음.
   final bool overComprehensiveTax;
+
+  /// 이 안에서 한 기관에 들어가는 금액 합계가 예금자보호 한도(1억원)를 넘는 기관 이름.
+  /// 단순형처럼 새 계좌를 만들지 않으면 같은 기관에 여러 상품이 몰려 발생할 수 있다.
+  List<String> get institutionsOverProtectionLimit {
+    const protectionLimit = 100000000;
+    final totalsByInstitution = <String, int>{};
+    for (final product in products) {
+      totalsByInstitution.update(
+        product.institutionName,
+        (total) => total + product.allocatedAmount,
+        ifAbsent: () => product.allocatedAmount,
+      );
+    }
+    return totalsByInstitution.entries
+        .where((entry) => entry.value > protectionLimit)
+        .map((entry) => entry.key)
+        .toList();
+  }
 
   const PortfolioOption({
     required this.tier,
